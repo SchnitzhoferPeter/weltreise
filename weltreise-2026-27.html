@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Weltreise 2026/27 · Civitavecchia → Civitavecchia</title>
+<meta name="description" content="Interaktive Karte der 141-tägigen Weltkreuzfahrt: alle Häfen, Liegezeiten, Seetage und Details auf einen Blick.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,700;1,6..96,500&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+:root{
+  --abyss:#0B1A2A;
+  --chart:#10273C;
+  --rule:#1E3D5A;
+  --brass:#E8B04B;
+  --brass-dim:#8a6a2c;
+  --aqua:#6FD3C6;
+  --paper:#F2EFE6;
+  --muted:#93A8BC;
+  --shadow:0 24px 60px -20px rgba(0,0,0,.75);
+  --ledger-w:390px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%}
+body{
+  background:var(--abyss);
+  color:var(--paper);
+  font-family:'Archivo',system-ui,-apple-system,'Segoe UI',sans-serif;
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  overflow:hidden;
+}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--aqua);outline-offset:2px;border-radius:2px}
+
+/* ---------- Kopfzeile ---------- */
+.masthead{
+  display:flex;align-items:flex-end;gap:28px;flex-wrap:wrap;
+  padding:14px 22px 12px;
+  border-bottom:1px solid var(--rule);
+  background:linear-gradient(180deg,#0d1f31,#0B1A2A);
+}
+.mark{display:flex;flex-direction:column;gap:2px;margin-right:auto}
+.eyebrow{
+  font-family:'IBM Plex Mono',ui-monospace,monospace;
+  font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--brass);
+}
+.mark h1{
+  margin:0;font-family:'Bodoni Moda',Georgia,serif;font-weight:700;
+  font-size:clamp(21px,2.6vw,30px);line-height:1.05;letter-spacing:-.01em;
+}
+.mark h1 em{font-style:italic;font-weight:500;color:var(--brass)}
+.stats{display:flex;gap:26px;flex-wrap:wrap;padding-bottom:3px}
+.stat b{
+  display:block;font-family:'Bodoni Moda',Georgia,serif;font-size:22px;font-weight:700;line-height:1;
+}
+.stat span{
+  font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted);
+}
+
+/* ---------- Bühne ---------- */
+.stage{
+  display:grid;grid-template-columns:1fr var(--ledger-w);
+  height:calc(100dvh - var(--head-h,74px));
+}
+.chart{display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--rule)}
+#map{flex:1;min-height:0;background:#0a1826}
+.leaflet-container{font-family:'Archivo',sans-serif;background:#0a1826}
+.leaflet-control-attribution{
+  background:rgba(11,26,42,.82)!important;color:var(--muted)!important;font-size:10px!important;
+}
+.leaflet-control-attribution a{color:var(--muted)!important}
+.leaflet-bar a{background:#12293e!important;color:var(--paper)!important;border-color:var(--rule)!important}
+.leaflet-bar a:hover{background:#1a3750!important}
+.leaflet-tooltip.port-tip{
+  background:#0d2137;border:1px solid var(--rule);color:var(--paper);
+  box-shadow:var(--shadow);font-size:12px;padding:5px 9px;border-radius:3px;
+}
+.leaflet-tooltip.port-tip::before{display:none}
+.leaflet-tooltip.port-tip b{font-weight:600}
+.leaflet-tooltip.port-tip i{
+  font-style:normal;display:block;font-family:'IBM Plex Mono',monospace;
+  font-size:10px;color:var(--brass);letter-spacing:.08em;
+}
+
+/* Kartenwerkzeuge */
+.chart-tools{position:absolute;z-index:500;right:14px;top:14px;display:flex;flex-direction:column;gap:6px}
+.tool{
+  background:rgba(13,33,55,.9);border:1px solid var(--rule);border-radius:3px;
+  padding:7px 11px;font-size:11.5px;letter-spacing:.04em;color:var(--paper);
+  backdrop-filter:blur(6px);transition:border-color .15s,color .15s;
+}
+.tool:hover{border-color:var(--brass);color:var(--brass)}
+.chart-wrap{position:relative;flex:1;min-height:0;display:flex}
+
+/* ---------- Reise-Log (Signature) ---------- */
+.log{
+  border-top:1px solid var(--rule);background:#0d2035;
+  padding:9px 16px 11px;overflow-x:auto;overflow-y:hidden;
+}
+.log-inner{min-width:760px}
+.log-months,.log-days{display:grid;grid-template-columns:repeat(141,1fr);gap:2px}
+.log-months{margin-bottom:5px}
+.log-months span{
+  font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--muted);border-left:1px solid var(--rule);padding-left:5px;white-space:nowrap;overflow:hidden;
+}
+.log-days{height:34px;align-items:end}
+.day{
+  height:34%;background:#1c3a55;border:0;padding:0;border-radius:1px;
+  transition:height .18s ease,background .18s ease;
+}
+.day.port{height:100%;background:var(--brass-dim)}
+.day.port.multi{background:var(--brass)}
+.day:hover,.day:focus-visible{background:var(--aqua);height:100%}
+.day.is-active{background:var(--paper);height:100%}
+.log-legend{
+  display:flex;gap:18px;align-items:center;margin-top:8px;
+  font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--muted);
+}
+.log-legend i{display:inline-block;width:9px;height:9px;margin-right:6px;vertical-align:-1px;border-radius:1px}
+
+/* ---------- Ledger ---------- */
+.ledger{position:relative;display:flex;flex-direction:column;min-height:0;background:#0c1e30}
+.ledger-head{padding:13px 16px 11px;border-bottom:1px solid var(--rule);display:flex;gap:9px;align-items:center}
+.search{
+  flex:1;background:#0a1826;border:1px solid var(--rule);border-radius:3px;
+  padding:8px 11px;color:var(--paper);font-size:13.5px;
+}
+.search::placeholder{color:#5f7891}
+.search:focus{outline:none;border-color:var(--brass)}
+.switch{
+  border:1px solid var(--rule);border-radius:3px;padding:8px 10px;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted);white-space:nowrap;
+}
+.switch[aria-pressed="true"]{border-color:var(--brass);color:var(--brass)}
+
+.stops{list-style:none;margin:0;padding:0 0 40px;overflow-y:auto;flex:1}
+.stop{
+  display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:baseline;
+  width:100%;text-align:left;padding:12px 16px;border-bottom:1px solid rgba(30,61,90,.55);
+  transition:background .14s ease;
+}
+.stop:hover{background:#102a41}
+.stop.is-active{background:#13324c;box-shadow:inset 3px 0 0 var(--brass)}
+.stop .day-no{
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;color:var(--brass);padding-top:3px;
+}
+.stop .day-no small{display:block;color:var(--muted);letter-spacing:.04em;font-size:9.5px;margin-top:3px}
+.stop .name{font-size:15.5px;font-weight:500;letter-spacing:-.005em}
+.stop .sub{
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--muted);
+  letter-spacing:.06em;margin-top:3px;display:block;
+}
+.stop .dur{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--paper);white-space:nowrap;padding-top:2px}
+.stop .dur em{font-style:normal;display:block;font-size:9.5px;color:var(--brass);letter-spacing:.1em;text-align:right;margin-top:3px}
+.sea{
+  display:flex;align-items:center;gap:10px;padding:7px 16px 7px 68px;
+  font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;
+  text-transform:uppercase;color:#5f7891;border-bottom:1px solid rgba(30,61,90,.35);
+}
+.sea::before{content:"";flex:0 0 22px;height:1px;background:repeating-linear-gradient(90deg,var(--rule) 0 3px,transparent 3px 6px)}
+.empty{padding:28px 18px;color:var(--muted);font-size:13.5px}
+
+/* ---------- Detailblatt ---------- */
+.sheet{
+  position:absolute;inset:0;background:#0c1e30;display:flex;flex-direction:column;
+  transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);
+  visibility:hidden;z-index:20;
+}
+.sheet.is-open{transform:translateX(0);visibility:visible}
+.sheet-scroll{overflow-y:auto;flex:1}
+.back{
+  display:flex;align-items:center;gap:8px;padding:12px 16px;width:100%;
+  border-bottom:1px solid var(--rule);font-family:'IBM Plex Mono',monospace;
+  font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+}
+.back:hover{color:var(--brass)}
+.hero{position:relative;aspect-ratio:16/10;background:#102a41;overflow:hidden}
+.hero img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .5s ease}
+.hero img.is-loaded{opacity:1}
+.hero::after{
+  content:"";position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(12,30,48,0) 40%,rgba(12,30,48,.95));
+}
+.hero figcaption{
+  position:absolute;left:0;right:0;bottom:0;z-index:2;padding:16px;
+}
+.hero .region{
+  font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.2em;
+  text-transform:uppercase;color:var(--brass);
+}
+.hero h2{
+  margin:5px 0 0;font-family:'Bodoni Moda',Georgia,serif;font-weight:700;
+  font-size:29px;line-height:1.05;letter-spacing:-.015em;
+}
+.hero .country{font-size:12.5px;color:var(--muted);margin-top:4px}
+.hero .placeholder{
+  position:absolute;inset:0;display:grid;place-items:center;
+  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.2em;
+  text-transform:uppercase;color:#3c5a76;
+  background:radial-gradient(120% 100% at 30% 0%,#173553,#0e2439);
+}
+.facts{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--rule)}
+.fact{padding:13px 16px;border-right:1px solid var(--rule);border-top:1px solid var(--rule)}
+.fact:nth-child(2n){border-right:0}
+.fact span{
+  display:block;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:5px;
+}
+.fact b{font-weight:500;font-size:14.5px}
+.body{padding:16px}
+.body p{margin:0 0 14px;font-size:14.5px;color:#dfe6ec}
+.body h3{
+  margin:20px 0 9px;font-family:'IBM Plex Mono',monospace;font-size:10px;
+  letter-spacing:.2em;text-transform:uppercase;color:var(--brass);font-weight:500;
+}
+.body ul{margin:0;padding:0;list-style:none}
+.body li{
+  padding:7px 0 7px 16px;border-bottom:1px solid rgba(30,61,90,.5);font-size:14px;position:relative;
+}
+.body li::before{content:"—";position:absolute;left:0;color:var(--brass-dim)}
+.hint{
+  margin-top:16px;padding:11px 13px;border-left:2px solid var(--brass);
+  background:#102a41;font-size:13px;color:#cfd9e2;
+}
+.links{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px}
+.links a{
+  border:1px solid var(--rule);border-radius:3px;padding:8px 12px;font-size:12px;
+  color:var(--paper);text-decoration:none;transition:border-color .15s,color .15s;
+}
+.links a:hover{border-color:var(--brass);color:var(--brass)}
+.credit{
+  padding:14px 16px 26px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;
+  letter-spacing:.1em;color:#4d6b87;
+}
+
+/* ---------- Mobil ---------- */
+@media (max-width:940px){
+  body{overflow:auto}
+  .masthead{padding:12px 16px 10px;gap:16px}
+  .stats{gap:18px}
+  .stage{display:block;height:auto}
+  .chart{border-right:0;border-bottom:1px solid var(--rule)}
+  .chart-wrap{height:52dvh}
+  .ledger{min-height:60dvh}
+  .sheet{position:fixed;inset:0;transform:translateY(100%)}
+  .sheet.is-open{transform:translateY(0)}
+  .stops{overflow:visible}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:.01ms!important;animation-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+
+<header class="masthead" id="masthead">
+  <div class="mark">
+    <div class="eyebrow">Costa Weltreise · 24. Nov 2026 – 13. Apr 2027</div>
+    <h1>Einmal um die Welt <em>in 141 Tagen</em></h1>
+  </div>
+  <div class="stats" id="stats"></div>
+</header>
+
+<main class="stage" id="stage">
+  <section class="chart">
+    <div class="chart-wrap">
+      <div id="map"></div>
+      <div class="chart-tools">
+        <button class="tool" id="fitBtn">Gesamte Route</button>
+        <button class="tool" id="nextBtn">Nächster Hafen</button>
+      </div>
+    </div>
+    <div class="log">
+      <div class="log-inner">
+        <div class="log-months" id="logMonths"></div>
+        <div class="log-days" id="logDays"></div>
+        <div class="log-legend">
+          <span><i style="background:var(--brass)"></i>Hafentag</span>
+          <span><i style="background:#1c3a55"></i>Seetag</span>
+          <span id="logHint">Tag anklicken, um zum Hafen zu springen</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="ledger">
+    <div class="ledger-head">
+      <input class="search" id="search" type="search" placeholder="Hafen oder Land suchen" aria-label="Hafen oder Land suchen">
+      <button class="switch" id="seaToggle" aria-pressed="true">Seetage</button>
+    </div>
+    <ol class="stops" id="stops"></ol>
+
+    <div class="sheet" id="sheet" aria-live="polite">
+      <button class="back" id="backBtn">← Zurück zur Route</button>
+      <div class="sheet-scroll" id="sheetBody"></div>
+    </div>
+  </aside>
+</main>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+/* =======================================================================
+   1 · Reisedaten
+   ===================================================================== */
+const START = Date.UTC(2026, 10, 24);          // Tag 1 = 24. Nov 2026
+const TOTAL_DAYS = 141;
+
+const CALLS = [
+ {n:"Civitavecchia | Rom",c:"Italien",r:"Mittelmeer",lat:42.094,lon:11.796,d1:1,d2:1,dep:"19:00",type:"start",
+  w:"Civitavecchia",t:"Einschiffungstag. Roms Hafen am Tyrrhenischen Meer – die Innenstadt liegt rund 80 km entfernt.",
+  h:["Forte Michelangelo","Altstadt und Promenade","Rom: Kolosseum, Trevi-Brunnen"]},
+ {n:"Savona",c:"Italien",r:"Mittelmeer",lat:44.308,lon:8.478,d1:2,d2:2,arr:"09:00",dep:"18:00",
+  w:"Savona",t:"Ligurischer Hafen mit dem Turm des Magellan-Begleiters Leon Pancaldo und der Festung Priamar.",
+  h:["Festung Priamar","Turm Leon Pancaldo","Pass Colle di Cadibona"]},
+ {n:"Marseille",c:"Frankreich",r:"Mittelmeer",lat:43.296,lon:5.370,d1:3,d2:3,arr:"09:00",dep:"18:00",
+  w:"Marseille",t:"Älteste Stadt Frankreichs, geprägt von Notre-Dame de la Garde und den Calanques.",
+  h:["Notre-Dame de la Garde","Palais Longchamp","Nationalpark Calanques"]},
+ {n:"Barcelona",c:"Spanien",r:"Mittelmeer",lat:41.385,lon:2.173,d1:4,d2:4,arr:"07:00",dep:"13:00",
+  w:"Barcelona",t:"Gaudí, Gotisches Viertel und La Rambla – kurzer Vormittag vor der Atlantikpassage.",
+  h:["Sagrada Família","La Rambla und Boqueria","Fundació Joan Miró"]},
+ {n:"Lissabon",c:"Portugal",r:"Atlantik",lat:38.722,lon:-9.139,d1:6,d2:6,arr:"14:00",dep:"21:00",
+  w:"Lissabon",t:"Nachmittag und Abend am Tejo – von der Alfama bis nach Belém.",
+  h:["Eléctrico 28","Ponte 25 de Abril","Cristo Rei"]},
+ {n:"Ponta Delgada | Azoren",c:"Portugal",r:"Atlantik",lat:37.741,lon:-25.669,d1:9,d2:9,arr:"09:00",dep:"19:00",
+  w:"Ponta Delgada",t:"Hauptstadt von São Miguel: Schwefelquellen, Kraterseen und Ananasplantagen.",
+  h:["Portas da Cidade","Kirche São Pedro","Caldeiras und Kraterseen"]},
+ {n:"Praia da Vitória | Azoren",c:"Portugal",r:"Atlantik",lat:38.733,lon:-27.067,d1:10,d2:10,arr:"08:00",dep:"18:00",
+  w:"Praia da Vitória",t:"Terceiras Handelshafen mit langem weißem Strand und historischem Zentrum.",
+  h:["Igreja Matriz de Santa Cruz","Paços do Concelho","Tourada à corda"]},
+ {n:"New York",c:"USA",r:"Nordamerika",lat:40.706,lon:-74.010,d1:16,d2:17,arr:"08:00",dep:"18:00",
+  w:"New York City",t:"Zwei Tage mit Übernachtung im Hafen – Manhattan von Liberty Island bis zur Brooklyn Bridge.",
+  h:["Freiheitsstatue","Brooklyn Bridge","Empire State Building"]},
+ {n:"Fort Lauderdale",c:"USA",r:"Nordamerika",lat:26.122,lon:-80.143,d1:20,d2:21,arr:"08:00",dep:"16:00",
+  w:"Fort Lauderdale",t:"Übernachtung in Floridas Kanalstadt, der Riverwalk beginnt direkt am Hafen.",
+  h:["Riverwalk","Broward Center","Swimming Hall of Fame"]},
+ {n:"Half Moon Cay",c:"Bahamas",r:"Karibik",lat:24.577,lon:-75.940,d1:22,d2:22,arr:"09:00",dep:"17:00",
+  w:"Half Moon Cay",t:"Privatinsel der Bahamas: Korallenriff, Puderzuckerstrand, reiner Badetag.",
+  h:["Schnorcheln am Riff","Reitausflug am Strand","Exotische Früchte"]},
+ {n:"Cristobal | Colón",c:"Panama",r:"Mittelamerika",lat:9.360,lon:-79.900,d1:26,d2:26,arr:"08:00",dep:"20:00",
+  w:"Colón (Panama)",t:"Karibisches Tor zum Panamakanal an der Atlantikseite der Landenge.",
+  h:["Agua-Clara-Schleusen","Historisches Colón","Regenwald am Chagres"]},
+ {n:"Puntarenas",c:"Costa Rica",r:"Mittelamerika",lat:9.977,lon:-84.838,d1:29,d2:29,arr:"08:00",dep:"20:00",
+  w:"Puntarenas",t:"Costa Ricas Pazifikhafen, Ausgangspunkt für Nebelwald und Nationalparks.",
+  h:["Nationalpark Manuel Antonio","Nebelwald Monteverde","Hängebrücken-Touren"]},
+ {n:"Puerto Quetzal",c:"Guatemala",r:"Mittelamerika",lat:13.925,lon:-90.786,d1:31,d2:31,arr:"08:00",dep:"20:00",
+  w:"Puerto Quetzal",t:"Heiligabend in Guatemala – Antigua und Vulkanlandschaften liegen im Hinterland.",
+  h:["Antigua Guatemala","Vulkan Pacaya","Kaffee-Fincas"]},
+ {n:"Puerto Vallarta",c:"Mexiko",r:"Pazifikküste",lat:20.653,lon:-105.238,d1:34,d2:34,arr:"07:00",dep:"16:00",
+  w:"Puerto Vallarta",t:"Kolonialaltstadt und Malecón, seit den 1960er-Jahren Hollywood-Kulisse.",
+  h:["Malecón","Villa Kimberley","Altstadt Zona Romántica"]},
+ {n:"Cabo San Lucas",c:"Mexiko",r:"Pazifikküste",lat:22.891,lon:-109.912,d1:35,d2:35,arr:"09:00",dep:"16:00",
+  w:"Cabo San Lucas",t:"Wüste trifft Pazifik: das Felsentor El Arco und die Walsaison vor der Küste.",
+  h:["Felsen El Arco","Whale Watching","Playa del Amor"]},
+ {n:"San Diego",c:"USA",r:"Pazifikküste",lat:32.712,lon:-117.173,d1:37,d2:37,arr:"10:00",dep:"20:00",
+  w:"San Diego",t:"Kalifornische Hafenstadt mit Balboa Park, Museen und der USS Midway am Kai.",
+  h:["San Diego Zoo","USS Midway Museum","Old Globe im Balboa Park"]},
+ {n:"Los Angeles",c:"USA",r:"Pazifikküste",lat:33.740,lon:-118.263,d1:38,d2:39,arr:"08:00",dep:"20:00",
+  w:"Los Angeles",t:"Silvester und Neujahr mit Übernachtung im Hafen von Los Angeles.",
+  h:["Hollywood Boulevard","Santa Monica Pier","Getty Center"]},
+ {n:"San Francisco",c:"USA",r:"Pazifikküste",lat:37.808,lon:-122.416,d1:41,d2:42,arr:"06:00",dep:"18:00",
+  w:"San Francisco",t:"Zwei Tage mit Übernachtung: Einfahrt unter der Golden Gate Bridge, 42 Hügel, Silicon Valley im Süden.",
+  h:["Golden Gate Bridge","Alcatraz","Fisherman's Wharf"]},
+ {n:"Honolulu",c:"USA · Hawaii",r:"Südsee",lat:21.307,lon:-157.862,d1:48,d2:48,arr:"08:00",dep:"18:00",
+  w:"Honolulu",t:"Oahu: Waikiki Beach, Pearl Harbor und der Krater Diamond Head.",
+  h:["Waikiki Beach","Pearl Harbor","Diamond Head"]},
+ {n:"Hilo",c:"USA · Hawaii",r:"Südsee",lat:19.729,lon:-155.090,d1:49,d2:49,arr:"09:00",dep:"19:00",
+  w:"Hilo (Hawaii)",t:"Die grüne Seite von Big Island: Regenwald, Wasserfälle und Vulkane über 4.000 Meter.",
+  h:["Rainbow Falls","Akaka Falls","Lava Tree State Monument"]},
+ {n:"Papeete | Tahiti",c:"Französisch-Polynesien",r:"Südsee",lat:-17.535,lon:-149.569,d1:55,d2:55,arr:"09:00",dep:"19:00",
+  w:"Papeete",t:"Tahiti: Lagunen, Vulkangipfel und Schnorchelreviere in Französisch-Polynesien.",
+  h:["Marché de Papeete","Notre-Dame de Papeete","Lagunen und Riffe"]},
+ {n:"Suva",c:"Fidschi",r:"Südsee",lat:-18.141,lon:178.442,d1:61,d2:61,arr:"08:00",dep:"18:00",
+  w:"Suva",t:"Hauptstadt der Fidschi-Inseln seit 1877, tropisch und kolonial geprägt.",
+  h:["Fiji Museum","Thurston Garden","Albert Park"]},
+ {n:"Lifou | Loyalitätsinseln",c:"Neukaledonien",r:"Südsee",lat:-20.917,lon:167.267,d1:63,d2:63,arr:"09:00",dep:"19:00",
+  w:"Lifou",t:"Weiße Sandstrände, Kalkklippen und Kanak-Kultur auf der größten Loyalitätsinsel.",
+  h:["Jinek Bay","Korallengärten","Kanak-Tänze und Kunsthandwerk"]},
+ {n:"Nouméa",c:"Neukaledonien",r:"Südsee",lat:-22.276,lon:166.458,d1:64,d2:64,arr:"07:00",dep:"16:00",
+  w:"Nouméa",t:"Rund um die Hauptinsel liegt das zweitgrößte Korallenriff der Welt, UNESCO-Weltnaturerbe.",
+  h:["Aquarium des Lagons","Tjibaou-Kulturzentrum","Baie des Citrons"]},
+ {n:"Sydney",c:"Australien",r:"Australien",lat:-33.858,lon:151.211,d1:67,d2:68,arr:"06:30",dep:"18:00",
+  w:"Sydney",t:"Übernachtung im Hafen – Opera House und Harbour Bridge liegen direkt am Anleger.",
+  h:["Opera House","Harbour Bridge","Bondi Beach"]},
+ {n:"Newcastle | New South Wales",c:"Australien",r:"Australien",lat:-32.926,lon:151.780,d1:69,d2:69,arr:"08:00",dep:"18:00",
+  w:"Newcastle (New South Wales)",t:"Australischer Küstenlifestyle: Meeresschwimmbecken, Klippenweg, Altstadt am Wasser.",
+  h:["Nobbys Beach","Memorial Walk","Foreshore-Promenade"]},
+ {n:"Cairns",c:"Australien",r:"Australien",lat:-16.923,lon:145.778,d1:73,d2:73,arr:"07:00",dep:"18:00",
+  w:"Cairns",t:"Tor zum Great Barrier Reef – mit dem Schnellboot rund 1,5 Stunden bis zum Riff.",
+  h:["Great Barrier Reef","Daintree-Nationalpark","Green Island"]},
+ {n:"Rabaul",c:"Papua-Neuguinea",r:"Südsee",lat:-4.199,lon:152.163,d1:76,d2:76,arr:"08:00",dep:"16:00",
+  w:"Rabaul",t:"Vulkanlandschaft und Kriegsgeschichte an der Simpson-Bucht in Neubritannien.",
+  h:["Vulkan Tavurvur","Heiße Quellen","Historische Tunnelanlagen"]},
+ {n:"Tokio",c:"Japan",r:"Ostasien",lat:35.633,lon:139.792,d1:82,d2:83,arr:"13:30",dep:"20:30",
+  w:"Tokio",t:"Zwei Tage mit Übernachtung: Kaiserpalast, Marunouchi, Ginza und Akihabara.",
+  h:["Kaiserpalast Kōkyo","Akihabara","Tokyo Tower"],
+  note:"Seit 1. Juli 2026 beträgt die internationale Touristenabgabe 3.000 JPY statt 1.000 JPY (rund 16,50 EUR)."},
+ {n:"Kobe",c:"Japan",r:"Ostasien",lat:34.680,lon:135.190,d1:85,d2:85,arr:"08:00",dep:"18:00",
+  w:"Kōbe",t:"Hafenstadt zwischen Rokkō-Gebirge und Bucht, bekannt für Sake, Chinatown und Kitano.",
+  h:["Akashi-Kaikyō-Brücke","Rokkō-Gebirge","Nanking-Viertel"],
+  note:"Seit 1. Juli 2026 beträgt die internationale Touristenabgabe 3.000 JPY statt 1.000 JPY (rund 16,50 EUR)."},
+ {n:"Nagasaki",c:"Japan",r:"Ostasien",lat:32.744,lon:129.873,d1:87,d2:87,arr:"08:00",dep:"18:00",
+  w:"Nagasaki",t:"Friedenspark und Atombombenmuseum prägen die wiederaufgebaute Hafenstadt.",
+  h:["Friedenspark","Peace Memorial Statue","Atombombenmuseum"],
+  note:"Seit 1. Juli 2026 beträgt die internationale Touristenabgabe 3.000 JPY statt 1.000 JPY (rund 16,50 EUR)."},
+ {n:"Busan",c:"Südkorea",r:"Ostasien",lat:35.101,lon:129.040,d1:88,d2:88,arr:"07:00",dep:"16:00",
+  w:"Busan",t:"Zweitgrößte Stadt Südkoreas mit Fischmarkt, Tempeln am Meer und riesigen Kaufhäusern.",
+  h:["Jagalchi-Markt","Tempel Haedong Yonggungsa","Shinsegae Centum City"]},
+ {n:"Keelung | Taipeh",c:"Taiwan",r:"Ostasien",lat:25.132,lon:121.741,d1:90,d2:90,arr:"10:00",dep:"20:00",
+  w:"Keelung",t:"Der Hafen reicht bis ins Stadtzentrum; nach Taipeh sind es rund 40 Minuten.",
+  h:["Nachtmarkt Keelung","Fulong Beach","Sandsteinformationen Lungtung"]},
+ {n:"Hongkong",c:"China",r:"Ostasien",lat:22.293,lon:114.170,d1:92,d2:93,arr:"07:00",dep:"17:00",
+  w:"Hongkong",t:"Übernachtung am Victoria Harbour: Skyline, Peak Tram und Star Ferry.",
+  h:["Victoria Peak","Man Mo Tempel","Viertel Stanley"]},
+ {n:"Nha Trang",c:"Vietnam",r:"Südostasien",lat:12.243,lon:109.196,d1:95,d2:95,arr:"10:00",dep:"20:00",
+  w:"Nha Trang",t:"Vietnams Badezentrum mit Cham-Türmen und kilometerlanger Strandpromenade.",
+  h:["Cham-Türme Thap Ba Ponagar","Tran Phu Boulevard","Ozeanographisches Museum"]},
+ {n:"Phu My | Ho-Chi-Minh-Stadt",c:"Vietnam",r:"Südostasien",lat:10.578,lon:107.028,d1:97,d2:97,arr:"08:00",dep:"18:00",
+  w:"Ho-Chi-Minh-Stadt",t:"Zugang zu Ho-Chi-Minh-Stadt (rund zwei Stunden Fahrt) oder zum Badeort Vũng Tàu.",
+  h:["Ho-Chi-Minh-Stadt","Vũng Tàu","Hafengebiet Phu My"]},
+ {n:"Koh Samui",c:"Thailand",r:"Südostasien",lat:9.512,lon:100.061,d1:99,d2:99,arr:"08:00",dep:"17:00",
+  w:"Ko Samui",t:"Thailändische Insel mit Traumstränden und einer 50 km langen Panoramastraße.",
+  h:["Hin Ta und Hin Yai","Na-Mueang-Wasserfall","Samui Butterfly Garden"]},
+ {n:"Singapur",c:"Singapur",r:"Südostasien",lat:1.264,lon:103.822,d1:101,d2:101,arr:"08:00",dep:"17:00",
+  w:"Singapur",t:"Wolkenkratzer, Gärten und historische Viertel auf engstem Raum.",
+  h:["Gardens by the Bay","Insel Sentosa","Chinatown und Little India"]},
+ {n:"Port Kelang (Kuala Lumpur)",c:"Malaysia",r:"Südostasien",lat:3.000,lon:101.392,d1:102,d2:102,arr:"07:00",dep:"17:00",
+  w:"Port Klang",t:"Hafen von Kuala Lumpur – rund eine Stunde bis zu den Petronas Towers.",
+  h:["Kuala Lumpur","Petronas Towers","Batu-Höhlen"]},
+ {n:"Penang",c:"Malaysia",r:"Südostasien",lat:5.417,lon:100.343,d1:103,d2:103,arr:"07:00",dep:"13:00",
+  w:"George Town (Penang)",t:"George Town mit Fort Cornwallis und Kek Lok Si, dem größten Tempel Südostasiens.",
+  h:["Fort Cornwallis","Tempel Kuan Yin Teng","Tempel Kek Lok Si"]},
+ {n:"Colombo",c:"Sri Lanka",r:"Indischer Ozean",lat:6.941,lon:79.845,d1:106,d2:106,arr:"10:00",dep:"19:00",
+  w:"Colombo",t:"Buddhistische und hinduistische Tempel, dazu das Kolonialviertel Fort.",
+  h:["Gangaramaya-Tempel","Kelaniya Raja Maha Vihara","Nationalmuseum"]},
+ {n:"Malé",c:"Malediven",r:"Indischer Ozean",lat:4.175,lon:73.509,d1:108,d2:108,arr:"08:00",dep:"18:00",
+  w:"Malé",t:"Dicht bebaute Hauptstadt des Inselstaates; kein Gebäude überragt die Freitagsmoschee.",
+  h:["Freitagsmoschee","Fisch- und Gemüsemarkt","Nationalmuseum"]},
+ {n:"Port Louis",c:"Mauritius",r:"Indischer Ozean",lat:-20.160,lon:57.500,d1:113,d2:113,arr:"08:00",dep:"17:00",
+  w:"Port Louis",t:"Mauritius: Blue Penny Museum, Dodo-Rekonstruktion und die Zitadelle über der Stadt.",
+  h:["Blue Penny Museum","Natural History Museum","Fort Adelaide"]},
+ {n:"Durban",c:"Südafrika",r:"Südliches Afrika",lat:-29.867,lon:31.030,d1:117,d2:117,arr:"08:00",dep:"20:00",
+  w:"Durban",t:"Drittgrößte Stadt Südafrikas, Golden Mile am Indischen Ozean.",
+  h:["Golden Mile","uShaka Marine World","Juma-Moschee"]},
+ {n:"Port Elizabeth",c:"Südafrika",r:"Südliches Afrika",lat:-33.962,lon:25.630,d1:119,d2:119,arr:"06:00",dep:"18:30",
+  w:"Gqeberha",t:"Hafen an der Algoa Bay, Ausgangspunkt für Safaris im Addo-Elefantenpark.",
+  h:["Addo-Elefantenpark","Donkin Reserve","Boardwalk"]},
+ {n:"Cape Town",c:"Südafrika",r:"Südliches Afrika",lat:-33.906,lon:18.423,d1:121,d2:121,arr:"07:00",dep:"20:00",
+  w:"Kapstadt",t:"Tafelberg, Waterfront und Kap der Guten Hoffnung – 13 Stunden Liegezeit.",
+  h:["Tafelberg","V&A Waterfront","Kap der Guten Hoffnung"]},
+ {n:"Walvis Bay",c:"Namibia",r:"Südliches Afrika",lat:-22.955,lon:14.505,d1:124,d2:124,arr:"07:00",dep:"18:00",
+  w:"Walvis Bay",t:"Lagune mit Flamingos und Pelikanen, dahinter die Dünen von Swakopmund.",
+  h:["Naturlagune","Bootstour zu Delfinen und Robben","Dünenfahrt Swakopmund"]},
+ {n:"Mindelo | São Vicente",c:"Kap Verde",r:"Atlantik",lat:16.886,lon:-24.988,d1:132,d2:132,arr:"09:00",dep:"19:00",
+  w:"Mindelo",t:"Kulturhauptstadt der Kapverden, überragt vom 750 Meter hohen Monte Verde.",
+  h:["Fliegermonument","Kulturzentrum im Alten Zollhaus","Amilcar-Cabral-Platz"]},
+ {n:"Las Palmas | Gran Canaria",c:"Spanien",r:"Atlantik",lat:28.140,lon:-15.428,d1:135,d2:135,arr:"07:00",dep:"15:00",
+  w:"Las Palmas de Gran Canaria",t:"Altstadt Vegueta, Bergland um den Pico de las Nieves und die Strandpromenade Las Canteras.",
+  h:["Viertel Vegueta","Jardín Canario","Caldera de Bandama"]},
+ {n:"Barcelona",c:"Spanien",r:"Mittelmeer",lat:41.385,lon:2.173,d1:138,d2:138,arr:"14:00",dep:"20:00",
+  w:"Barcelona",t:"Zurück im Mittelmeer: Nachmittag und Abend in Barcelona.",
+  h:["Sagrada Família","Barceloneta","Gran Teatre del Liceu"]},
+ {n:"Marseille",c:"Frankreich",r:"Mittelmeer",lat:43.296,lon:5.370,d1:139,d2:139,arr:"09:00",dep:"18:00",
+  w:"Marseille",t:"Zweiter Halt in Marseille, diesmal mit vollem Tag an Land.",
+  h:["Notre-Dame de la Garde","Vieux-Port","Nationalpark Calanques"]},
+ {n:"Savona",c:"Italien",r:"Mittelmeer",lat:44.308,lon:8.478,d1:140,d2:140,arr:"08:00",dep:"17:00",
+  w:"Savona",t:"Letzter Hafen vor der Rückkehr: Ligurien mit Festung Priamar und Badeorten ringsum.",
+  h:["Festung Priamar","Turm Leon Pancaldo","Badeorte Alassio und Varazze"]},
+ {n:"Civitavecchia | Rom",c:"Italien",r:"Mittelmeer",lat:42.094,lon:11.796,d1:141,d2:141,arr:"09:00",type:"end",
+  w:"Civitavecchia",t:"Ausschiffungstag um 09:00 Uhr – nach 141 Tagen zurück am Ausgangspunkt.",
+  h:["Forte Michelangelo","Rom: Kaiserforen und Spanische Treppe","Rückreise"]}
+];
+
+/* =======================================================================
+   2 · Datums- und Formathelfer
+   ===================================================================== */
+const WD = ["So","Mo","Di","Mi","Do","Fr","Sa"];
+const MO = ["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
+const MO_LONG = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
+
+const dateOf = d => new Date(START + (d - 1) * 86400000);
+const fmtShort = d => { const x = dateOf(d); return `${x.getUTCDate()}. ${MO[x.getUTCMonth()]}`; };
+const fmtFull  = d => { const x = dateOf(d); return `${WD[x.getUTCDay()]}, ${x.getUTCDate()}. ${MO[x.getUTCMonth()]} ${x.getUTCFullYear()}`; };
+const toMin = t => t ? (+t.slice(0,2)) * 60 + (+t.slice(3)) : null;
+
+function hours(call){
+  if(!call.arr || !call.dep) return null;
+  return ((call.d2 - call.d1) * 1440 + toMin(call.dep) - toMin(call.arr)) / 60;
+}
+function fmtDur(h){
+  if(h === null) return "—";
+  if(h < 24) return `${Math.round(h)} Std.`;
+  const d = Math.floor(h / 24), rest = Math.round(h - d * 24);
+  return rest ? `${d} Tg. ${rest} Std.` : `${d} Tage`;
+}
+
+/* =======================================================================
+   3 · Kennzahlen
+   ===================================================================== */
+const portDays = new Set();
+CALLS.forEach(c => { for(let d = c.d1; d <= c.d2; d++) portDays.add(d); });
+const countries = new Set(CALLS.map(c => c.c.split(" · ")[0]));
+const seaDayCount = TOTAL_DAYS - portDays.size;
+const daysToGo = Math.ceil((START - Date.now()) / 86400000);
+
+document.getElementById("stats").innerHTML = [
+  [TOTAL_DAYS, "Reisetage"],
+  [CALLS.length, "Anläufe"],
+  [countries.size, "Länder"],
+  [seaDayCount, "Seetage"],
+  daysToGo > 0 ? [daysToGo, "Tage bis Abfahrt"] : null
+].filter(Boolean).map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("");
+
+/* Kopfhöhe für die Bühnenhöhe */
+const setHeadH = () => document.documentElement.style.setProperty(
+  "--head-h", document.getElementById("masthead").offsetHeight + "px");
+setHeadH();
+addEventListener("resize", setHeadH);
+
+/* =======================================================================
+   4 · Karte
+   ===================================================================== */
+const map = L.map("map", {
+  worldCopyJump:true, minZoom:2, maxZoom:12, zoomControl:true,
+  attributionControl:true, scrollWheelZoom:true
+});
+L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+  attribution:'&copy; OpenStreetMap, &copy; CARTO · Reisedaten: eigene Buchung',
+  subdomains:"abcd", maxZoom:19
+}).addTo(map);
+
+/* Route: Segmente am 180. Längengrad sauber teilen */
+const routeSegments = [];
+for(let i = 0; i < CALLS.length - 1; i++){
+  const a = CALLS[i], b = CALLS[i + 1];
+  let lon2 = b.lon, d = lon2 - a.lon;
+  if(d > 180) lon2 -= 360; else if(d < -180) lon2 += 360;
+  if(lon2 >= -180 && lon2 <= 180){
+    routeSegments.push([[a.lat, a.lon], [b.lat, b.lon]]);
+  } else {
+    const edge = lon2 > 180 ? 180 : -180;
+    const t = (edge - a.lon) / (lon2 - a.lon);
+    const latX = a.lat + t * (b.lat - a.lat);
+    routeSegments.push([[a.lat, a.lon], [latX, edge]]);
+    routeSegments.push([[latX, -edge], [b.lat, b.lon]]);
+  }
+}
+L.polyline(routeSegments, {color:"#E8B04B", weight:7, opacity:.10}).addTo(map);
+L.polyline(routeSegments, {color:"#E8B04B", weight:1.6, opacity:.85, dashArray:"1 5", lineCap:"round"}).addTo(map);
+
+const markers = CALLS.map((c, i) => {
+  const long = (hours(c) || 0) > 24;
+  const m = L.circleMarker([c.lat, c.lon], {
+    radius: long ? 6 : 4.5, color:"#0B1A2A", weight:1.5,
+    fillColor:"#E8B04B", fillOpacity:1
+  }).addTo(map);
+  m.bindTooltip(`<b>${c.n}</b><i>Tag ${c.d1}${c.d2 > c.d1 ? "–" + c.d2 : ""} · ${fmtShort(c.d1)}</i>`,
+    {className:"port-tip", direction:"top", offset:[0, -6]});
+  m.on("click", () => select(i, true));
+  return m;
+});
+const halo = L.circleMarker([0, 0], {
+  radius:12, color:"#6FD3C6", weight:2, fill:false, opacity:0, interactive:false
+}).addTo(map);
+
+const allBounds = L.latLngBounds(CALLS.map(c => [c.lat, c.lon]));
+const fitAll = () => map.fitBounds(allBounds, {padding:[40, 40]});
+fitAll();
+document.getElementById("fitBtn").addEventListener("click", () => { fitAll(); });
+
+/* =======================================================================
+   5 · Routenliste
+   ===================================================================== */
+const stopsEl = document.getElementById("stops");
+let showSea = true, query = "", activeIdx = -1;
+
+function renderList(){
+  const q = query.trim().toLowerCase();
+  let html = "", shown = 0;
+
+  CALLS.forEach((c, i) => {
+    const match = !q || c.n.toLowerCase().includes(q) || c.c.toLowerCase().includes(q) || c.r.toLowerCase().includes(q);
+
+    if(showSea && !q && i > 0){
+      const gap = c.d1 - CALLS[i - 1].d2 - 1;
+      if(gap > 0){
+        html += `<li class="sea">${gap} ${gap === 1 ? "Seetag" : "Seetage"} · ${fmtShort(CALLS[i-1].d2+1)} – ${fmtShort(c.d1-1)}</li>`;
+      }
+    }
+    if(!match) return;
+    shown++;
+
+    const h = hours(c);
+    const times = c.type === "start" ? `Ablegen ${c.dep}`
+              : c.type === "end"   ? `Ankunft ${c.arr}`
+              : `${c.arr} – ${c.dep}`;
+    html += `<li><button class="stop${i === activeIdx ? " is-active" : ""}" data-i="${i}">
+        <span class="day-no">TAG ${c.d1}${c.d2 > c.d1 ? "–" + c.d2 : ""}<small>${fmtShort(c.d1)}</small></span>
+        <span><span class="name">${c.n}</span><span class="sub">${c.c}</span></span>
+        <span class="dur">${times}<em>${h === null ? (c.type === "start" ? "Start" : "Ziel") : fmtDur(h)}</em></span>
+      </button></li>`;
+  });
+
+  stopsEl.innerHTML = shown ? html : `<li class="empty">Kein Hafen gefunden. Suchbegriff anpassen oder Feld leeren.</li>`;
+}
+stopsEl.addEventListener("click", e => {
+  const btn = e.target.closest(".stop");
+  if(btn) select(+btn.dataset.i, true);
+});
+document.getElementById("search").addEventListener("input", e => { query = e.target.value; renderList(); });
+const seaBtn = document.getElementById("seaToggle");
+seaBtn.addEventListener("click", () => {
+  showSea = !showSea;
+  seaBtn.setAttribute("aria-pressed", String(showSea));
+  renderList();
+});
+
+/* =======================================================================
+   6 · Reise-Log (Tagesband)
+   ===================================================================== */
+const dayOwner = new Array(TOTAL_DAYS + 1).fill(-1);
+CALLS.forEach((c, i) => { for(let d = c.d1; d <= c.d2; d++) dayOwner[d] = i; });
+
+const monthsEl = document.getElementById("logMonths");
+const daysEl = document.getElementById("logDays");
+let mHtml = "", start = 1;
+for(let d = 1; d <= TOTAL_DAYS; d++){
+  const isLast = d === TOTAL_DAYS;
+  const changes = !isLast && dateOf(d + 1).getUTCMonth() !== dateOf(d).getUTCMonth();
+  if(changes || isLast){
+    const x = dateOf(start), span = d - start + 1;
+    mHtml += `<span style="grid-column:${start} / span ${span}">${MO_LONG[x.getUTCMonth()].slice(0,3)}</span>`;
+    start = d + 1;
+  }
+}
+monthsEl.innerHTML = mHtml;
+
+daysEl.innerHTML = Array.from({length:TOTAL_DAYS}, (_, k) => {
+  const d = k + 1, idx = dayOwner[d], c = idx >= 0 ? CALLS[idx] : null;
+  const cls = c ? (c.d2 > c.d1 ? "day port multi" : "day port") : "day";
+  const label = c ? `Tag ${d}, ${fmtFull(d)} · ${c.n}` : `Tag ${d}, ${fmtFull(d)} · Seetag`;
+  return `<button class="${cls}" data-day="${d}" data-i="${idx}" title="${label}" aria-label="${label}"></button>`;
+}).join("");
+
+daysEl.addEventListener("click", e => {
+  const b = e.target.closest(".day");
+  if(!b) return;
+  const i = +b.dataset.i;
+  if(i >= 0) select(i, true);
+  else document.getElementById("logHint").textContent = `Tag ${b.dataset.day}: Seetag, ${fmtFull(+b.dataset.day)}`;
+});
+
+function markLogDays(i){
+  daysEl.querySelectorAll(".day.is-active").forEach(el => el.classList.remove("is-active"));
+  if(i < 0) return;
+  const c = CALLS[i];
+  for(let d = c.d1; d <= c.d2; d++){
+    const el = daysEl.querySelector(`.day[data-day="${d}"]`);
+    if(el) el.classList.add("is-active");
+  }
+}
+
+/* =======================================================================
+   7 · Detailblatt
+   ===================================================================== */
+const sheet = document.getElementById("sheet");
+const sheetBody = document.getElementById("sheetBody");
+const imgCache = new Map();
+
+async function wikiImage(title){
+  if(imgCache.has(title)) return imgCache.get(title);
+  const langs = ["de", "en"];
+  for(const lang of langs){
+    try{
+      const res = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
+      if(!res.ok) continue;
+      const data = await res.json();
+      const src = data.thumbnail && data.thumbnail.source;
+      if(src){
+        const big = src.replace(/\/\d+px-/, "/1000px-");
+        const out = {src:big, page:data.content_urls && data.content_urls.desktop.page};
+        imgCache.set(title, out);
+        return out;
+      }
+    }catch(e){ /* offline oder blockiert: Platzhalter zeigen */ }
+  }
+  imgCache.set(title, null);
+  return null;
+}
+
+function renderSheet(i){
+  const c = CALLS[i], h = hours(c);
+  const dateLine = c.d2 > c.d1 ? `${fmtFull(c.d1)} – ${fmtFull(c.d2)}` : fmtFull(c.d1);
+  const timeLine = c.type === "start" ? `Ablegen ${c.dep}` : c.type === "end" ? `Ankunft ${c.arr}` : `${c.arr} – ${c.dep} Uhr`;
+
+  sheetBody.innerHTML = `
+    <figure class="hero" id="hero">
+      <div class="placeholder">Bild wird geladen</div>
+      <figcaption>
+        <div class="region">Tag ${c.d1}${c.d2 > c.d1 ? "–" + c.d2 : ""} · ${c.r}</div>
+        <h2>${c.n}</h2>
+        <div class="country">${c.c}</div>
+      </figcaption>
+    </figure>
+    <div class="facts">
+      <div class="fact"><span>Datum</span><b>${dateLine}</b></div>
+      <div class="fact"><span>Liegezeit</span><b>${timeLine}</b></div>
+      <div class="fact"><span>Dauer an Land</span><b>${h === null ? "—" : fmtDur(h)}</b></div>
+      <div class="fact"><span>Position</span><b style="font-family:'IBM Plex Mono',monospace;font-size:12.5px">${c.lat.toFixed(3)}, ${c.lon.toFixed(3)}</b></div>
+    </div>
+    <div class="body">
+      <p>${c.t}</p>
+      <h3>Nicht versäumen</h3>
+      <ul>${c.h.map(x => `<li>${x}</li>`).join("")}</ul>
+      ${c.note ? `<p class="hint">${c.note}</p>` : ""}
+      <div class="links">
+        <a href="https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lon}" target="_blank" rel="noopener">In Google Maps öffnen</a>
+        <a href="https://de.wikipedia.org/wiki/${encodeURIComponent(c.w)}" target="_blank" rel="noopener">Wikipedia</a>
+      </div>
+      <p class="credit">Bild: Wikipedia / Wikimedia Commons</p>
+    </div>`;
+
+  const hero = document.getElementById("hero");
+  wikiImage(c.w).then(res => {
+    if(!res || sheetBody.dataset.i != i) {
+      if(!res) hero.querySelector(".placeholder").textContent = c.n;
+      return;
+    }
+    const img = new Image();
+    img.alt = c.n;
+    img.src = res.src;
+    img.addEventListener("load", () => {
+      img.classList.add("is-loaded");
+      const ph = hero.querySelector(".placeholder");
+      if(ph) ph.remove();
+    });
+    hero.insertBefore(img, hero.firstChild);
+  });
+  sheetBody.dataset.i = i;
+}
+
+function select(i, fly){
+  activeIdx = i;
+  renderList();
+  markLogDays(i);
+  renderSheet(i);
+  sheet.classList.add("is-open");
+
+  const c = CALLS[i];
+  halo.setLatLng([c.lat, c.lon]).setStyle({opacity:.9});
+  markers.forEach((m, k) => m.setStyle({fillColor: k === i ? "#6FD3C6" : "#E8B04B"}));
+  if(fly) map.flyTo([c.lat, c.lon], Math.max(map.getZoom(), 5), {duration:.9});
+
+  const row = stopsEl.querySelector(`.stop[data-i="${i}"]`);
+  if(row) row.scrollIntoView({block:"nearest"});
+}
+
+function closeSheet(){
+  sheet.classList.remove("is-open");
+  activeIdx = -1;
+  halo.setStyle({opacity:0});
+  markers.forEach(m => m.setStyle({fillColor:"#E8B04B"}));
+  markLogDays(-1);
+  renderList();
+}
+document.getElementById("backBtn").addEventListener("click", closeSheet);
+addEventListener("keydown", e => { if(e.key === "Escape") closeSheet(); });
+
+/* Nächster Hafen ab heute */
+document.getElementById("nextBtn").addEventListener("click", () => {
+  const today = Math.floor((Date.now() - START) / 86400000) + 1;
+  const idx = CALLS.findIndex(c => c.d2 >= today);
+  select(idx < 0 ? CALLS.length - 1 : idx, true);
+});
+
+renderList();
+</script>
+</body>
+</html>
