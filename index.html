@@ -302,6 +302,13 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 .ship-icon polygon{fill:var(--live);stroke:var(--card);stroke-width:2}
 .ship-icon.est polygon{fill:var(--brass)}
 
+/* ---------- Hinweis ---------- */
+.toast{
+  position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:60;
+  max-width:min(92vw,560px);background:var(--ink);color:var(--paper);border-radius:10px;
+  padding:12px 16px;font-size:15px;line-height:1.4;box-shadow:var(--shadow);
+}
+
 /* ---------- Dialoge ---------- */
 dialog.panel{border:1px solid var(--line);border-radius:12px;background:var(--paper);color:var(--ink);padding:0;max-width:560px;width:calc(100% - 32px);box-shadow:var(--shadow);font-size:16px}
 dialog.panel::backdrop{background:rgba(20,35,58,.55)}
@@ -484,6 +491,8 @@ dialog.panel .note code{font-size:14px}
     <div class="sheet-scroll" id="sheetBody"></div>
   </div>
 </main>
+
+<div class="toast" id="toast" role="status" hidden></div>
 
 <dialog class="panel" id="cfgDlg">
   <h2>Woher kommt die Schiffsposition? <button data-close aria-label="Schließen"><svg class="ic" style="width:20px;height:20px"><use href="#i-close"/></svg></button></h2>
@@ -1023,10 +1032,7 @@ const allBounds = L.latLngBounds(routePts);
 const fitAll = () => map.fitBounds(allBounds, {padding:[40, 40]});
 fitAll();
 el("fitBtn").addEventListener("click", fitAll);
-el("shipBtn").addEventListener("click", () => {
-  const p = livePos();
-  map.flyTo([p.lat, p.lon], Math.max(map.getZoom(), 5), {duration:.9});
-});
+el("shipBtn").addEventListener("click", () => openShip());
 
 /* =======================================================================
    7 · Routenliste
@@ -2001,9 +2007,137 @@ function renderSheet(i){
   });
 }
 
+/* Kurzer Hinweis am unteren Rand */
+let toastTimer = null;
+function toast(text, ms = 4500){
+  const t = el("toast");
+  t.textContent = text; t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => { t.hidden = true; }, ms);
+}
+
+/* ---------- Schiffsblatt: Position, Fahrt und alle Details ---------- */
+let sheetMode = "port";
+const SHIP_FACTS = [["Reederei", SHIP.line], ["IMO", SHIP.imo], ["MMSI", SHIP.mmsi], ["Rufzeichen", SHIP.callsign],
+  ["Flagge", "Italien"], ["Baujahr", "2010, Fincantieri"], ["Länge", "294 m"], ["Passagiere", "2.260 bis 2.828"], ["Besatzung", "934"]];
+
+function renderShipSheet(){
+  const now = Date.now(), fix = livePos(), zone = shipZoneOf(fix);
+  const claim = fix.live || fix.phase !== "pre";
+  const c = fix.portIdx >= 0 ? CALLS[fix.portIdx] : null;
+  const nextIdx = fix.nextIdx >= 0 ? fix.nextIdx : nextCallIdx(now);
+  const sog = isFinite(fix.sog) ? fix.sog : null;
+  const aisActive = cfg.key && (cfg.mode === "auto" || cfg.mode === "ais");
+
+  let status = "";
+  if(fix.phase === "pre") status = claim ? `Vor der Weltreise, derzeit auf anderer Route` : `Vor der Weltreise – Einschiffung ${stampIn(CALLS[0].depUtc, CALLS[0].tz)} in ${short(CALLS[0].n)}`;
+  else if(fix.phase === "port" && c) status = c.transit ? `Durchfahrt ${short(c.n)}` : `Im Hafen von ${short(c.n)}`;
+  else if(fix.phase === "done") status = "Reise vollendet";
+  else status = `Auf See zwischen ${short(CALLS[fix.prevIdx >= 0 ? fix.prevIdx : 0].n)} und ${CALLS[nextIdx] ? short(CALLS[nextIdx].n) : "—"}`;
+
+  const sourceLine = fix.live
+    ? `${SRC_LABEL[fix.src]}, gemeldet vor ${fmtCountdown(now - fix.t)}`
+    : `Fahrplan-Schätzung${aisActive ? ` · AIS ${aisStatus || "nicht verbunden"}` : " · keine Live-Quelle eingerichtet"}`;
+
+  let liveHint = "";
+  if(!fix.live){
+    liveHint = aisActive
+      ? (/abgelehnt|Fehler|erreichbar/.test(aisStatus)
+          ? `AIS meldet: ${aisStatus}. Unter „Positionsquelle“ den Key prüfen.`
+          : `AIS ist ${aisStatus || "noch nicht verbunden"}. Landstationen empfangen das Schiff in Häfen und bis etwa 40 sm vor der Küste; auf hoher See bleibt es bei der Fahrplan-Schätzung. Die Anzeige aktualisiert sich von selbst.`)
+      : `Für die echte Position unter „Positionsquelle“ den AIS-Zugang einrichten oder den Einladungslink öffnen.`;
+  }
+
+  let nextBlock = "";
+  if(nextIdx >= 0 && nextIdx < CALLS.length && fix.phase !== "done"){
+    const b = CALLS[nextIdx], e = etaFor(fix, nextIdx);
+    nextBlock = `<div class="wx-box eta-box"><div class="lbl">${b.transit ? "Nächste Station" : "Nächster Hafen"} · ${short(b.n)}</div>
+      <div class="eta-rows">
+        <span>Entfernung</span><b>${Math.round(e.nm).toLocaleString("de-DE")} sm${fix.phase === "sea" && e.kn ? ` · noch ${fmtCountdown(e.nm / e.kn * 3600000)} Fahrt` : ""}</b><i class="sp"></i>
+        <span>Geplant</span><b>${stampIn(b.arrUtc, b.tz)}</b><i class="sp"></i>
+        <span>Erwartet</span><b>${fix.phase === "sea" ? stampIn(e.eta, b.tz) : "laut Plan"}</b>${fix.phase === "sea" ? deltaBadge(e.delta) : '<i class="sp"></i>'}
+        <span>In ${HOME.label}</span><b>${stampIn(b.arrUtc, HOME.tz)}</b><i class="sp"></i>
+        <div class="eta-note">Ortszeit ${short(b.n)}${fix.phase === "sea" ? ` · gerechnet mit ${num(e.kn, 1)} kn ${e.moving ? "aktueller Fahrt" : "Fahrplanmittel"}` : ""}</div>
+      </div></div>`;
+  }
+
+  const posBlock = claim ? `
+      <div class="fact"><span>Position</span><b class="num">${fmtLat(fix.lat)} · ${fmtLon(fix.lon)}</b></div>
+      <div class="fact"><span>Fahrt über Grund</span><b class="num">${sog === null ? "—" : num(sog, 1) + " kn"} <i>${sog === null ? "" : "≈ " + num(sog * 1.852, 0) + " km/h"}</i></b></div>
+      <div class="fact"><span>Kurs</span><b class="num">${isFinite(fix.cog) ? Math.round(fix.cog) + "° " + compass(fix.cog) : "—"}</b></div>
+      <div class="fact"><span>Bordzeit</span><b class="num">${clockIn(now, zone)} <i>${zoneTag(now, zone)}${typeof zone === "string" ? "" : " nautisch"} · ${vsHome(now, zone)}</i></b></div>
+      <div class="fact"><span>Zurückgelegt</span><b class="num">${Math.round(fix.nm || 0).toLocaleString("de-DE")} <i>von ${Math.round(TOTAL_NM).toLocaleString("de-DE")} sm</i></b></div>
+      <div class="fact"><span>Reisetag</span><b class="num">${fix.phase === "pre" ? "—" : `${dayNoOf(now)} von ${TOTAL_DAYS}`}</b></div>` : `
+      <div class="fact"><span>Position</span><b>noch keine Live-Meldung</b></div>
+      <div class="fact"><span>Fahrt und Kurs</span><b>—</b></div>`;
+
+  sheetBody.innerHTML = `
+    <figure class="hero" id="hero">
+      <div class="placeholder">${SHIP.name}</div>
+      <figcaption>
+        <div class="region">${fix.live ? "Live-Position" : "Position laut Fahrplan"}</div>
+        <h2>${SHIP.name}</h2>
+        <div class="country">${status}</div>
+      </figcaption>
+    </figure>
+    <div class="facts">
+      <div class="fact" style="grid-column:1 / -1"><span>Quelle</span><b style="display:flex;align-items:center;gap:8px"><i class="dot${fix.live ? "" : " est"}" style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${fix.live ? "var(--live)" : "var(--brass)"}"></i>${sourceLine}</b></div>
+      ${posBlock}
+    </div>
+    <div class="body">
+      ${liveHint ? `<div class="hint" style="margin:0 0 14px">${liveHint}</div>` : ""}
+      ${nextBlock}
+      <div class="wx-box" id="shipWxBox"><div class="lbl">Wetter und See am Schiff</div><div class="loading">wird geladen …</div></div>
+      <h3>Schiffsdaten</h3>
+      <div class="rows">${SHIP_FACTS.map(([k, v]) => `<div><span>${k}</span><b>${v}</b></div>`).join("")}</div>
+      <div class="links">
+        <a class="chip" href="${SHIP.vf}" target="_blank" rel="noopener">VesselFinder</a>
+        <a class="chip" href="${SHIP.mt}" target="_blank" rel="noopener">MarineTraffic</a>
+        <button class="chip" id="shipCfg">Positionsquelle</button>
+        ${claim ? `<button class="chip" id="shipFly">Auf der Karte zeigen</button>` : ""}
+      </div>
+    </div>
+    <p class="credit">Bild: Wikipedia / Wikimedia Commons · Wetter: Open-Meteo</p>`;
+  sheetBody.dataset.i = "ship";
+
+  const hero = el("hero");
+  wikiImage("Costa Deliziosa").then(res => {
+    if(sheetBody.dataset.i !== "ship" || !res) return;
+    const img = new Image(); img.alt = SHIP.name; img.src = res.src;
+    img.addEventListener("load", () => { img.classList.add("is-loaded"); const ph = hero.querySelector(".placeholder"); if(ph) ph.remove(); });
+    hero.insertBefore(img, hero.firstChild);
+  });
+  if(claim) Promise.all([weatherAt(fix.lat, fix.lon, "ship"), marineAt(fix.lat, fix.lon)]).then(([wx, m]) => {
+    if(sheetBody.dataset.i !== "ship") return;
+    const box = el("shipWxBox");
+    if(!wx || !wx.current){ box.innerHTML = `<div class="lbl">Wetter und See am Schiff</div><div class="loading">gerade nicht abrufbar</div>`; return; }
+    const cur = wx.current, [txt, ic] = wmo(cur.weather_code), mc = m && m.current;
+    box.innerHTML = `<div class="lbl">Wetter und See am Schiff</div>` +
+      wxRow(ic, `${Math.round(cur.temperature_2m)}°`, txt,
+        `gefühlt ${Math.round(cur.apparent_temperature)} °C · Wind ${num(cur.wind_speed_10m, 0)} kn ${compass(cur.wind_direction_10m)}${isFinite(cur.wind_gusts_10m) ? `, Böen ${num(cur.wind_gusts_10m, 0)} kn` : ""}`
+        + (mc && isFinite(mc.wave_height) ? ` · Seegang ${num(mc.wave_height, 1)} m` : "")
+        + (mc && isFinite(mc.sea_surface_temperature) ? ` · Wasser ${Math.round(mc.sea_surface_temperature)} °C, ${bathing(mc.sea_surface_temperature)}` : ""));
+  }); else el("shipWxBox").hidden = true;
+
+  el("shipCfg").addEventListener("click", () => { syncCfgForm(); dlg.showModal(); });
+  const fly = el("shipFly");
+  if(fly) fly.addEventListener("click", () => map.flyTo([fix.lat, fix.lon], Math.max(map.getZoom(), 6), {duration:.9}));
+}
+function openShip(){
+  const fix = livePos(), claim = fix.live || fix.phase !== "pre";
+  activeIdx = -1; sheetMode = "ship";
+  renderList(); markLogDays(-1); halo.setStyle({opacity:0}); applyMapTheme();
+  renderShipSheet();
+  sheet.classList.add("is-open");
+  history.replaceState(null, "", "#schiff");
+  if(claim) map.flyTo([fix.lat, fix.lon], Math.max(map.getZoom(), 5), {duration:.9});
+  else toast(cfg.key ? `Noch keine Live-Position – AIS ${aisStatus || "verbindet"}.` : "Noch keine Live-Position eingerichtet.");
+}
+shipMarker.on("click", openShip);
+
 function select(i, fly){
   if(i < 0 || i >= CALLS.length) return;
-  activeIdx = i;
+  activeIdx = i; sheetMode = "port";
   renderList(); markLogDays(i); renderSheet(i);
   sheet.classList.add("is-open");
   history.replaceState(null, "", `#hafen-${i}`);
@@ -2121,21 +2255,24 @@ el("refreshBtn").addEventListener("click", async () => { await Promise.all([load
    ===================================================================== */
 function refreshView(){
   renderStats(); markToday(); renderNow();
-  if(sheet.classList.contains("is-open") && activeIdx >= 0) renderSheet(activeIdx); else renderList();
+  if(sheet.classList.contains("is-open") && sheetMode === "ship") renderShipSheet();
+  else if(sheet.classList.contains("is-open") && activeIdx >= 0) renderSheet(activeIdx);
+  else renderList();
 }
 function openFromHash(){
   const m = /^#hafen-(\d+)$/.exec(location.hash);
   if(m) select(+m[1], true);
+  else if(location.hash === "#schiff") openShip();
 }
 applyMapTheme();
 const adopted = adoptKeyFromHash();
 renderList(); markToday(); renderNow(); renderWarnBox();
-if(adopted){ syncCfgForm(); el("cfgStatus").textContent = "AIS-Zugang übernommen und in diesem Browser gespeichert. Die Position erscheint, sobald eine Landstation das Schiff empfängt."; dlg.showModal(); }
+if(adopted) toast("AIS-Zugang übernommen – die Schiffsposition erscheint, sobald eine Landstation das Schiff empfängt.", 7000);
 Promise.all([loadFilePosition(), loadSharedExcursions()]).then(() => { refreshView(); refreshWarnings(); });
 if(cfg.key && (cfg.mode === "auto" || cfg.mode === "ais")) connectAis();
 openFromHash();
 addEventListener("hashchange", openFromHash);
-setInterval(renderNow, 20000);
+setInterval(() => { renderNow(); if(sheet.classList.contains("is-open") && sheetMode === "ship") renderShipSheet(); }, 20000);
 setInterval(() => { loadFilePosition().then(refreshView); }, 5 * 60000);
 setInterval(refreshWarnings, 30 * 60000);
 setInterval(renderList, 10 * 60000);
