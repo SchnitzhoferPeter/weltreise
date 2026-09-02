@@ -362,11 +362,11 @@ dialog.panel .note code{font-size:14px}
   .stat b{font-size:26px}
   .stage{display:flex;flex-direction:column;height:auto}
   .side{display:contents}
-  .now{order:1}
-  .ledger-head{position:static}
-  .chart{order:2;border-right:0;border-bottom:1px solid var(--line)}
-  .chart-wrap{height:56dvh}
+  .chart{order:1;border-right:0;border-bottom:1px solid var(--line)}
+  .chart-wrap{height:52dvh;min-height:300px}
+  .now{order:2}
   .ledger{order:3;min-height:60dvh}
+  .ledger-head{position:static}
   .sheet{position:fixed;inset:0;z-index:40;transform:translateY(100%)}
   .sheet.is-open{transform:translateY(0)}
   .stops{overflow:visible}
@@ -380,10 +380,10 @@ dialog.panel .note code{font-size:14px}
   .mark .ship{display:none}
   .mark h1{font-size:25px}
   .eyebrow{font-size:12px;letter-spacing:.08em}
-  .stats{flex:1 1 auto}
-  .stat b{font-size:24px}
-  .head-tools{flex:1 1 100%;gap:6px}
-  .head-tools .btn{padding:7px 10px;font-size:13.5px;min-height:38px;flex:1 1 auto;justify-content:center}
+  .stats{display:none}
+  .head-tools{flex:1 1 100%;gap:6px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+  .head-tools::-webkit-scrollbar{display:none}
+  .head-tools .btn{padding:7px 12px;font-size:14px;min-height:38px;flex:0 0 auto;white-space:nowrap}
   .now-eyebrow{font-size:12px;letter-spacing:.06em}
   .eta-rows{grid-template-columns:86px minmax(0,1fr) auto;font-size:15px}
   .now{padding:14px 16px}
