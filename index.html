@@ -6,6 +6,14 @@
 <title>Weltreise 2026/27 · Costa Deliziosa</title>
 <meta name="description" content="Live-Verfolgung der 141-tägigen Weltkreuzfahrt der Costa Deliziosa: Schiffsposition, Ankunftsprognose, Wetter, Landausflüge und alle Häfen im Detail.">
 <meta name="theme-color" content="#F6F1E7">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Weltreise 2026/27">
+<meta property="og:title" content="Einmal um die Welt in 141 Tagen">
+<meta property="og:description" content="Wo ist die Costa Deliziosa gerade? Live-Position, nächster Hafen, Wetter und alle Stationen der Weltreise.">
+<meta property="og:image" content="https://schnitzhoferpeter.github.io/weltreise/img/costa-deliziosa.jpg">
+<meta property="og:url" content="https://schnitzhoferpeter.github.io/weltreise/">
+<meta property="og:locale" content="de_AT">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.webmanifest">
@@ -178,7 +186,7 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 .delta.late{background:var(--brass-soft);color:var(--brass)}
 .delta.ontime{background:var(--card-2);color:var(--ink-2)}
 
-.now-extra{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.now-extra{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;margin-top:10px}
 .tile{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line-soft);border-radius:var(--r);padding:10px 12px;background:var(--card);text-align:left;width:100%;min-width:0}
 .tile svg{color:var(--brass);margin-top:2px}
 .tile span{font-size:13px;color:var(--ink-2);display:block}
@@ -218,6 +226,8 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 .stop:hover{background:var(--card-2)}
 .stop.is-active{background:var(--card-2);box-shadow:inset 4px 0 0 var(--brass)}
 .stop.is-past{opacity:.66}
+.stop.is-next{box-shadow:inset 4px 0 0 var(--live)}
+.stop.is-next .day-no i::after{content:"nächster Hafen";font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--live);margin-left:6px}
 .stop .day-no{font-size:14px;font-weight:700;color:var(--brass);line-height:1.3;display:flex;flex-direction:column;gap:2px}
 .stop .day-no i{display:flex;align-items:center;gap:5px;font-style:normal}
 .stop .day-no svg{width:15px;height:15px;stroke:var(--brass);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
@@ -337,6 +347,14 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 @keyframes slideR{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:none}}
 .swipe-hint{padding:0 22px 22px;font-size:13px;color:var(--ink-3);text-align:center}
 @media (min-width:981px){ .swipe-hint{display:none} }
+
+/* ---------- Land und Geld ---------- */
+.landinfo{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-bottom:14px}
+.landinfo div{background:var(--card);border:1px solid var(--line-soft);border-radius:10px;padding:10px 12px;min-width:0}
+.landinfo span{display:block;font-size:13px;color:var(--ink-2)}
+.landinfo b{display:block;font-size:17px;font-weight:600;line-height:1.3;font-variant-numeric:tabular-nums}
+.landinfo b.greet{font-family:'Newsreader',Georgia,serif;font-size:22px}
+@media (max-width:560px){ .landinfo{grid-template-columns:1fr 1fr} .landinfo div:first-child{grid-column:1 / -1} }
 
 /* ---------- Hinweis ---------- */
 .toast{
@@ -593,7 +611,42 @@ const SHIP = {
   vf:"https://www.vesselfinder.com/vessels/details/9398917",
   mt:"https://www.marinetraffic.com/en/ais/details/ships/imo:9398917"
 };
-const HOME = {label:"Wien", tz:"Europe/Vienna"};      /* Bezugszeitzone der Familie */
+const HOME = {label:"Wien", tz:"Europe/Vienna", lat:48.2082, lon:16.3738};   /* Bezugsort der Familie */
+const RATES_URL = "https://open.er-api.com/v6/latest/EUR";              /* Wechselkurse, frei, ohne Schlüssel */
+
+/* Land → Währung, Sprache, Grußwort (Schlüssel wie im Feld c der Anläufe) */
+const LAND = {
+  "Italien":{cur:"EUR",name:"Euro",lang:"Italienisch",hi:"Buongiorno!"},
+  "Frankreich":{cur:"EUR",name:"Euro",lang:"Französisch",hi:"Bonjour!"},
+  "Spanien":{cur:"EUR",name:"Euro",lang:"Spanisch",hi:"¡Hola!"},
+  "Portugal":{cur:"EUR",name:"Euro",lang:"Portugiesisch",hi:"Olá!"},
+  "USA":{cur:"USD",name:"US-Dollar",lang:"Englisch",hi:"Hello!"},
+  "USA · Hawaii":{cur:"USD",name:"US-Dollar",lang:"Englisch, Hawaiisch",hi:"Aloha!"},
+  "Bahamas":{cur:"BSD",name:"Bahama-Dollar (1:1 zum US-Dollar)",lang:"Englisch",hi:"Hello!"},
+  "Panama":{cur:"USD",name:"US-Dollar (Balboa)",lang:"Spanisch",hi:"¡Hola!"},
+  "Costa Rica":{cur:"CRC",name:"Colón",lang:"Spanisch",hi:"¡Pura vida!"},
+  "Guatemala":{cur:"GTQ",name:"Quetzal",lang:"Spanisch",hi:"¡Hola!"},
+  "Mexiko":{cur:"MXN",name:"Mexikanischer Peso",lang:"Spanisch",hi:"¡Hola!"},
+  "Französisch-Polynesien":{cur:"XPF",name:"CFP-Franc",lang:"Französisch, Tahitianisch",hi:"Ia ora na!"},
+  "Fidschi":{cur:"FJD",name:"Fidschi-Dollar",lang:"Englisch, Fidschi",hi:"Bula!"},
+  "Neukaledonien":{cur:"XPF",name:"CFP-Franc",lang:"Französisch",hi:"Bonjour!"},
+  "Australien":{cur:"AUD",name:"Australischer Dollar",lang:"Englisch",hi:"G'day!"},
+  "Papua-Neuguinea":{cur:"PGK",name:"Kina",lang:"Tok Pisin, Englisch",hi:"Gude!"},
+  "Japan":{cur:"JPY",name:"Yen",lang:"Japanisch",hi:"Konnichiwa!"},
+  "Südkorea":{cur:"KRW",name:"Won",lang:"Koreanisch",hi:"Annyeong haseyo!"},
+  "Taiwan":{cur:"TWD",name:"Neuer Taiwan-Dollar",lang:"Mandarin",hi:"Nǐ hǎo!"},
+  "China":{cur:"HKD",name:"Hongkong-Dollar",lang:"Kantonesisch, Englisch",hi:"Néih hóu!"},
+  "Vietnam":{cur:"VND",name:"Đồng",lang:"Vietnamesisch",hi:"Xin chào!"},
+  "Thailand":{cur:"THB",name:"Baht",lang:"Thai",hi:"Sawatdee!"},
+  "Singapur":{cur:"SGD",name:"Singapur-Dollar",lang:"Englisch, Malaiisch, Mandarin, Tamil",hi:"Hello!"},
+  "Malaysia":{cur:"MYR",name:"Ringgit",lang:"Malaiisch",hi:"Selamat datang!"},
+  "Sri Lanka":{cur:"LKR",name:"Sri-Lanka-Rupie",lang:"Singhalesisch, Tamil",hi:"Ayubowan!"},
+  "Malediven":{cur:"MVR",name:"Rufiyaa",lang:"Dhivehi",hi:"Assalaamu alaikum!"},
+  "Mauritius":{cur:"MUR",name:"Mauritius-Rupie",lang:"Kreolisch, Französisch, Englisch",hi:"Bonzour!"},
+  "Südafrika":{cur:"ZAR",name:"Rand",lang:"Englisch, Zulu, Afrikaans",hi:"Sawubona!"},
+  "Namibia":{cur:"NAD",name:"Namibia-Dollar",lang:"Englisch",hi:"Hello!"},
+  "Kap Verde":{cur:"CVE",name:"Kap-Verde-Escudo",lang:"Portugiesisch, Kreolisch",hi:"Olá!"}
+};
 const START = Date.UTC(2026, 10, 24);                 /* Tag 1 = 24. Nov 2026 */
 const TOTAL_DAYS = 141;
 
@@ -797,6 +850,7 @@ function stayLines(c){
   return [`${c.arr} – ${c.dep}`];
 }
 const pad = n => String(n).padStart(2, "0");
+const short = n => String(n).split(" | ")[0];      /* „Civitavecchia | Rom“ → „Civitavecchia“ */
 
 /* Verschiebung einer IANA-Zone zu einem Zeitpunkt, in Minuten */
 const _tzCache = new Map();
@@ -1110,6 +1164,7 @@ let showSea = true, onlyAhead = false, query = "", activeIdx = -1;
 function renderList(){
   const q = query.trim().toLowerCase();
   const now = Date.now();
+  const nextI = nextCallIdx(now);
   let html = "", shown = 0;
 
   CALLS.forEach((c, i) => {
@@ -1136,7 +1191,7 @@ function renderList(){
     const exc = excursionsFor(i).length;
     const sub = [c.c, c.transit ? `<span class="tag">Kanalpassage, kein Landgang</span>`
       : exc ? `<span class="tag">${exc} ${exc === 1 ? "Landausflug" : "Landausflüge"}</span>` : `dort jetzt ${clockIn(now, c.tz)}`].join(" · ");
-    html += `<li><button class="stop${i === activeIdx ? " is-active" : ""}${past ? " is-past" : ""}" data-i="${i}">
+    html += `<li><button class="stop${i === activeIdx ? " is-active" : ""}${past ? " is-past" : ""}${i === nextI && now >= CALLS[0].depUtc ? " is-next" : ""}" data-i="${i}">
         <span class="day-no num"><i>${icon(c.transit ? "wave" : "anchor")}Tag ${c.d1}${c.d2 > c.d1 ? "–" + c.d2 : ""}</i><small>${c.d2 > c.d1 ? `${dateOf(c.d1).getUTCDate()}.–${fmtShort(c.d2)}` : fmtShort(c.d1)}</small></span>
         <span style="min-width:0"><span class="name">${c.n.replace(" | ", ", ")}</span><span class="sub">${sub}</span></span>
         <span class="dur num">${times}<em>${h === null ? (c.type === "start" ? "Start" : "Ziel") : c.transit ? "Durchfahrt" : fmtDur(h)}</em></span>
@@ -1663,6 +1718,100 @@ function renderWarnBox(){
 }
 
 /* =======================================================================
+   13b · Höhepunkte, Entfernung von zuhause, Wechselkurse, Klima
+   ===================================================================== */
+const kmFromHome = (lat, lon) => distNm(HOME.lat, HOME.lon, lat, lon) * 1.852;
+/* Zeitpunkt entlang einer Etappe, an dem eine Bedingung erstmals gilt (Abtastung in 200 Schritten) */
+function legMoment(leg, test){
+  const a = CALLS[leg.from], b = CALLS[leg.to];
+  if(!a.depUtc || !b.arrUtc) return null;
+  let prev = gcPoint(a.lat, a.lon, b.lat, b.lon, 0);
+  for(let k = 1; k <= 200; k++){
+    const f = k / 200, p = gcPoint(a.lat, a.lon, b.lat, b.lon, f);
+    if(test(prev, p)){ return {t: a.depUtc + f * (b.arrUtc - a.depUtc), lat:p[0], lon:p[1]}; }
+    prev = p;
+  }
+  return null;
+}
+function computeEvents(){
+  const ev = [];
+  LEGS.forEach(l => {
+    const eq = legMoment(l, (p, q) => (p[0] >= 0) !== (q[0] >= 0));
+    if(eq) ev.push({key:"aequator", title:"Äquatorüberquerung", detail:`zwischen ${short(CALLS[l.from].n)} und ${short(CALLS[l.to].n)}`, t:eq.t, lat:eq.lat, lon:eq.lon});
+    const dl = legMoment(l, (p, q) => Math.abs(p[1] - q[1]) > 180);
+    if(dl) ev.push({key:"datumsgrenze", title:"Datumsgrenze", detail:"ein Kalendertag wird übersprungen", t:dl.t, lat:dl.lat, lon:dl.lon});
+  });
+  CALLS.forEach(c => { if(c.transit) ev.push({key:"kanal", title:short(c.n), detail:`Einfahrt ${clockIn(c.arrUtc, c.tz)} Ortszeit`, t:c.arrUtc, lat:c.lat, lon:c.lon}); });
+  /* weitester Punkt von zuhause */
+  let far = {km:0, t:0, lat:0, lon:0};
+  LEGS.forEach(l => {
+    const a = CALLS[l.from], b = CALLS[l.to];
+    for(let k = 0; k <= 100; k++){
+      const f = k / 100, p = gcPoint(a.lat, a.lon, b.lat, b.lon, f), km = kmFromHome(p[0], p[1]);
+      if(km > far.km) far = {km, t:a.depUtc + f * (b.arrUtc - a.depUtc), lat:p[0], lon:p[1]};
+    }
+  });
+  ev.push({key:"weitester", title:"Weitester Punkt von " + HOME.label, detail:`${Math.round(far.km).toLocaleString("de-DE")} km Luftlinie`, t:far.t, lat:far.lat, lon:far.lon});
+  const last = CALLS[CALLS.length - 1];
+  ev.push({key:"halbzeit", title:"Halbzeit der Reise", detail:`Tag ${Math.round(TOTAL_DAYS / 2)} von ${TOTAL_DAYS}`, t:START + (last.arrUtc - START) / 2});
+  ev.push({key:"heimkehr", title:"Heimkehr", detail:`Ankunft in ${short(last.n)}`, t:last.arrUtc});
+  return ev.sort((x, y) => x.t - y.t);
+}
+const EVENTS = computeEvents();
+const FAR = EVENTS.find(e => e.key === "weitester");
+const nextEvent = now => EVENTS.find(e => e.t > now) || null;
+
+/* Wechselkurse (Basis Euro), einmal täglich */
+let RATES = null;
+async function loadRates(){
+  const hit = cacheGet("rates", 24 * 3600000);
+  if(hit && hit.fresh){ RATES = hit.data; return; }
+  try{ const d = await fetchJson(RATES_URL); if(d && d.rates){ RATES = d.rates; cacheSet("rates", RATES); } }
+  catch(e){ if(hit) RATES = hit.data; }
+}
+function landFor(c){
+  const info = LAND[c.c] || LAND[c.c.split(" · ")[0]];
+  if(!info) return null;
+  let rate = "";
+  if(info.cur === "EUR") rate = "";
+  else if(RATES && RATES[info.cur]){
+    const r = RATES[info.cur];
+    rate = r >= 100 ? `1 € ≈ ${Math.round(r).toLocaleString("de-DE")} ${info.cur}` : `1 € ≈ ${r.toFixed(2).replace(".", ",")} ${info.cur}`;
+  }
+  return Object.assign({rate}, info);
+}
+
+/* Klima: dieselben zwei Wochen um den Anlauftag in den Jahren 2023 bis 2025 */
+async function climateAt(lat, lon, dayNo){
+  const key = `clim.${lat.toFixed(2)},${lon.toFixed(2)},${dayNo}`;
+  const hit = cacheGet(key, 7 * 86400000);
+  if(hit && hit.fresh) return hit.data;
+  const x = dateOf(dayNo), mo = x.getUTCMonth(), dd = x.getUTCDate();
+  const iso = d => `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`;
+  const years = [2023, 2024, 2025];
+  const res = await Promise.all(years.map(y => {
+    const mid = Date.UTC(y, mo, dd), s = new Date(mid - 7 * 86400000), e = new Date(mid + 7 * 86400000);
+    return fetchJson(`https://archive-api.open-meteo.com/v1/archive?latitude=${lat.toFixed(3)}&longitude=${lon.toFixed(3)}&start_date=${iso(s)}&end_date=${iso(e)}&daily=temperature_2m_max,temperature_2m_min,precipitation_sum&timezone=auto`).catch(() => null);
+  }));
+  let hi = [], lo = [], rain = 0, days = 0;
+  res.forEach(d => {
+    const D = d && d.daily;
+    if(!D || !Array.isArray(D.temperature_2m_max) || !Array.isArray(D.temperature_2m_min)) return;
+    D.temperature_2m_max.forEach((v, k) => {
+      const lo1 = D.temperature_2m_min[k];
+      if(!isFinite(v) || !isFinite(lo1)) return;
+      hi.push(v); lo.push(lo1); days++;
+      if(((D.precipitation_sum || [])[k] || 0) >= 1) rain++;
+    });
+  });
+  if(!days) return null;
+  const avg = arr => arr.reduce((s, v) => s + v, 0) / arr.length;
+  const out = {hi:avg(hi), lo:avg(lo), rainShare:rain / days, days};
+  cacheSet(key, out);
+  return out;
+}
+
+/* =======================================================================
    14 · Die Reise in Zahlen
    ===================================================================== */
 function computeStats(now){
@@ -1711,7 +1860,9 @@ function renderStatsDialog(){
       <div><span>Seetage insgesamt</span><b>${seaDayCount}</b></div>
       <div><span>Landausflüge eingetragen</span><b>${s.excursions}</b></div>
     </div>
-    <p class="note">Seemeilen als Großkreisdistanz von Hafen zu Hafen; die tatsächliche Fahrstrecke liegt etwas darüber.</p>`;
+    <h3 style="margin:18px 0 8px;font-family:'Newsreader',Georgia,serif;font-size:22px">Höhepunkte der Reise</h3>
+    <ul class="tzlist">${EVENTS.map(e => `<li class="${e.t < Date.now() ? "past" : (e === nextEvent(Date.now()) ? "next" : "")}">${icon(e.key === "aequator" || e.key === "datumsgrenze" ? "wave" : e.key === "heimkehr" ? "anchor" : "flag")}<b>${esc(e.title)}</b><span>${esc(e.detail)} · ${stampIn(e.t, HOME.tz)} ${HOME.label}er Zeit · Tag ${dayNoOf(e.t)}</span></li>`).join("")}</ul>
+    <p class="note">Seemeilen als Großkreisdistanz von Hafen zu Hafen; die tatsächliche Fahrstrecke liegt etwas darüber. Höhepunkte nach Fahrplan gerechnet.</p>`;
 }
 
 /* =======================================================================
@@ -1734,7 +1885,6 @@ function deltaBadge(delta){
   if(Math.abs(min) <= 20) return `<span class="delta ontime">im Plan</span>`;
   return `<span class="delta ${min < 0 ? "early" : "late"}">${fmtCountdown(Math.abs(delta))} ${min < 0 ? "früher" : "später"}</span>`;
 }
-const short = n => n.split(" | ")[0];
 
 function renderNow(){
   const now = Date.now();
@@ -1839,6 +1989,8 @@ function renderNow(){
     const b = CALLS[ch.to];
     extra.push(`<button class="tile" data-tz="1">${icon("clock")}<div><span>Nächste Zeitumstellung · vor ${short(b.n)}</span><b>${clockText(ch)}</b></div></button>`);
   }
+  const nev = fix.phase === "done" ? null : nextEvent(now);
+  if(nev) extra.push(`<button class="tile" data-stats="1">${icon(nev.key === "aequator" || nev.key === "datumsgrenze" ? "wave" : "flag")}<div><span>Nächster Höhepunkt · in ${fmtCountdown(nev.t - now)}</span><b>${esc(nev.title)}, ${dateIn(nev.t, HOME.tz)}</b></div></button>`);
   el("nowExtra").innerHTML = extra.join("");
   el("nowExtra").hidden = !extra.length;
 
@@ -1851,7 +2003,7 @@ function renderNow(){
     : fix.phase === "done" ? `${TOTAL_DAYS} Tage rund um die Welt` : `Tag ${day} von ${TOTAL_DAYS}`;
   el("progRight").textContent = fix.phase === "pre" ? "" : `${pct.toFixed(0)} % der Strecke`;
   el("nowFoot").innerHTML = claim
-    ? `${Math.round(doneNm).toLocaleString("de-DE")} von ${Math.round(TOTAL_NM).toLocaleString("de-DE")} sm gefahren · <em id="shipWind" style="font-style:normal">Wind …</em> · <em id="shipSea" style="font-style:normal">Seegang …</em>`
+    ? `${Math.round(doneNm).toLocaleString("de-DE")} von ${Math.round(TOTAL_NM).toLocaleString("de-DE")} sm gefahren · ${Math.round(kmFromHome(fix.lat, fix.lon)).toLocaleString("de-DE")} km von ${HOME.label} entfernt${FAR ? ` (weitester Punkt ${Math.round(FAR.km).toLocaleString("de-DE")} km, Tag ${dayNoOf(FAR.t)})` : ""} · <em id="shipWind" style="font-style:normal">Wind …</em> · <em id="shipSea" style="font-style:normal">Seegang …</em>`
     : `Gesamtstrecke ${Math.round(TOTAL_NM).toLocaleString("de-DE")} sm über ${PORTS.length} Anläufe in ${countries.size} Ländern`;
 
   /* Anruf-Fenster */
@@ -1921,9 +2073,10 @@ function renderNow(){
   });
 }
 el("nowExtra").addEventListener("click", e => {
-  const t = e.target.closest("button[data-open]"), z = e.target.closest("button[data-tz]");
+  const t = e.target.closest("button[data-open]"), z = e.target.closest("button[data-tz]"), s = e.target.closest("button[data-stats]");
   if(t) select(+t.dataset.open, true);
   if(z){ renderTzDialog(); el("tzDlg").showModal(); }
+  if(s){ renderStatsDialog(); el("statsDlg").showModal(); }
 });
 
 /* =======================================================================
@@ -2022,6 +2175,10 @@ function renderSheet(i){
     <div class="body">
       ${etaBlock}
       ${ch ? `<div class="hint" style="margin:0 0 14px;display:flex;gap:10px;align-items:flex-start">${icon("clock")}<div><b>Zeitumstellung vor diesem Hafen:</b> ${clockText(ch)}.</div></div>` : ""}
+      ${(() => { const L = landFor(c); if(!L || c.transit) return ""; return `<div class="landinfo">
+        <div><span>Grußwort</span><b class="greet">${esc(L.hi)}</b></div>
+        <div><span>Währung</span><b>${esc(L.name)}${L.rate ? `<br><small style="font-weight:400;color:var(--ink-2)">${esc(L.rate)}</small>` : ""}</b></div>
+        <div><span>Sprache</span><b style="font-size:15px">${esc(L.lang)}</b></div></div>`; })()}
       <div class="wx-box" id="wxNow"><div class="lbl">Wetter vor Ort</div><div class="loading">wird geladen …</div></div>
       <div class="wx-box" id="wxDay" hidden></div>
       <p>${c.t}</p>
@@ -2099,6 +2256,18 @@ function renderSheet(i){
           sstDayTxt +
           ` · Sonne ${hhmm(wx.daily.sunrise[di])}–${hhmm(wx.daily.sunset[di])}`) +
         (warn.length ? `<div class="warnbox" style="margin-top:10px">${icon("warn")}<div><b>Warnung:</b> ${warn.map(esc).join(" · ")}</div></div>` : "");
+    } else if(!isPast && c.arrUtc - Date.now() > 16 * 86400000){
+      /* Anlauf jenseits der Vorhersage: Klima derselben Tage der letzten Jahre */
+      dayBox.hidden = false;
+      dayBox.innerHTML = `<div class="lbl">Typisches Wetter um den Anlauftag · ${fmtShort(c.d1)}</div><div class="loading">Klimadaten werden geladen …</div>`;
+      climateAt(c.lat, c.lon, c.d1).then(cl => {
+        if(sheetBody.dataset.i != i) return;
+        if(!cl){ dayBox.innerHTML = `<div class="lbl">Typisches Wetter um den Anlauftag</div><div class="loading">keine Klimadaten verfügbar</div>`; return; }
+        const rainTxt = cl.rainShare >= .5 ? "häufig Regen" : cl.rainShare >= .25 ? "gelegentlich Regen" : "meist trocken";
+        dayBox.innerHTML = `<div class="lbl">Typisches Wetter um den Anlauftag · ${fmtShort(c.d1)}</div>` +
+          wxRow(cl.rainShare >= .5 ? "rain" : cl.rainShare >= .25 ? "partly" : "sun", `${Math.round(cl.hi)}°`, `${Math.round(cl.lo)} bis ${Math.round(cl.hi)} °C, ${rainTxt}`,
+            `Mittel derselben zwei Wochen 2023 bis 2025 · Regen an ${Math.round(cl.rainShare * 100)} % der Tage · Vorhersage ab 16 Tage vor Ankunft`);
+      });
     } else dayBox.hidden = true;
   });
 
@@ -2477,7 +2646,7 @@ function openFromHash(){
 applyMapTheme();
 if(/^#ais=/.test(location.hash)) history.replaceState(null, "", location.pathname);   /* alte Einladungslinks */
 renderList(); markToday(); renderNow(); renderWarnBox();
-Promise.all([loadFilePosition(), loadSharedExcursions(), loadSyncConfig(), loadDiaryConfig(), loadImages()]).then(async () => {
+Promise.all([loadFilePosition(), loadSharedExcursions(), loadSyncConfig(), loadDiaryConfig(), loadImages(), loadRates()]).then(async () => {
   refreshView(); refreshWarnings();
   if(sync.url){ await pullShared(); await pushAllShared(); refreshView(); }
 });
