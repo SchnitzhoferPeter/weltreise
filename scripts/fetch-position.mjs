@@ -56,14 +56,27 @@ function finish(){
   setTimeout(() => process.exit(0), 200);
 }
 
+/* Suchfenster: um die letzte bekannte Position, mit dem Alter wachsend (rund 8° je Tag, Schiff macht bis 450 sm/Tag);
+   ohne bekannte Position das Mittelmeer (Heimatrevier vor der Weltreise). Der MMSI-Filter von aisstream lieferte im
+   Test nichts, das Fenster ohne Filter dagegen binnen 90 s – deshalb wird die MMSI hier selbst verglichen. */
+function searchBox(){
+  const MED = [[30, -6], [46, 37]];
+  if(!previous || !Number.isFinite(previous.lat) || !Number.isFinite(previous.lon)) return MED;
+  const ageDays = Math.max(0, (Date.now() - Date.parse(previous.timestamp || 0)) / 86400000);
+  if(!Number.isFinite(ageDays) || ageDays > 6) return [[-90, -180], [90, 180]];
+  const r = Math.min(40, 6 + 8 * ageDays);
+  const lat0 = Math.max(-85, previous.lat - r), lat1 = Math.min(85, previous.lat + r);
+  let lon0 = previous.lon - r, lon1 = previous.lon + r;
+  if(lon0 < -180 || lon1 > 180) return [[lat0, -180], [lat1, 180]];   /* Datumsgrenze: ganzer Breitengürtel */
+  return [[lat0, lon0], [lat1, lon1]];
+}
 const seen = new Map();                                          /* Diagnose: MMSI → Name */
 const ws = new WebSocket("wss://stream.aisstream.io/v0/stream");
 ws.addEventListener("open", () => {
-  const sub = DIAG
-    ? { APIKey: KEY, BoundingBoxes: [[[30, -6], [46, 37]]], FilterMessageTypes: ["PositionReport"] }
-    : { APIKey: KEY, BoundingBoxes: [[[-90, -180], [90, 180]]], FiltersShipMMSI: [String(MMSI)], FilterMessageTypes: ["PositionReport"] };
-  ws.send(JSON.stringify(sub));
-  console.log(DIAG ? "Diagnose: alle Positionsmeldungen im Mittelmeer" : "Verbunden, warte auf PositionReport von MMSI " + MMSI);
+  const box = DIAG ? [[30, -6], [46, 37]] : searchBox();
+  ws.send(JSON.stringify({ APIKey: KEY, BoundingBoxes: [box], FilterMessageTypes: ["PositionReport"] }));
+  console.log(DIAG ? "Diagnose: alle Positionsmeldungen im Mittelmeer"
+    : `Verbunden, Suchfenster ${box[0][0].toFixed(1)}..${box[1][0].toFixed(1)} N / ${box[0][1].toFixed(1)}..${box[1][1].toFixed(1)} O, warte auf MMSI ${MMSI}`);
 });
 ws.addEventListener("message", async ev => {
   let m;
@@ -72,12 +85,10 @@ ws.addEventListener("message", async ev => {
   const pr = m && m.Message && m.Message.PositionReport;
   const meta = (m && m.MetaData) || {};
   if(!pr) return;
-  if(DIAG){
-    const id = String(meta.MMSI ?? pr.UserID ?? "");
-    if(!seen.has(id)) seen.set(id, (meta.ShipName || "").trim());
-    if(id !== String(MMSI)) return;
-    console.log("Zielschiff gesehen:", meta.ShipName, pr.Latitude, pr.Longitude, pr.Sog, "kn");
-  }
+  const id = String(meta.MMSI ?? pr.UserID ?? "");
+  if(DIAG && !seen.has(id)) seen.set(id, (meta.ShipName || "").trim());
+  if(id !== String(MMSI)) return;
+  console.log("Zielschiff gesehen:", meta.ShipName, pr.Latitude, pr.Longitude, pr.Sog, "kn");
   const lat = pr.Latitude ?? meta.latitude, lon = pr.Longitude ?? meta.longitude;
   if(!Number.isFinite(lat) || !Number.isFinite(lon)) return;
   const t = Date.parse(String(meta.time_utc || "").replace(" +0000 UTC", "Z").replace(" ", "T"));
