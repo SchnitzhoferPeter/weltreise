@@ -24,5 +24,6 @@ jobs:
           git add img data/bilder.json
           if git diff --cached --quiet; then echo "Keine Änderung."; else
             git commit -qm "Hafenbilder aktualisiert"
+            git pull --rebase -q origin main
             git push
           fi
