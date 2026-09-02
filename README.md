@@ -20,6 +20,7 @@ Der Entwurf liegt als Design-Canvas vor: https://claude.ai/code/artifact/2898c28
 - Status: im Hafen, auf See, vor der Reise oder angekommen
 - Bordzeit an der Schiffsposition (Zeitzone der Position, sonst nautische Zonenzeit)
 - Position, Fahrt über Grund, Kurs, Wetter am Schiff, Seegang und Wassertemperatur
+  (mit Einordnung: badewarm, angenehm, frisch, kalt)
 - Nächster Hafen mit geplanter Ankunft, Distanz in Seemeilen und **erwarteter Ankunft**
   (aus Position und Geschwindigkeit gerechnet, mit Abweichung zum Fahrplan)
 - Ankunftszeit zusätzlich in Wiener Zeit – praktisch für Anrufe
@@ -35,8 +36,9 @@ Der Entwurf liegt als Design-Canvas vor: https://claude.ai/code/artifact/2898c28
 **Je Station**
 - Bild aus Wikipedia, Kurzbeschreibung, Sehenswürdigkeiten
 - Datum, Liegezeit, Dauer an Land, Ortszeit, Zeitunterschied zu Wien, Distanz zum Schiff
-- Wetter vor Ort jetzt (inkl. Sonnenauf- und -untergang) sowie Vorhersage für den
-  Anlauftag, sobald er in der 16-Tage-Vorhersage liegt
+- Wetter vor Ort jetzt (inkl. Sonnenauf- und -untergang, Wassertemperatur) sowie Vorhersage
+  für den Anlauftag, sobald er in der 16-Tage-Vorhersage liegt; Wassertemperatur am Anlauftag,
+  sobald er in der 7-Tage-Marinevorhersage liegt
 - Ankunftsprognose, wenn es der nächste Hafen ist
 - Notizfeld je Hafen (bleibt im jeweiligen Browser)
 - Links zu Google Maps, Wikipedia, Windy und ein kopierbarer Direktlink
