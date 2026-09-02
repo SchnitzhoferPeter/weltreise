@@ -7,6 +7,13 @@ und für die Reisende an Bord.
 Öffnen: `index.html` (lokal per Doppelklick oder als GitHub Page).
 Kein Build, keine Abhängigkeiten außer Leaflet (Karte) und Open-Meteo (Wetter).
 
+## Gestaltung
+
+Helles Logbuch: warmes Papier, Marineblau, Messing als Akzent, Petrol für alles Live.
+Grundschrift 17 px, kleinste Schrift 13 px, Kontrast mindestens 6:1. Der Knopf **Nachtmodus**
+schaltet auf ein dunkles Schema (auch automatisch nach Systemeinstellung), die Karte wechselt mit.
+Der Entwurf liegt als Design-Canvas vor: https://claude.ai/code/artifact/2898c283-720b-4994-99d8-72279c40eabf
+
 ## Was die Seite zeigt
 
 **Bordkarte (Livestatus, rechts oben)**
@@ -33,6 +40,28 @@ Kein Build, keine Abhängigkeiten außer Leaflet (Karte) und Open-Meteo (Wetter)
 - Ankunftsprognose, wenn es der nächste Hafen ist
 - Notizfeld je Hafen (bleibt im jeweiligen Browser)
 - Links zu Google Maps, Wikipedia, Windy und ein kopierbarer Direktlink
+
+**Landausflüge**
+- Je Hafen Ausflüge mit Uhrzeit, Dauer, Treffpunkt und Hinweisen erfassen
+- Erscheinen in der Routenliste, in der Bordkarte (heute bzw. nächster Hafen) und im Kalenderexport
+- Gemeinsame Liste über `data/ausfluege.json` (Vorlage: `data/ausfluege.example.json`),
+  eigene Einträge bleiben im Browser; „Ausflüge als JSON“ kopiert sie zum Teilen
+
+**Wetterwarnungen**
+- Regelbasiert aus Open-Meteo: Böen, Gewitter und Seegang der nächsten 48 Std. an der
+  Schiffsposition sowie Böen, Unwetter, Hitze und hohe Regenwahrscheinlichkeit am Anlauftag
+  der nächsten drei Häfen (soweit in der 16-Tage-Vorhersage)
+- Keine amtlichen Warnungen – als Hinweis gedacht, nicht als Ersatz für das Bordprogramm
+
+**Zeitumstellungen an Bord**
+- Aus den Zeitzonen der Häfen berechnet, inkl. Datumsgrenze im Pazifik
+- Als Zeile in der Routenliste, als Kachel „Nächste Zeitumstellung“ und als Gesamtliste
+- Costa nennt die genaue Nacht im Bordprogramm; die Seite zeigt Richtung und Umfang
+
+**Die Reise in Zahlen**
+- Laufende Bilanz: Seemeilen, Häfen, Länder, Reisetage, Zeitzonen, Umstellungen,
+  Äquatorüberquerungen, längste Etappe, längste Liegezeit, nördlichster und südlichster Hafen
+- Zum Reiseende die Abschlussstatistik
 
 **Sonstiges**
 - `Kalender .ics`: alle Anläufe als Kalenderdatei für Outlook, iOS oder Android
@@ -81,11 +110,7 @@ Bilder Wikipedia/Wikimedia Commons, Schiffsdaten Costa Deliziosa (IMO 9398917, M
 ## Ideen für später
 
 - Foto- und Postkartengalerie je Hafen (Bilder aus SharePoint oder OneDrive einbetten)
-- Landausflüge und Reservierungen je Hafen erfassen, inkl. Treffpunkt und Uhrzeit
 - Push-Nachricht oder E-Mail, sobald das Schiff einen Hafen erreicht oder verlässt
-- Zeitumstellungen an Bord als eigene Liste (wann wird die Uhr vor- oder zurückgestellt)
 - Kostenübersicht je Hafen (Landausflüge, Taxi, Souvenirs)
-- Wetterwarnungen auf der Route (Zyklonsaison Südpazifik, Kap Agulhas)
 - Bordprogramm-PDF je Tag hinterlegen
 - Gemeinsames Gästebuch: Nachrichten der Familie, die an Bord lesbar sind
-- Statistik am Ende: gefahrene Seemeilen, Länder, Zeitzonen, wärmster und kältester Tag

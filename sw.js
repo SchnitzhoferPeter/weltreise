@@ -1,7 +1,7 @@
 /* Kleiner Service Worker: die Seite startet auch bei schlechtem Schiffs-WLAN.
    Wetter- und Positionsdaten werden bewusst nicht gecacht – die kommen aus dem Netz
    oder aus dem localStorage-Cache der Seite selbst. */
-const CACHE = "weltreise-v1";
+const CACHE = "weltreise-v2";
 const SHELL = [
   "./",
   "./index.html",
