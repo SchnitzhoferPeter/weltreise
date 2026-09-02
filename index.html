@@ -17,7 +17,6 @@
 /* =======================================================================
    Gestaltung: „Helles Logbuch“ – warmes Papier, Marineblau, Messing, Petrol.
    Grundschrift 17 px, kleinste Schrift 13 px, Kontrast mindestens 6:1.
-   Nachtmodus über html[data-theme="dark"].
    ===================================================================== */
 :root{
   --paper:#F6F1E7;      /* Grundfläche */
@@ -40,26 +39,6 @@
   --shadow:0 2px 10px rgba(20,35,58,.10);
   --ledger-w:480px;
   --r:8px;
-}
-html[data-theme="dark"]{
-  --paper:#0E1A2B;
-  --card:#152538;
-  --card-2:#1C3049;
-  --line:#2A4460;
-  --line-soft:#213A55;
-  --ink:#F4EFE4;
-  --ink-2:#B9C5D3;
-  --ink-3:#8FA0B3;
-  --brass:#E8B04B;
-  --brass-soft:#3A2F14;
-  --live:#6FD3C6;
-  --live-soft:#153D3A;
-  --warn:#F08A7E;
-  --warn-soft:#3F1F1C;
-  --sea:#274563;
-  --sea-deep:#1C3550;
-  --map-bg:#0a1826;
-  --shadow:0 4px 18px rgba(0,0,0,.45);
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
@@ -432,7 +411,6 @@ dialog.panel .note code{font-size:14px}
     <button class="btn" id="icsBtn" title="Alle Häfen als Kalenderdatei herunterladen">Kalender</button>
     <button class="btn" id="statsBtn">Reise in Zahlen</button>
     <button class="btn" id="tzBtn">Zeitumstellungen</button>
-    <button class="btn" id="themeBtn" aria-pressed="false">Nachtmodus</button>
   </div>
 </header>
 
@@ -973,35 +951,20 @@ addEventListener("resize", setHeadH);
 
 
 /* =======================================================================
-   6 · Karte, Route, Schiff, Farbschema
+   6 · Karte, Route, Schiff
    ===================================================================== */
 const el = id => document.getElementById(id);
 const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-const isDark = () => document.documentElement.dataset.theme === "dark";
-
-/* Farbschema: gespeichert, sonst Systemeinstellung */
-(function initTheme(){
-  let t = null;
-  try{ t = localStorage.getItem(LS + "theme"); }catch(e){}
-  if(!t && matchMedia("(prefers-color-scheme: dark)").matches) t = "dark";
-  if(t === "dark") document.documentElement.dataset.theme = "dark";
-})();
-
 const map = L.map("map", {
   worldCopyJump:true, minZoom:2, maxZoom:12, zoomControl:true,
   attributionControl:true, scrollWheelZoom:true
 });
-const TILES = {
-  light:"https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png",
-  dark:"https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
-};
-const tiles = L.tileLayer(TILES[isDark() ? "dark" : "light"], {
+const tiles = L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png", {
   attribution:'&copy; OpenStreetMap, &copy; CARTO · Wetter: Open-Meteo · Reisedaten: eigene Buchung',
   subdomains:"abcd", maxZoom:19
 }).addTo(map);
-const labels = L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png",
-  {subdomains:"abcd", maxZoom:19, opacity:.9, pane:"shadowPane"});
-if(!isDark()) labels.addTo(map);
+L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png",
+  {subdomains:"abcd", maxZoom:19, opacity:.9, pane:"shadowPane"}).addTo(map);
 
 function splitAtDateline(points){
   const out = [];
@@ -1043,6 +1006,7 @@ const shipMarker = L.marker([0, 0], {
 }).addTo(map);
 shipMarker.bindTooltip("", {className:"ship-tip", direction:"top", offset:[0, -14]});
 
+/* Kartenfarben aus dem Stylesystem */
 function applyMapTheme(){
   const brass = cssVar("--brass"), live = cssVar("--live"), card = cssVar("--card");
   routeGlow.setStyle({color:brass});
@@ -1050,17 +1014,6 @@ function applyMapTheme(){
   sailedLine.setStyle({color:live});
   markers.forEach((m, k) => m.setStyle({color:card, fillColor: k === activeIdx ? live : brass}));
   halo.setStyle({color:live});
-  tiles.setUrl(TILES[isDark() ? "dark" : "light"]);
-  if(isDark()) map.removeLayer(labels); else if(!map.hasLayer(labels)) labels.addTo(map);
-}
-function setTheme(dark){
-  if(dark) document.documentElement.dataset.theme = "dark";
-  else delete document.documentElement.dataset.theme;
-  try{ localStorage.setItem(LS + "theme", dark ? "dark" : "light"); }catch(e){}
-  el("themeBtn").setAttribute("aria-pressed", String(dark));
-  el("themeBtn").textContent = dark ? "Tagmodus" : "Nachtmodus";
-  document.querySelector('meta[name="theme-color"]').content = cssVar("--paper");
-  applyMapTheme();
 }
 
 const allBounds = L.latLngBounds(routePts);
@@ -2063,7 +2016,6 @@ document.querySelectorAll("dialog.panel [data-close]").forEach(b => b.addEventLi
 document.querySelectorAll("dialog.panel").forEach(d => d.addEventListener("click", e => { if(e.target === d) d.close(); }));
 el("statsBtn").addEventListener("click", () => { renderStatsDialog(); el("statsDlg").showModal(); });
 el("tzBtn").addEventListener("click", () => { renderTzDialog(); el("tzDlg").showModal(); });
-el("themeBtn").addEventListener("click", () => setTheme(!isDark()));
 
 const dlg = el("cfgDlg");
 function syncCfgForm(){
@@ -2121,7 +2073,7 @@ function openFromHash(){
   const m = /^#hafen-(\d+)$/.exec(location.hash);
   if(m) select(+m[1], true);
 }
-setTheme(isDark());
+applyMapTheme();
 renderList(); markToday(); renderNow(); renderWarnBox();
 Promise.all([loadFilePosition(), loadSharedExcursions()]).then(() => { refreshView(); refreshWarnings(); });
 if(cfg.key && (cfg.mode === "auto" || cfg.mode === "ais")) connectAis();
