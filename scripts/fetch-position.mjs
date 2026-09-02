@@ -5,14 +5,18 @@ import { mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
 
 const KEY = process.env.AISSTREAM_KEY;
 const MMSI = process.env.SHIP_MMSI || "247282900";
-const LISTEN_MS = Number(process.env.LISTEN_MS || 150000);   /* 2,5 Minuten lauschen */
+const LISTEN_MS = Number(process.env.LISTEN_MS || 240000);   /* 4 Minuten lauschen */
+const DIAG = process.env.DIAG === "1";                          /* Diagnose: alle Schiffe im Mittelmeer zählen */
 const OUT = process.env.OUT_DIR || "out";
 
 if(!KEY){ console.error("AISSTREAM_KEY fehlt (Repository-Secret)."); process.exit(1); }
 mkdirSync(OUT, { recursive: true });
 
-const previous = existsSync(`${OUT}/position.json`)
-  ? JSON.parse(readFileSync(`${OUT}/position.json`, "utf8")) : null;
+let previous = null;
+try{
+  const raw = existsSync(`${OUT}/position.json`) ? readFileSync(`${OUT}/position.json`, "utf8").trim() : "";
+  previous = raw ? JSON.parse(raw) : null;
+}catch(e){ previous = null; }
 
 let fix = null, error = "", finished = false;
 const started = Date.now();
@@ -43,19 +47,23 @@ function finish(){
     console.log("Keine Meldung in", status.listenedSeconds, "s.", error ? "Fehler: " + error : "Schiff vermutlich außer Reichweite der Landstationen.");
     if(previous) console.log("Letzte bekannte Position bleibt:", previous.timestamp);
   }
+  if(DIAG){
+    console.log(`Diagnose: ${seen.size} verschiedene Schiffe im Mittelmeer empfangen.`);
+    const costa = [...seen.entries()].filter(([, n]) => /COSTA/i.test(n));
+    console.log("Davon Costa-Schiffe:", costa.length ? costa.map(([id, n]) => `${n} (${id})`).join(", ") : "keine");
+  }
   try{ ws.close(); }catch(e){}
   setTimeout(() => process.exit(0), 200);
 }
 
+const seen = new Map();                                          /* Diagnose: MMSI → Name */
 const ws = new WebSocket("wss://stream.aisstream.io/v0/stream");
 ws.addEventListener("open", () => {
-  ws.send(JSON.stringify({
-    APIKey: KEY,
-    BoundingBoxes: [[[-90, -180], [90, 180]]],
-    FiltersShipMMSI: [String(MMSI)],
-    FilterMessageTypes: ["PositionReport"]
-  }));
-  console.log("Verbunden, warte auf PositionReport von MMSI", MMSI);
+  const sub = DIAG
+    ? { APIKey: KEY, BoundingBoxes: [[[30, -6], [46, 37]]], FilterMessageTypes: ["PositionReport"] }
+    : { APIKey: KEY, BoundingBoxes: [[[-90, -180], [90, 180]]], FiltersShipMMSI: [String(MMSI)], FilterMessageTypes: ["PositionReport"] };
+  ws.send(JSON.stringify(sub));
+  console.log(DIAG ? "Diagnose: alle Positionsmeldungen im Mittelmeer" : "Verbunden, warte auf PositionReport von MMSI " + MMSI);
 });
 ws.addEventListener("message", async ev => {
   let m;
@@ -64,6 +72,12 @@ ws.addEventListener("message", async ev => {
   const pr = m && m.Message && m.Message.PositionReport;
   const meta = (m && m.MetaData) || {};
   if(!pr) return;
+  if(DIAG){
+    const id = String(meta.MMSI ?? pr.UserID ?? "");
+    if(!seen.has(id)) seen.set(id, (meta.ShipName || "").trim());
+    if(id !== String(MMSI)) return;
+    console.log("Zielschiff gesehen:", meta.ShipName, pr.Latitude, pr.Longitude, pr.Sog, "kn");
+  }
   const lat = pr.Latitude ?? meta.latitude, lon = pr.Longitude ?? meta.longitude;
   if(!Number.isFinite(lat) || !Number.isFinite(lon)) return;
   const t = Date.parse(String(meta.time_utc || "").replace(" +0000 UTC", "Z").replace(" ", "T"));

@@ -2,8 +2,13 @@ name: Schiffsposition abholen
 
 on:
   schedule:
-    - cron: "*/15 * * * *"        # alle 15 Minuten (GitHub kann einige Minuten verzögern)
+    - cron: "*/10 * * * *"        # alle 10 Minuten (GitHub kann einige Minuten verzögern)
   workflow_dispatch:
+    inputs:
+      diag:
+        description: "Diagnose: alle Schiffe im Mittelmeer zählen statt nur die Deliziosa"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
@@ -29,13 +34,18 @@ jobs:
         run: |
           mkdir -p out
           if git fetch --depth 1 origin position-data 2>/dev/null; then
-            git show origin/position-data:position.json > out/position.json 2>/dev/null || true
+            if git show origin/position-data:position.json > out/position.tmp 2>/dev/null && [ -s out/position.tmp ]; then
+              mv out/position.tmp out/position.json
+            else
+              rm -f out/position.tmp
+            fi
           fi
 
       - name: Position über aisstream abfragen
         env:
           AISSTREAM_KEY: ${{ secrets.AISSTREAM_KEY }}
           OUT_DIR: out
+          DIAG: ${{ inputs.diag && '1' || '0' }}
         run: node scripts/fetch-position.mjs
 
       - name: Auf Branch position-data veröffentlichen
