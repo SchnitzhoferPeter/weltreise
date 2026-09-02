@@ -99,10 +99,10 @@ ebenso einlesen könnte.
 ## Reisetagebuch (FindPenguins)
 
 Erlebtes wird nicht in der App notiert, sondern in FindPenguins gepostet. `data/tagebuch.json`
-enthält den Freigabelink des Trips und die Einbettungsadresse
-(`https://findpenguins.com/embed/<nutzer>/trip/<trip>?v=1&s=<token>`); der Knopf **Tagebuch** zeigt den
-Trip eingebettet, jedes Hafendetail verweist darauf. Blockiert FindPenguins die Einbettung, bleibt
-der Link „In FindPenguins öffnen“.
+enthält den Freigabelink des privaten Trips; der Knopf **Tagebuch** und der Verweis in jedem
+Hafendetail öffnen ihn direkt. Wird der Trip einmal öffentlich, kann in `embed` die
+Einbettungsadresse (`https://findpenguins.com/embed/<nutzer>/trip/<trip>?v=1`) eingetragen werden –
+dann zeigt die Seite den Trip in einem eigenen Bereich.
 
 ## Gemeinsame Landausflüge
 
