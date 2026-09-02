@@ -10,8 +10,7 @@ Kein Build, keine Abhängigkeiten außer Leaflet (Karte) und Open-Meteo (Wetter)
 ## Gestaltung
 
 Helles Logbuch: warmes Papier, Marineblau, Messing als Akzent, Petrol für alles Live.
-Grundschrift 17 px, kleinste Schrift 13 px, Kontrast mindestens 6:1. Der Knopf **Nachtmodus**
-schaltet auf ein dunkles Schema (auch automatisch nach Systemeinstellung), die Karte wechselt mit.
+Grundschrift 17 px, kleinste Schrift 13 px, Kontrast mindestens 6:1.
 Der Entwurf liegt als Design-Canvas vor: https://claude.ai/code/artifact/2898c283-720b-4994-99d8-72279c40eabf
 
 ## Was die Seite zeigt
