@@ -30,7 +30,7 @@ self.addEventListener("fetch", e => {
   const req = e.request;
   if(req.method !== "GET") return;
   const url = new URL(req.url);
-  if(url.hostname.includes("open-meteo.com") || url.pathname.endsWith("position.json")) return;
+  if(url.hostname.includes("open-meteo.com") || url.pathname.endsWith("position.json") || url.pathname.endsWith("bilder.json")) return;
 
   e.respondWith(
     fetch(req)

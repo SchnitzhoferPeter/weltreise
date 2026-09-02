@@ -582,6 +582,7 @@ const POS_FILE = "data/position.json";                /* optionale, gemeinsam ge
 const EXC_FILE = "data/ausfluege.json";               /* optionale, gemeinsam genutzte Landausflüge */
 const SYNC_FILE = "data/sync.json";                   /* Adresse des gemeinsamen Speichers (Firebase Realtime Database) */
 const DIARY_FILE = "data/tagebuch.json";              /* Reisetagebuch auf FindPenguins: Link und Einbettung */
+const IMG_FILE = "data/bilder.json";                  /* im Repository hinterlegte Hafenbilder mit Urheberangaben */
 const POS_MAX_AGE_H = 18;                             /* danach gilt eine Meldung als veraltet */
 const WX_TTL_MS = 20 * 60 * 1000;                     /* Wetter-Cache */
 const LS = "weltreise.";
@@ -1912,7 +1913,18 @@ el("nowExtra").addEventListener("click", e => {
 const sheet = el("sheet");
 const sheetBody = el("sheetBody");
 const imgCache = new Map();
+let IMAGES = {};
+const slugify = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+async function loadImages(){
+  try{ const d = await fetchJson(IMG_FILE + "?_=" + Math.floor(Date.now() / 3600000)); if(d && typeof d === "object") IMAGES = d; }catch(e){}
+}
+/* Hinterlegtes Bild aus dem Repository, sonst Wikipedia live */
 async function wikiImage(title){
+  const local = IMAGES[slugify(title)];
+  if(local && local.file){
+    const credit = [local.author ? "Foto: " + local.author : "Foto: Wikimedia Commons", local.license].filter(Boolean).join(" · ");
+    return {src: local.file, page: local.page || local.wiki, credit};
+  }
   if(imgCache.has(title)) return imgCache.get(title);
   for(const lang of ["de", "en"]){
     try{
@@ -2013,7 +2025,7 @@ function renderSheet(i){
         <button class="chip" id="excCopy">Ausflüge als JSON</button>
       </div>
     </div>
-    <p class="credit">Bild: Wikipedia / Wikimedia Commons · Wetter: Open-Meteo${isPast ? " · Dieser Hafen liegt bereits hinter uns" : ""}</p>`;
+    <p class="credit" id="imgCredit">Bild: Wikipedia / Wikimedia Commons · Wetter: Open-Meteo${isPast ? " · Dieser Hafen liegt bereits hinter uns" : ""}</p>`;
   sheetBody.dataset.i = i;
   renderExcursions(i);
 
@@ -2025,7 +2037,10 @@ function renderSheet(i){
     const img = new Image();
     img.alt = c.n; img.src = res.src;
     img.addEventListener("load", () => { img.classList.add("is-loaded"); const ph = hero.querySelector(".placeholder"); if(ph) ph.remove(); });
+    img.addEventListener("error", () => { const ph = hero.querySelector(".placeholder"); if(ph) ph.textContent = short(c.n); });
     hero.insertBefore(img, hero.firstChild);
+    const cr = el("imgCredit");
+    if(cr && res.credit) cr.innerHTML = `${res.page ? `<a href="${esc(res.page)}" target="_blank" rel="noopener" style="color:inherit">${esc(res.credit)}</a>` : esc(res.credit)} · Wetter: Open-Meteo${isPast ? " · Dieser Hafen liegt bereits hinter uns" : ""}`;
   });
 
   /* Wetter und Wassertemperatur */
@@ -2403,7 +2418,7 @@ function openFromHash(){
 applyMapTheme();
 if(/^#ais=/.test(location.hash)) history.replaceState(null, "", location.pathname);   /* alte Einladungslinks */
 renderList(); markToday(); renderNow(); renderWarnBox();
-Promise.all([loadFilePosition(), loadSharedExcursions(), loadSyncConfig(), loadDiaryConfig()]).then(async () => {
+Promise.all([loadFilePosition(), loadSharedExcursions(), loadSyncConfig(), loadDiaryConfig(), loadImages()]).then(async () => {
   refreshView(); refreshWarnings();
   if(sync.url){ await pullShared(); await pushAllShared(); refreshView(); }
 });
