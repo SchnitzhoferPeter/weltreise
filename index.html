@@ -3,270 +3,437 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Weltreise 2026/27 · Civitavecchia → Civitavecchia</title>
-<meta name="description" content="Interaktive Karte der 141-tägigen Weltkreuzfahrt: alle Häfen, Liegezeiten, Seetage und Details auf einen Blick.">
+<title>Weltreise 2026/27 · Costa Deliziosa</title>
+<meta name="description" content="Live-Verfolgung der 141-tägigen Weltkreuzfahrt der Costa Deliziosa: Schiffsposition, Ankunftsprognose, Wetter, Landausflüge und alle Häfen im Detail.">
+<meta name="theme-color" content="#F6F1E7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,500;0,6..96,700;1,6..96,500&family=Archivo:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,500;0,6..72,700;1,6..72,500&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <style>
+/* =======================================================================
+   Gestaltung: „Helles Logbuch“ – warmes Papier, Marineblau, Messing, Petrol.
+   Grundschrift 17 px, kleinste Schrift 13 px, Kontrast mindestens 6:1.
+   Nachtmodus über html[data-theme="dark"].
+   ===================================================================== */
 :root{
-  --abyss:#0B1A2A;
-  --chart:#10273C;
-  --rule:#1E3D5A;
+  --paper:#F6F1E7;      /* Grundfläche */
+  --card:#FFFDF8;       /* Karten und Kopf */
+  --card-2:#F1EADB;     /* aktive Zeile */
+  --line:#D9D0BE;
+  --line-soft:#E6DECD;
+  --ink:#14233A;
+  --ink-2:#4A576A;
+  --ink-3:#6B7688;
+  --brass:#8F620F;
+  --brass-soft:#F3E4C0;
+  --live:#0E7A6C;
+  --live-soft:#DDF0EC;
+  --warn:#B3261E;
+  --warn-soft:#FBE9E6;
+  --sea:#C9D7DF;
+  --sea-deep:#A9BFCB;
+  --map-bg:#D7E5EC;
+  --shadow:0 2px 10px rgba(20,35,58,.10);
+  --ledger-w:480px;
+  --r:8px;
+}
+html[data-theme="dark"]{
+  --paper:#0E1A2B;
+  --card:#152538;
+  --card-2:#1C3049;
+  --line:#2A4460;
+  --line-soft:#213A55;
+  --ink:#F4EFE4;
+  --ink-2:#B9C5D3;
+  --ink-3:#8FA0B3;
   --brass:#E8B04B;
-  --brass-dim:#8a6a2c;
-  --aqua:#6FD3C6;
-  --paper:#F2EFE6;
-  --muted:#93A8BC;
-  --shadow:0 24px 60px -20px rgba(0,0,0,.75);
-  --ledger-w:390px;
+  --brass-soft:#3A2F14;
+  --live:#6FD3C6;
+  --live-soft:#153D3A;
+  --warn:#F08A7E;
+  --warn-soft:#3F1F1C;
+  --sea:#274563;
+  --sea-deep:#1C3550;
+  --map-bg:#0a1826;
+  --shadow:0 4px 18px rgba(0,0,0,.45);
 }
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
 body{
-  background:var(--abyss);
-  color:var(--paper);
-  font-family:'Archivo',system-ui,-apple-system,'Segoe UI',sans-serif;
-  font-size:15px;
-  line-height:1.5;
-  -webkit-font-smoothing:antialiased;
-  overflow:hidden;
+  background:var(--paper);color:var(--ink);
+  font-family:'Source Sans 3','Segoe UI',system-ui,-apple-system,sans-serif;
+  font-size:17px;line-height:1.5;-webkit-font-smoothing:antialiased;overflow:hidden;
 }
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
-:focus-visible{outline:2px solid var(--aqua);outline-offset:2px;border-radius:2px}
+a{color:var(--brass)}
+:focus-visible{outline:3px solid var(--live);outline-offset:2px;border-radius:4px}
+[hidden]{display:none!important}
+.num{font-variant-numeric:tabular-nums}
+.serif{font-family:'Newsreader',Georgia,'Times New Roman',serif}
+.label{font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brass)}
+.muted{color:var(--ink-2)}
+svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+/* ---------- Knöpfe ---------- */
+.btn,.chip,.tool,.switch{
+  display:inline-flex;align-items:center;gap:8px;
+  border:1px solid var(--line);border-radius:6px;background:var(--card);
+  padding:9px 14px;font-size:15px;font-weight:600;color:var(--ink);
+  text-decoration:none;min-height:44px;transition:border-color .15s,color .15s,background .15s;
+}
+.btn:hover,.chip:hover,.tool:hover,.switch:hover{border-color:var(--brass);color:var(--brass)}
+.switch[aria-pressed="true"],.chip.on{border-color:var(--brass);color:var(--brass);background:var(--brass-soft)}
+.chip{padding:8px 12px;min-height:40px;font-size:14px}
+.btn.primary{background:var(--brass);border-color:var(--brass);color:#fff}
+.btn.primary:hover{color:#fff;filter:brightness(1.08)}
 
 /* ---------- Kopfzeile ---------- */
 .masthead{
-  display:flex;align-items:flex-end;gap:28px;flex-wrap:wrap;
-  padding:14px 22px 12px;
-  border-bottom:1px solid var(--rule);
-  background:linear-gradient(180deg,#0d1f31,#0B1A2A);
+  display:flex;align-items:center;gap:22px;flex-wrap:wrap;
+  padding:14px 26px 12px;border-bottom:1px solid var(--line);background:var(--card);
 }
-.mark{display:flex;flex-direction:column;gap:2px;margin-right:auto}
-.eyebrow{
-  font-family:'IBM Plex Mono',ui-monospace,monospace;
-  font-size:10.5px;letter-spacing:.22em;text-transform:uppercase;color:var(--brass);
-}
+.mark{display:flex;flex-direction:column;gap:3px;margin-right:auto;min-width:0}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--brass)}
 .mark h1{
-  margin:0;font-family:'Bodoni Moda',Georgia,serif;font-weight:700;
-  font-size:clamp(21px,2.6vw,30px);line-height:1.05;letter-spacing:-.01em;
+  margin:0;font-family:'Newsreader',Georgia,serif;font-weight:700;
+  font-size:clamp(26px,2.6vw,36px);line-height:1.05;letter-spacing:-.01em;
 }
 .mark h1 em{font-style:italic;font-weight:500;color:var(--brass)}
-.stats{display:flex;gap:26px;flex-wrap:wrap;padding-bottom:3px}
-.stat b{
-  display:block;font-family:'Bodoni Moda',Georgia,serif;font-size:22px;font-weight:700;line-height:1;
-}
-.stat span{
-  font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.16em;
-  text-transform:uppercase;color:var(--muted);
-}
+.mark .ship{font-size:15px;color:var(--ink-2)}
+.stats{display:flex;gap:22px;flex-wrap:wrap}
+.stat b{display:block;font-family:'Newsreader',Georgia,serif;font-size:32px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.stat span{display:block;font-size:13px;color:var(--ink-2);margin-top:4px}
+.stat.live b{color:var(--live)}
+.head-tools{display:flex;gap:8px;flex-wrap:wrap}
 
 /* ---------- Bühne ---------- */
 .stage{
-  display:grid;grid-template-columns:1fr var(--ledger-w);
-  height:calc(100dvh - var(--head-h,74px));
+  display:grid;grid-template-columns:minmax(0,1fr) var(--ledger-w);
+  grid-template-rows:minmax(0,1fr);
+  height:calc(100dvh - var(--head-h,96px));
 }
-.chart{display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--rule)}
-#map{flex:1;min-height:0;background:#0a1826}
-.leaflet-container{font-family:'Archivo',sans-serif;background:#0a1826}
-.leaflet-control-attribution{
-  background:rgba(11,26,42,.82)!important;color:var(--muted)!important;font-size:10px!important;
-}
-.leaflet-control-attribution a{color:var(--muted)!important}
-.leaflet-bar a{background:#12293e!important;color:var(--paper)!important;border-color:var(--rule)!important}
-.leaflet-bar a:hover{background:#1a3750!important}
-.leaflet-tooltip.port-tip{
-  background:#0d2137;border:1px solid var(--rule);color:var(--paper);
-  box-shadow:var(--shadow);font-size:12px;padding:5px 9px;border-radius:3px;
-}
-.leaflet-tooltip.port-tip::before{display:none}
-.leaflet-tooltip.port-tip b{font-weight:600}
-.leaflet-tooltip.port-tip i{
-  font-style:normal;display:block;font-family:'IBM Plex Mono',monospace;
-  font-size:10px;color:var(--brass);letter-spacing:.08em;
-}
-
-/* Kartenwerkzeuge */
-.chart-tools{position:absolute;z-index:500;right:14px;top:14px;display:flex;flex-direction:column;gap:6px}
-.tool{
-  background:rgba(13,33,55,.9);border:1px solid var(--rule);border-radius:3px;
-  padding:7px 11px;font-size:11.5px;letter-spacing:.04em;color:var(--paper);
-  backdrop-filter:blur(6px);transition:border-color .15s,color .15s;
-}
-.tool:hover{border-color:var(--brass);color:var(--brass)}
+.chart{grid-column:1;grid-row:1;display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--line)}
+.side{grid-column:2;grid-row:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;background:var(--paper)}
 .chart-wrap{position:relative;flex:1;min-height:0;display:flex}
-
-/* ---------- Reise-Log (Signature) ---------- */
-.log{
-  border-top:1px solid var(--rule);background:#0d2035;
-  padding:9px 16px 11px;overflow-x:auto;overflow-y:hidden;
+#map{flex:1;min-height:0;background:var(--map-bg)}
+.leaflet-container{font-family:inherit;background:var(--map-bg);font-size:14px}
+.leaflet-control-attribution{background:var(--card)!important;color:var(--ink-2)!important;font-size:11px!important}
+.leaflet-control-attribution a{color:var(--ink-2)!important}
+.leaflet-bar a{background:var(--card)!important;color:var(--ink)!important;border-color:var(--line)!important;width:36px!important;height:36px!important;line-height:36px!important;font-size:20px!important}
+.leaflet-bar a:hover{background:var(--card-2)!important}
+.leaflet-tooltip.port-tip,.leaflet-tooltip.ship-tip{
+  background:var(--card);border:1px solid var(--line);color:var(--ink);
+  box-shadow:var(--shadow);font-size:15px;padding:8px 12px;border-radius:6px;line-height:1.35;
 }
-.log-inner{min-width:760px}
+.leaflet-tooltip.ship-tip{border-color:var(--live)}
+.leaflet-tooltip.port-tip::before,.leaflet-tooltip.ship-tip::before{display:none}
+.leaflet-tooltip.port-tip b{font-weight:700}
+.leaflet-tooltip.port-tip i{font-style:normal;display:block;font-size:13px;color:var(--brass);font-weight:600}
+.chart-tools{position:absolute;z-index:500;right:14px;top:14px;display:flex;flex-direction:column;gap:8px}
+.tool{box-shadow:var(--shadow)}
+
+/* ---------- Tagesband ---------- */
+.log{border-top:1px solid var(--line);background:var(--card);padding:12px 20px 12px;overflow-x:auto;overflow-y:hidden}
+.log-inner{min-width:820px}
 .log-months,.log-days{display:grid;grid-template-columns:repeat(141,1fr);gap:2px}
-.log-months{margin-bottom:5px}
-.log-months span{
-  font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
-  color:var(--muted);border-left:1px solid var(--rule);padding-left:5px;white-space:nowrap;overflow:hidden;
-}
-.log-days{height:34px;align-items:end}
-.day{
-  height:34%;background:#1c3a55;border:0;padding:0;border-radius:1px;
-  transition:height .18s ease,background .18s ease;
-}
-.day.port{height:100%;background:var(--brass-dim)}
-.day.port.multi{background:var(--brass)}
-.day:hover,.day:focus-visible{background:var(--aqua);height:100%}
-.day.is-active{background:var(--paper);height:100%}
-.log-legend{
-  display:flex;gap:18px;align-items:center;margin-top:8px;
-  font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--muted);
-}
-.log-legend i{display:inline-block;width:9px;height:9px;margin-right:6px;vertical-align:-1px;border-radius:1px}
+.log-months{margin-bottom:6px}
+.log-months span{font-size:13px;font-weight:600;color:var(--ink-2);border-left:1px solid var(--line);padding-left:6px;white-space:nowrap;overflow:hidden}
+.log-days{height:38px;align-items:end}
+.day{height:40%;background:var(--sea);border:0;padding:0;border-radius:2px;transition:height .18s ease,background .18s ease}
+.day.port{height:100%;background:var(--brass);opacity:.72}
+.day.port.multi{opacity:1}
+.day:hover,.day:focus-visible{background:var(--live);height:100%;opacity:1}
+.day.is-active{background:var(--ink);height:100%;opacity:1}
+.day.is-today{background:var(--live)!important;height:100%!important;opacity:1!important}
+.log-legend{display:flex;gap:20px;flex-wrap:wrap;margin-top:9px;font-size:14px;color:var(--ink-2)}
+.log-legend span{display:flex;align-items:center;gap:7px}
+.log-legend i{display:inline-block;width:12px;height:12px;border-radius:2px}
+#logHint{margin-left:auto}
 
-/* ---------- Ledger ---------- */
-.ledger{position:relative;display:flex;flex-direction:column;min-height:0;background:#0c1e30}
-.ledger-head{padding:13px 16px 11px;border-bottom:1px solid var(--rule);display:flex;gap:9px;align-items:center}
-.search{
-  flex:1;background:#0a1826;border:1px solid var(--rule);border-radius:3px;
-  padding:8px 11px;color:var(--paper);font-size:13.5px;
-}
-.search::placeholder{color:#5f7891}
+/* ---------- Bordkarte ---------- */
+.now{border-bottom:1px solid var(--line);background:var(--card);padding:16px 22px 16px}
+.now-head{display:flex;align-items:flex-start;gap:14px}
+.now-eyebrow{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--live)}
+.now-eyebrow .dot{width:10px;height:10px;border-radius:50%;background:var(--live);flex:0 0 auto;box-shadow:0 0 0 0 rgba(14,122,108,.5);animation:pulse 2.4s infinite}
+.now-eyebrow .dot.est{background:var(--brass);animation:none}
+.now-eyebrow.est{color:var(--brass)}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(14,122,108,.45)}70%{box-shadow:0 0 0 10px rgba(14,122,108,0)}100%{box-shadow:0 0 0 0 rgba(14,122,108,0)}}
+.now-status{margin-top:3px;font-family:'Newsreader',Georgia,serif;font-weight:700;font-size:29px;line-height:1.1;letter-spacing:-.01em}
+.now-status small{display:block;font-family:'Source Sans 3',system-ui,sans-serif;font-weight:400;font-size:16px;color:var(--ink-2);margin-top:4px;line-height:1.35}
+.now-clock{margin-left:auto;text-align:right;flex:0 0 auto}
+.now-clock b{display:block;font-family:'Newsreader',Georgia,serif;font-size:42px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.now-clock span{display:block;font-size:13px;color:var(--ink-2);margin-top:5px}
+.fold{margin-left:6px;align-self:flex-start;border:1px solid var(--line);border-radius:6px;width:36px;height:36px;color:var(--ink-2);display:grid;place-items:center}
+.fold:hover{border-color:var(--brass);color:var(--brass)}
+.now.is-folded .now-grid,.now.is-folded .now-next,.now.is-folded .now-actions,.now.is-folded .now-extra,.now.is-folded .now-foot,.now.is-folded .call-hint,.now.is-folded .warnbox{display:none}
+
+.now-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:14px}
+.metric{background:var(--paper);border:1px solid var(--line-soft);border-radius:var(--r);padding:9px 11px;min-width:0;display:flex;flex-direction:column;gap:2px}
+.metric span{font-size:13px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.metric b{font-size:21px;font-weight:700;line-height:1.2;font-variant-numeric:tabular-nums;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.metric b i{font-style:normal;font-size:14px;font-weight:600;color:var(--ink-2)}
+.metric b.pos{font-size:15px;line-height:1.3;display:block;white-space:normal}
+.metric b em{font-style:normal}
+.metric b em.loading{font-size:14px;font-weight:400;color:var(--ink-3)}
+
+.now-next{margin-top:12px;border:1px solid var(--line-soft);border-radius:10px;background:var(--paper);padding:13px 15px;display:flex;flex-direction:column;gap:9px}
+.now-next .top{display:flex;align-items:baseline;gap:12px}
+.now-next .port{flex:1 1 auto;min-width:0;display:flex;flex-direction:column}
+.now-next .port .lbl{font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brass)}
+.now-next .port .name{font-family:'Newsreader',Georgia,serif;font-size:25px;font-weight:700;line-height:1.15}
+.now-next .port em{font-style:normal;font-size:15px;color:var(--ink-2);margin-top:2px}
+.now-next .cd{text-align:right;flex:0 0 auto}
+.now-next .cd b{display:block;font-size:25px;font-weight:700;color:var(--live);line-height:1;font-variant-numeric:tabular-nums}
+.now-next .cd em{font-style:normal;display:block;font-size:13px;color:var(--ink-2);margin-top:4px}
+.eta-rows{display:grid;grid-template-columns:104px minmax(0,1fr) auto;gap:6px 12px;border-top:1px solid var(--line-soft);padding-top:9px;font-size:16px;align-items:baseline}
+.eta-rows span{color:var(--ink-2)}
+.eta-rows b{font-weight:600;font-variant-numeric:tabular-nums}
+.eta-rows .sp{display:block}
+.eta-note{grid-column:1 / -1;font-size:14px;color:var(--ink-2);line-height:1.45;margin-top:2px}
+.delta{font-size:14px;font-weight:700;border-radius:999px;padding:2px 10px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.delta.early{background:var(--live-soft);color:var(--live)}
+.delta.late{background:var(--brass-soft);color:var(--brass)}
+.delta.ontime{background:var(--card-2);color:var(--ink-2)}
+
+.now-extra{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.tile{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line-soft);border-radius:var(--r);padding:10px 12px;background:var(--card);text-align:left;width:100%;min-width:0}
+.tile svg{color:var(--brass);margin-top:2px}
+.tile span{font-size:13px;color:var(--ink-2);display:block}
+.tile b{font-size:15px;font-weight:600;line-height:1.3;display:block}
+.tile:hover{border-color:var(--brass)}
+.warnbox{display:flex;gap:10px;align-items:flex-start;margin-top:10px;border-radius:var(--r);padding:10px 12px;background:var(--warn-soft);border:1px solid color-mix(in srgb,var(--warn) 35%,transparent);font-size:15px;line-height:1.4}
+.warnbox svg{color:var(--warn);margin-top:1px}
+.warnbox b{color:var(--warn)}
+.warnbox.ok{background:var(--live-soft);border-color:color-mix(in srgb,var(--live) 35%,transparent)}
+.warnbox.ok svg,.warnbox.ok b{color:var(--live)}
+.warnbox ul{margin:4px 0 0;padding-left:18px}
+.warnbox li{margin:2px 0}
+
+.now-bar{margin-top:13px}
+.now-bar .track{height:6px;background:var(--line-soft);border-radius:3px;overflow:hidden}
+.now-bar .track i{display:block;height:100%;background:var(--brass);border-radius:3px}
+.now-bar .track i.done{background:var(--live)}
+.now-bar small{display:flex;justify-content:space-between;gap:12px;margin-top:6px;font-size:14px;color:var(--ink-2)}
+.now-foot{margin-top:5px;font-size:14px;color:var(--ink-2);line-height:1.45}
+.call-hint{margin-top:9px;font-size:15px;line-height:1.4;color:var(--ink)}
+.call-hint b{color:var(--live)}
+.call-hint.night b{color:var(--brass)}
+.now-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
+
+/* ---------- Routenliste ---------- */
+.ledger{position:relative;display:flex;flex-direction:column;background:var(--paper)}
+.ledger-head{position:sticky;top:0;z-index:5;padding:12px 22px;border-bottom:1px solid var(--line);display:flex;gap:8px;align-items:center;background:var(--card)}
+.search{flex:1;min-width:0;background:var(--paper);border:1px solid var(--line);border-radius:6px;padding:10px 14px;color:var(--ink);font:inherit;font-size:16px;min-height:44px}
+.search::placeholder{color:var(--ink-3)}
 .search:focus{outline:none;border-color:var(--brass)}
-.switch{
-  border:1px solid var(--rule);border-radius:3px;padding:8px 10px;
-  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;
-  text-transform:uppercase;color:var(--muted);white-space:nowrap;
-}
-.switch[aria-pressed="true"]{border-color:var(--brass);color:var(--brass)}
-
-.stops{list-style:none;margin:0;padding:0 0 40px;overflow-y:auto;flex:1}
+.stops{list-style:none;margin:0;padding:0 0 40px}
 .stop{
-  display:grid;grid-template-columns:52px 1fr auto;gap:12px;align-items:baseline;
-  width:100%;text-align:left;padding:12px 16px;border-bottom:1px solid rgba(30,61,90,.55);
+  display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:14px;align-items:baseline;
+  width:100%;text-align:left;padding:13px 22px;border-bottom:1px solid var(--line-soft);
   transition:background .14s ease;
 }
-.stop:hover{background:#102a41}
-.stop.is-active{background:#13324c;box-shadow:inset 3px 0 0 var(--brass)}
-.stop .day-no{
-  font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.08em;color:var(--brass);padding-top:3px;
-}
-.stop .day-no small{display:block;color:var(--muted);letter-spacing:.04em;font-size:9.5px;margin-top:3px}
-.stop .name{font-size:15.5px;font-weight:500;letter-spacing:-.005em}
-.stop .sub{
-  font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--muted);
-  letter-spacing:.06em;margin-top:3px;display:block;
-}
-.stop .dur{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--paper);white-space:nowrap;padding-top:2px}
-.stop .dur em{font-style:normal;display:block;font-size:9.5px;color:var(--brass);letter-spacing:.1em;text-align:right;margin-top:3px}
-.sea{
-  display:flex;align-items:center;gap:10px;padding:7px 16px 7px 68px;
-  font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;
-  text-transform:uppercase;color:#5f7891;border-bottom:1px solid rgba(30,61,90,.35);
-}
-.sea::before{content:"";flex:0 0 22px;height:1px;background:repeating-linear-gradient(90deg,var(--rule) 0 3px,transparent 3px 6px)}
-.empty{padding:28px 18px;color:var(--muted);font-size:13.5px}
+.stop:hover{background:var(--card)}
+.stop.is-active{background:var(--card-2);box-shadow:inset 4px 0 0 var(--brass)}
+.stop.is-past{opacity:.66}
+.stop .day-no{font-size:14px;font-weight:700;color:var(--brass);line-height:1.3}
+.stop .day-no small{display:block;font-weight:400;color:var(--ink-2);font-size:14px}
+.stop .name{font-size:19px;font-weight:600;line-height:1.25}
+.stop .sub{font-size:15px;color:var(--ink-2);margin-top:2px;display:block}
+.stop .sub .tag{color:var(--brass);font-weight:600}
+.stop .dur{font-size:16px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.stop .dur em{font-style:normal;display:block;font-size:14px;color:var(--brass);font-weight:600;margin-top:2px}
+.sea,.clockrow{display:flex;align-items:center;gap:10px;padding:9px 22px 9px 108px;font-size:15px;color:var(--ink-2);border-bottom:1px solid var(--line-soft)}
+.clockrow{color:var(--ink);background:var(--card)}
+.clockrow svg{color:var(--brass);width:18px;height:18px}
+.empty{padding:28px 22px;color:var(--ink-2);font-size:16px}
 
 /* ---------- Detailblatt ---------- */
-.sheet{
-  position:absolute;inset:0;background:#0c1e30;display:flex;flex-direction:column;
-  transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);
-  visibility:hidden;z-index:20;
-}
+.sheet{grid-column:2;grid-row:1;position:relative;background:var(--paper);display:flex;flex-direction:column;min-height:0;
+  transform:translateX(100%);transition:transform .28s cubic-bezier(.4,0,.2,1);visibility:hidden;z-index:20}
 .sheet.is-open{transform:translateX(0);visibility:visible}
 .sheet-scroll{overflow-y:auto;flex:1}
-.back{
-  display:flex;align-items:center;gap:8px;padding:12px 16px;width:100%;
-  border-bottom:1px solid var(--rule);font-family:'IBM Plex Mono',monospace;
-  font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
-}
+.back{display:flex;align-items:center;gap:8px;padding:13px 22px;width:100%;border-bottom:1px solid var(--line);font-size:15px;font-weight:600;color:var(--ink-2);background:var(--card);min-height:48px}
 .back:hover{color:var(--brass)}
-.hero{position:relative;aspect-ratio:16/10;background:#102a41;overflow:hidden}
+.hero{position:relative;aspect-ratio:16/9;background:var(--sea-deep);overflow:hidden;margin:0}
 .hero img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .5s ease}
 .hero img.is-loaded{opacity:1}
-.hero::after{
-  content:"";position:absolute;inset:0;
-  background:linear-gradient(180deg,rgba(12,30,48,0) 40%,rgba(12,30,48,.95));
-}
-.hero figcaption{
-  position:absolute;left:0;right:0;bottom:0;z-index:2;padding:16px;
-}
-.hero .region{
-  font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.2em;
-  text-transform:uppercase;color:var(--brass);
-}
-.hero h2{
-  margin:5px 0 0;font-family:'Bodoni Moda',Georgia,serif;font-weight:700;
-  font-size:29px;line-height:1.05;letter-spacing:-.015em;
-}
-.hero .country{font-size:12.5px;color:var(--muted);margin-top:4px}
-.hero .placeholder{
-  position:absolute;inset:0;display:grid;place-items:center;
-  font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.2em;
-  text-transform:uppercase;color:#3c5a76;
-  background:radial-gradient(120% 100% at 30% 0%,#173553,#0e2439);
-}
-.facts{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--rule)}
-.fact{padding:13px 16px;border-right:1px solid var(--rule);border-top:1px solid var(--rule)}
+.hero::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,35,58,0) 35%,rgba(20,35,58,.88))}
+.hero figcaption{position:absolute;left:0;right:0;bottom:0;z-index:2;padding:18px 22px;color:#FFFDF8}
+.hero .region{font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#F0C87A}
+.hero h2{margin:4px 0 0;font-family:'Newsreader',Georgia,serif;font-weight:700;font-size:38px;line-height:1.05;letter-spacing:-.015em}
+.hero .country{font-size:16px;opacity:.92;margin-top:3px}
+.hero .placeholder{position:absolute;inset:0;display:grid;place-items:center;font-size:14px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#FFFDF8;opacity:.8;background:linear-gradient(160deg,#9FB8C6,#5F7F92)}
+.facts{display:grid;grid-template-columns:1fr 1fr;border-bottom:1px solid var(--line);background:var(--card)}
+.fact{padding:13px 22px;border-right:1px solid var(--line-soft);border-top:1px solid var(--line-soft);min-width:0}
 .fact:nth-child(2n){border-right:0}
-.fact span{
-  display:block;font-family:'IBM Plex Mono',monospace;font-size:9.5px;letter-spacing:.16em;
-  text-transform:uppercase;color:var(--muted);margin-bottom:5px;
+.fact span{display:block;font-size:13px;color:var(--ink-2);margin-bottom:3px}
+.fact b{font-weight:600;font-size:17px;line-height:1.3;font-variant-numeric:tabular-nums}
+.fact b i{font-style:normal;color:var(--ink-2);font-size:14px}
+.body{padding:18px 22px 10px}
+.body p{margin:0 0 16px;font-size:17px;color:var(--ink)}
+.body h3{margin:22px 0 10px;font-family:'Newsreader',Georgia,serif;font-size:24px;font-weight:700;line-height:1.15;display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.body h3 .more{font-family:'Source Sans 3',system-ui,sans-serif;font-size:15px;font-weight:600;color:var(--brass);white-space:nowrap}
+.body ul.plain{margin:0;padding:0;list-style:none}
+.body ul.plain li{padding:9px 0;border-bottom:1px solid var(--line-soft);font-size:17px}
+.hint{margin-top:16px;padding:12px 14px;border-radius:var(--r);background:var(--card);border:1px solid var(--line-soft);font-size:15px;color:var(--ink)}
+.links{display:flex;gap:8px;flex-wrap:wrap;margin-top:22px}
+.credit{padding:16px 22px 28px;font-size:13px;color:var(--ink-3)}
+
+/* Wetterkästen */
+.wx-box{border:1px solid var(--line-soft);border-radius:10px;background:var(--card);padding:13px 15px;margin-bottom:14px}
+.wx-box .lbl{font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brass);margin-bottom:8px}
+.wx{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.wx svg{width:40px;height:40px;color:var(--brass);stroke-width:1.8}
+.wx-temp{font-size:30px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1}
+.wx-text{display:flex;flex-direction:column;font-size:15px;line-height:1.35;min-width:0}
+.wx-text b{font-weight:600;font-size:16px}
+.wx-text span{color:var(--ink-2)}
+.loading{font-size:14px;color:var(--ink-3)}
+.eta-box .eta-rows{border-top:0;padding-top:0}
+
+/* Landausflüge */
+.exc{border:1px solid var(--line-soft);border-radius:10px;background:var(--card);padding:12px 15px;display:grid;grid-template-columns:70px minmax(0,1fr) auto;gap:2px 14px;margin-bottom:8px;align-items:start}
+.exc .time{font-size:20px;font-weight:700;color:var(--live);font-variant-numeric:tabular-nums;grid-row:1 / span 2}
+.exc .title{font-size:17px;font-weight:600;line-height:1.3}
+.exc .meta{font-size:15px;color:var(--ink-2);line-height:1.4}
+.exc .del{grid-row:1 / span 2;color:var(--ink-3);padding:4px;border-radius:6px;min-height:0}
+.exc .del:hover{color:var(--warn)}
+.exc.shared .del{visibility:hidden}
+.exc-empty{border:1px dashed var(--line);border-radius:10px;padding:12px 15px;font-size:15px;color:var(--ink-2)}
+.exc-form{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;padding:14px 15px;border:1px solid var(--line-soft);border-radius:10px;background:var(--card)}
+.exc-form label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--ink-2)}
+.exc-form label.wide{grid-column:1 / -1}
+.exc-form input,.exc-form textarea,dialog.panel input,dialog.panel select,.journal textarea{
+  width:100%;background:var(--paper);border:1px solid var(--line);border-radius:6px;color:var(--ink);
+  padding:10px 12px;font:inherit;font-size:16px;min-height:44px;
 }
-.fact b{font-weight:500;font-size:14.5px}
-.body{padding:16px}
-.body p{margin:0 0 14px;font-size:14.5px;color:#dfe6ec}
-.body h3{
-  margin:20px 0 9px;font-family:'IBM Plex Mono',monospace;font-size:10px;
-  letter-spacing:.2em;text-transform:uppercase;color:var(--brass);font-weight:500;
-}
-.body ul{margin:0;padding:0;list-style:none}
-.body li{
-  padding:7px 0 7px 16px;border-bottom:1px solid rgba(30,61,90,.5);font-size:14px;position:relative;
-}
-.body li::before{content:"—";position:absolute;left:0;color:var(--brass-dim)}
-.hint{
-  margin-top:16px;padding:11px 13px;border-left:2px solid var(--brass);
-  background:#102a41;font-size:13px;color:#cfd9e2;
-}
-.links{display:flex;gap:8px;flex-wrap:wrap;margin-top:20px}
-.links a{
-  border:1px solid var(--rule);border-radius:3px;padding:8px 12px;font-size:12px;
-  color:var(--paper);text-decoration:none;transition:border-color .15s,color .15s;
-}
-.links a:hover{border-color:var(--brass);color:var(--brass)}
-.credit{
-  padding:14px 16px 26px;font-family:'IBM Plex Mono',monospace;font-size:9.5px;
-  letter-spacing:.1em;color:#4d6b87;
-}
+.exc-form textarea,.journal textarea{min-height:76px;resize:vertical}
+.exc-form input:focus,.exc-form textarea:focus,dialog.panel input:focus,dialog.panel select:focus,.journal textarea:focus{outline:none;border-color:var(--brass)}
+.exc-form .row{grid-column:1 / -1;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.journal .row{display:flex;align-items:center;gap:10px;margin-top:8px;font-size:14px;color:var(--ink-2)}
+.journal .saved{color:var(--live);font-weight:600}
+
+/* Schiffsmarker */
+.ship-icon{display:grid;place-items:center;width:26px;height:26px}
+.ship-icon svg{width:26px;height:26px;overflow:visible;filter:drop-shadow(0 1px 3px rgba(20,35,58,.4))}
+.ship-icon polygon{fill:var(--live);stroke:var(--card);stroke-width:2}
+.ship-icon.est polygon{fill:var(--brass)}
+
+/* ---------- Dialoge ---------- */
+dialog.panel{border:1px solid var(--line);border-radius:12px;background:var(--paper);color:var(--ink);padding:0;max-width:560px;width:calc(100% - 32px);box-shadow:var(--shadow);font-size:16px}
+dialog.panel::backdrop{background:rgba(20,35,58,.55)}
+dialog.panel h2{margin:0;padding:16px 20px;border-bottom:1px solid var(--line);font-family:'Newsreader',Georgia,serif;font-size:26px;font-weight:700;background:var(--card);display:flex;align-items:center;justify-content:space-between;gap:12px}
+dialog.panel h2 button{width:40px;height:40px;border:1px solid var(--line);border-radius:6px;display:grid;place-items:center;color:var(--ink-2)}
+dialog.panel .inner{padding:16px 20px 20px;max-height:72dvh;overflow-y:auto}
+dialog.panel p{margin:0 0 12px;font-size:16px}
+dialog.panel label{display:block;font-size:13px;color:var(--ink-2);margin:12px 0 5px}
+dialog.panel .cols{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+dialog.panel .foot{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+dialog.panel .note{font-size:14px;color:var(--ink-2);margin-top:12px;line-height:1.45}
+dialog.panel .note code{font-size:14px}
+.statgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:14px}
+.statgrid div{background:var(--card);border:1px solid var(--line-soft);border-radius:10px;padding:12px 14px}
+.statgrid b{display:block;font-family:'Newsreader',Georgia,serif;font-size:30px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.statgrid span{display:block;font-size:14px;color:var(--ink-2);margin-top:5px;line-height:1.3}
+.rows{display:grid;gap:0}
+.rows div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;padding:10px 0;border-bottom:1px solid var(--line-soft);font-size:16px}
+.rows div b{font-weight:600;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
+.rows div span{color:var(--ink-2)}
+.tzlist{list-style:none;margin:0;padding:0}
+.tzlist li{display:grid;grid-template-columns:44px minmax(0,1fr);gap:4px 12px;padding:12px 0;border-bottom:1px solid var(--line-soft)}
+.tzlist li svg{color:var(--brass);width:28px;height:28px;grid-row:1 / span 2}
+.tzlist li b{font-size:17px;font-weight:600}
+.tzlist li span{font-size:15px;color:var(--ink-2);line-height:1.4}
+.tzlist li.past{opacity:.6}
+.tzlist li.next b{color:var(--live)}
 
 /* ---------- Mobil ---------- */
-@media (max-width:940px){
+@media (max-width:1180px){
+  :root{--ledger-w:440px}
+}
+@media (max-width:980px){
   body{overflow:auto}
-  .masthead{padding:12px 16px 10px;gap:16px}
-  .stats{gap:18px}
-  .stage{display:block;height:auto}
-  .chart{border-right:0;border-bottom:1px solid var(--rule)}
-  .chart-wrap{height:52dvh}
-  .ledger{min-height:60dvh}
-  .sheet{position:fixed;inset:0;transform:translateY(100%)}
+  .masthead{padding:14px 18px 12px;gap:14px}
+  .stats{gap:16px 20px}
+  .stat b{font-size:26px}
+  .stage{display:flex;flex-direction:column;height:auto}
+  .side{display:contents}
+  .now{order:1}
+  .ledger-head{position:static}
+  .chart{order:2;border-right:0;border-bottom:1px solid var(--line)}
+  .chart-wrap{height:56dvh}
+  .ledger{order:3;min-height:60dvh}
+  .sheet{position:fixed;inset:0;z-index:40;transform:translateY(100%)}
   .sheet.is-open{transform:translateY(0)}
   .stops{overflow:visible}
+  .now-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .stop{grid-template-columns:64px minmax(0,1fr) auto;padding:13px 18px}
+  .sea,.clockrow{padding-left:96px}
 }
-@media (prefers-reduced-motion:reduce){
-  *{transition-duration:.01ms!important;animation-duration:.01ms!important}
+@media (max-width:560px){
+  .masthead{padding:12px 16px 10px;gap:8px 14px}
+  .mark{flex:1 1 100%}
+  .mark .ship{display:none}
+  .mark h1{font-size:25px}
+  .eyebrow{font-size:12px;letter-spacing:.08em}
+  .stats{flex:1 1 auto}
+  .stat b{font-size:24px}
+  .head-tools{flex:1 1 100%;gap:6px}
+  .head-tools .btn{padding:7px 10px;font-size:13.5px;min-height:38px;flex:1 1 auto;justify-content:center}
+  .now-eyebrow{font-size:12px;letter-spacing:.06em}
+  .eta-rows{grid-template-columns:86px minmax(0,1fr) auto;font-size:15px}
+  .now{padding:14px 16px}
+  .now-status{font-size:26px}
+  .now-clock b{font-size:38px}
+  .now-extra{grid-template-columns:1fr}
+  .statgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .exc-form{grid-template-columns:1fr}
+  .facts{grid-template-columns:1fr}
+  .fact{border-right:0}
+  .head-tools .btn{padding:9px 12px;font-size:14px}
 }
+@media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important}}
 </style>
 </head>
 <body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-partly" viewBox="0 0 24 24"><path d="M8 5a3 3 0 0 1 5.6-1.5M4 8.5A3 3 0 0 1 6 5M12 3V2M18 7.5l.7-.7"/><path d="M7 19a4 4 0 1 1 .5-7.97A5.5 5.5 0 0 1 18 12a3.5 3.5 0 0 1-.5 7z"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18a4 4 0 1 1 .5-7.97A5.5 5.5 0 0 1 18 11a3.5 3.5 0 0 1-.5 7z"/></symbol>
+    <symbol id="i-fog" viewBox="0 0 24 24"><path d="M7 14a4 4 0 1 1 .5-7.97A5.5 5.5 0 0 1 18 7a3.5 3.5 0 0 1-.5 7z"/><path d="M5 18h14M7 21h10"/></symbol>
+    <symbol id="i-rain" viewBox="0 0 24 24"><path d="M7 15a4 4 0 1 1 .5-7.97A5.5 5.5 0 0 1 18 8a3.5 3.5 0 0 1-.5 7z"/><path d="M8 18l-1 3M12 18l-1 3M16 18l-1 3"/></symbol>
+    <symbol id="i-snow" viewBox="0 0 24 24"><path d="M7 15a4 4 0 1 1 .5-7.97A5.5 5.5 0 0 1 18 8a3.5 3.5 0 0 1-.5 7z"/><path d="M8 19v.01M12 21v.01M16 19v.01M10 22v.01M14 18v.01"/></symbol>
+    <symbol id="i-storm" viewBox="0 0 24 24"><path d="M7 15a4 4 0 1 1 .5-7.97A5.5 5.5 0 0 1 18 8a3.5 3.5 0 0 1-.5 7z"/><path d="M13 14l-2 4h3l-2 4"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18.5v.5"/></symbol>
+    <symbol id="i-ok" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12l3 3 5-6"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+    <symbol id="i-up" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
+  </defs>
+</svg>
 
 <header class="masthead" id="masthead">
   <div class="mark">
     <div class="eyebrow">Costa Weltreise · 24. Nov 2026 – 13. Apr 2027</div>
     <h1>Einmal um die Welt <em>in 141 Tagen</em></h1>
+    <div class="ship" id="shipLine">Costa Deliziosa</div>
   </div>
   <div class="stats" id="stats"></div>
+  <div class="head-tools">
+    <button class="btn" id="icsBtn" title="Alle Häfen als Kalenderdatei herunterladen">Kalender</button>
+    <button class="btn" id="statsBtn">Reise in Zahlen</button>
+    <button class="btn" id="tzBtn">Zeitumstellungen</button>
+    <button class="btn" id="themeBtn" aria-pressed="false">Nachtmodus</button>
+  </div>
 </header>
 
 <main class="stage" id="stage">
@@ -275,6 +442,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <div id="map"></div>
       <div class="chart-tools">
         <button class="tool" id="fitBtn">Gesamte Route</button>
+        <button class="tool" id="shipBtn">Schiff zeigen</button>
         <button class="tool" id="nextBtn">Nächster Hafen</button>
       </div>
     </div>
@@ -284,10 +452,42 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
         <div class="log-days" id="logDays"></div>
         <div class="log-legend">
           <span><i style="background:var(--brass)"></i>Hafentag</span>
-          <span><i style="background:#1c3a55"></i>Seetag</span>
+          <span><i style="background:var(--sea)"></i>Seetag</span>
+          <span><i style="background:var(--live)"></i>Heute</span>
           <span id="logHint">Tag anklicken, um zum Hafen zu springen</span>
         </div>
       </div>
+    </div>
+  </section>
+
+  <div class="side">
+  <section class="now" id="now" aria-live="polite">
+    <div class="now-head">
+      <div style="min-width:0;flex:1 1 auto">
+        <div class="now-eyebrow est" id="srcLine"><i class="dot est" id="srcDot"></i><span id="srcLabel">Position wird ermittelt</span></div>
+        <div class="now-status" id="nowStatus">Costa Deliziosa<small>Status wird geladen …</small></div>
+      </div>
+      <div class="now-clock">
+        <b id="nowClock">--:--</b>
+        <span>Bordzeit · <em id="nowTz" style="font-style:normal"></em></span>
+      </div>
+      <button class="fold" id="foldBtn" aria-expanded="true" aria-controls="now" title="Bordkarte ein- oder ausklappen"><svg class="ic" style="width:20px;height:20px"><use href="#i-up"/></svg></button>
+    </div>
+    <div class="now-grid" id="nowGrid"></div>
+    <div class="now-next" id="nowNext"></div>
+    <div class="now-extra" id="nowExtra"></div>
+    <div class="warnbox ok" id="warnBox"><svg class="ic"><use href="#i-ok"/></svg><div>Wetterwarnungen werden geprüft …</div></div>
+    <div class="now-bar">
+      <div class="track"><i id="progBar" style="width:0"></i></div>
+      <small><span id="progLeft">Tag 0 von 141</span><span id="progRight"></span></small>
+    </div>
+    <div class="now-foot" id="nowFoot"></div>
+    <div class="call-hint" id="callHint" hidden></div>
+    <div class="now-actions">
+      <a class="chip" id="vfLink" href="https://www.vesselfinder.com/vessels/details/9398917" target="_blank" rel="noopener">VesselFinder</a>
+      <a class="chip" id="mtLink" href="https://www.marinetraffic.com/en/ais/details/ships/imo:9398917" target="_blank" rel="noopener">MarineTraffic</a>
+      <button class="chip" id="cfgBtn">Positionsquelle</button>
+      <button class="chip" id="refreshBtn">Aktualisieren</button>
     </div>
   </section>
 
@@ -295,191 +495,257 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
     <div class="ledger-head">
       <input class="search" id="search" type="search" placeholder="Hafen oder Land suchen" aria-label="Hafen oder Land suchen">
       <button class="switch" id="seaToggle" aria-pressed="true">Seetage</button>
+      <button class="switch" id="aheadToggle" aria-pressed="false" title="Nur die noch bevorstehenden Häfen zeigen">Ab heute</button>
     </div>
     <ol class="stops" id="stops"></ol>
-
-    <div class="sheet" id="sheet" aria-live="polite">
-      <button class="back" id="backBtn">← Zurück zur Route</button>
-      <div class="sheet-scroll" id="sheetBody"></div>
-    </div>
   </aside>
+  </div>
+
+  <div class="sheet" id="sheet" aria-live="polite">
+    <button class="back" id="backBtn">← Zurück zur Route</button>
+    <div class="sheet-scroll" id="sheetBody"></div>
+  </div>
 </main>
+
+<dialog class="panel" id="cfgDlg">
+  <h2>Woher kommt die Schiffsposition? <button data-close aria-label="Schließen"><svg class="ic" style="width:20px;height:20px"><use href="#i-close"/></svg></button></h2>
+  <div class="inner">
+    <p>Ohne Live-Quelle rechnet die Seite die Position aus dem Fahrplan (Großkreis zwischen den Häfen). Das reicht für den Überblick, ist aber keine echte AIS-Meldung.</p>
+    <label for="cfgMode">Quelle</label>
+    <select id="cfgMode">
+      <option value="auto">Automatisch (Datei → AIS → Fahrplan)</option>
+      <option value="manual">Manuell eingetragene Position</option>
+      <option value="ais">AIS live über aisstream.io</option>
+      <option value="schedule">Nur Fahrplan-Schätzung</option>
+    </select>
+    <div id="cfgManual">
+      <div class="cols">
+        <div><label for="cfgLat">Breite (Lat)</label><input id="cfgLat" inputmode="decimal" placeholder="-17.535"></div>
+        <div><label for="cfgLon">Länge (Lon)</label><input id="cfgLon" inputmode="decimal" placeholder="-149.569"></div>
+      </div>
+      <div class="cols">
+        <div><label for="cfgSog">Fahrt (Knoten)</label><input id="cfgSog" inputmode="decimal" placeholder="16.4"></div>
+        <div><label for="cfgCog">Kurs (Grad)</label><input id="cfgCog" inputmode="decimal" placeholder="248"></div>
+      </div>
+      <p class="note">Position bei <a href="https://www.vesselfinder.com/vessels/details/9398917" target="_blank" rel="noopener">VesselFinder</a> ablesen und hier eintragen. Der Zeitstempel wird automatisch gesetzt.</p>
+    </div>
+    <div id="cfgAis">
+      <label for="cfgKey">API-Key von aisstream.io</label>
+      <input id="cfgKey" placeholder="kostenloser Key, bleibt nur in diesem Browser">
+      <p class="note">Der Key wird nur lokal gespeichert und direkt an aisstream.io geschickt. AIS über Landstationen erreicht das Schiff nur in Küstennähe.</p>
+    </div>
+    <div class="foot">
+      <button class="btn primary" id="cfgSave">Speichern</button>
+      <button class="btn" id="cfgCopy">Position als JSON kopieren</button>
+    </div>
+    <p class="note" id="cfgStatus"></p>
+    <p class="note">Für alle gemeinsam: die kopierte JSON als <code>data/position.json</code> ins Repository legen – dann sehen alle dieselbe Position.</p>
+  </div>
+</dialog>
+
+<dialog class="panel" id="statsDlg">
+  <h2>Die Reise in Zahlen <button data-close aria-label="Schließen"><svg class="ic" style="width:20px;height:20px"><use href="#i-close"/></svg></button></h2>
+  <div class="inner" id="statsBody"></div>
+</dialog>
+
+<dialog class="panel" id="tzDlg">
+  <h2>Zeitumstellungen an Bord <button data-close aria-label="Schließen"><svg class="ic" style="width:20px;height:20px"><use href="#i-close"/></svg></button></h2>
+  <div class="inner" id="tzBody"></div>
+</dialog>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 /* =======================================================================
-   1 · Reisedaten
+   1 · Konfiguration und Reisedaten
    ===================================================================== */
-const START = Date.UTC(2026, 10, 24);          // Tag 1 = 24. Nov 2026
+const SHIP = {
+  name:"Costa Deliziosa", line:"Costa Crociere",
+  imo:"9398917", mmsi:"247282900", callsign:"IBJD",
+  vf:"https://www.vesselfinder.com/vessels/details/9398917",
+  mt:"https://www.marinetraffic.com/en/ais/details/ships/imo:9398917"
+};
+const HOME = {label:"Wien", tz:"Europe/Vienna"};      /* Bezugszeitzone der Familie */
+const START = Date.UTC(2026, 10, 24);                 /* Tag 1 = 24. Nov 2026 */
 const TOTAL_DAYS = 141;
 
+const POS_FILE = "data/position.json";                /* optionale, gemeinsam genutzte Position */
+const EXC_FILE = "data/ausfluege.json";               /* optionale, gemeinsam genutzte Landausflüge */
+const POS_MAX_AGE_H = 18;                             /* danach gilt eine Meldung als veraltet */
+const WX_TTL_MS = 20 * 60 * 1000;                     /* Wetter-Cache */
+const LS = "weltreise.";
+
 const CALLS = [
- {n:"Civitavecchia | Rom",c:"Italien",r:"Mittelmeer",lat:42.094,lon:11.796,d1:1,d2:1,dep:"19:00",type:"start",
+ {n:"Civitavecchia | Rom",tz:"Europe/Rome",c:"Italien",r:"Mittelmeer",lat:42.094,lon:11.796,d1:1,d2:1,dep:"19:00",type:"start",
   w:"Civitavecchia",t:"Einschiffungstag. Roms Hafen am Tyrrhenischen Meer – die Innenstadt liegt rund 80 km entfernt.",
   h:["Forte Michelangelo","Altstadt und Promenade","Rom: Kolosseum, Trevi-Brunnen"]},
- {n:"Savona",c:"Italien",r:"Mittelmeer",lat:44.308,lon:8.478,d1:2,d2:2,arr:"09:00",dep:"18:00",
+ {n:"Savona",tz:"Europe/Rome",c:"Italien",r:"Mittelmeer",lat:44.308,lon:8.478,d1:2,d2:2,arr:"09:00",dep:"18:00",
   w:"Savona",t:"Ligurischer Hafen mit dem Turm des Magellan-Begleiters Leon Pancaldo und der Festung Priamar.",
   h:["Festung Priamar","Turm Leon Pancaldo","Pass Colle di Cadibona"]},
- {n:"Marseille",c:"Frankreich",r:"Mittelmeer",lat:43.296,lon:5.370,d1:3,d2:3,arr:"09:00",dep:"18:00",
+ {n:"Marseille",tz:"Europe/Paris",c:"Frankreich",r:"Mittelmeer",lat:43.296,lon:5.370,d1:3,d2:3,arr:"09:00",dep:"18:00",
   w:"Marseille",t:"Älteste Stadt Frankreichs, geprägt von Notre-Dame de la Garde und den Calanques.",
   h:["Notre-Dame de la Garde","Palais Longchamp","Nationalpark Calanques"]},
- {n:"Barcelona",c:"Spanien",r:"Mittelmeer",lat:41.385,lon:2.173,d1:4,d2:4,arr:"07:00",dep:"13:00",
+ {n:"Barcelona",tz:"Europe/Madrid",c:"Spanien",r:"Mittelmeer",lat:41.385,lon:2.173,d1:4,d2:4,arr:"07:00",dep:"13:00",
   w:"Barcelona",t:"Gaudí, Gotisches Viertel und La Rambla – kurzer Vormittag vor der Atlantikpassage.",
   h:["Sagrada Família","La Rambla und Boqueria","Fundació Joan Miró"]},
- {n:"Lissabon",c:"Portugal",r:"Atlantik",lat:38.722,lon:-9.139,d1:6,d2:6,arr:"14:00",dep:"21:00",
+ {n:"Lissabon",tz:"Europe/Lisbon",c:"Portugal",r:"Atlantik",lat:38.722,lon:-9.139,d1:6,d2:6,arr:"14:00",dep:"21:00",
   w:"Lissabon",t:"Nachmittag und Abend am Tejo – von der Alfama bis nach Belém.",
   h:["Eléctrico 28","Ponte 25 de Abril","Cristo Rei"]},
- {n:"Ponta Delgada | Azoren",c:"Portugal",r:"Atlantik",lat:37.741,lon:-25.669,d1:9,d2:9,arr:"09:00",dep:"19:00",
+ {n:"Ponta Delgada | Azoren",tz:"Atlantic/Azores",c:"Portugal",r:"Atlantik",lat:37.741,lon:-25.669,d1:9,d2:9,arr:"09:00",dep:"19:00",
   w:"Ponta Delgada",t:"Hauptstadt von São Miguel: Schwefelquellen, Kraterseen und Ananasplantagen.",
   h:["Portas da Cidade","Kirche São Pedro","Caldeiras und Kraterseen"]},
- {n:"Praia da Vitória | Azoren",c:"Portugal",r:"Atlantik",lat:38.733,lon:-27.067,d1:10,d2:10,arr:"08:00",dep:"18:00",
+ {n:"Praia da Vitória | Azoren",tz:"Atlantic/Azores",c:"Portugal",r:"Atlantik",lat:38.733,lon:-27.067,d1:10,d2:10,arr:"08:00",dep:"18:00",
   w:"Praia da Vitória",t:"Terceiras Handelshafen mit langem weißem Strand und historischem Zentrum.",
   h:["Igreja Matriz de Santa Cruz","Paços do Concelho","Tourada à corda"]},
- {n:"New York",c:"USA",r:"Nordamerika",lat:40.706,lon:-74.010,d1:16,d2:17,arr:"08:00",dep:"18:00",
+ {n:"New York",tz:"America/New_York",c:"USA",r:"Nordamerika",lat:40.706,lon:-74.010,d1:16,d2:17,arr:"08:00",dep:"18:00",
   w:"New York City",t:"Zwei Tage mit Übernachtung im Hafen – Manhattan von Liberty Island bis zur Brooklyn Bridge.",
   h:["Freiheitsstatue","Brooklyn Bridge","Empire State Building"]},
- {n:"Fort Lauderdale",c:"USA",r:"Nordamerika",lat:26.122,lon:-80.143,d1:20,d2:21,arr:"08:00",dep:"16:00",
+ {n:"Fort Lauderdale",tz:"America/New_York",c:"USA",r:"Nordamerika",lat:26.122,lon:-80.143,d1:20,d2:21,arr:"08:00",dep:"16:00",
   w:"Fort Lauderdale",t:"Übernachtung in Floridas Kanalstadt, der Riverwalk beginnt direkt am Hafen.",
   h:["Riverwalk","Broward Center","Swimming Hall of Fame"]},
- {n:"Half Moon Cay",c:"Bahamas",r:"Karibik",lat:24.577,lon:-75.940,d1:22,d2:22,arr:"09:00",dep:"17:00",
+ {n:"Half Moon Cay",tz:"America/Nassau",c:"Bahamas",r:"Karibik",lat:24.577,lon:-75.940,d1:22,d2:22,arr:"09:00",dep:"17:00",
   w:"Half Moon Cay",t:"Privatinsel der Bahamas: Korallenriff, Puderzuckerstrand, reiner Badetag.",
   h:["Schnorcheln am Riff","Reitausflug am Strand","Exotische Früchte"]},
- {n:"Cristobal | Colón",c:"Panama",r:"Mittelamerika",lat:9.360,lon:-79.900,d1:26,d2:26,arr:"08:00",dep:"20:00",
-  w:"Colón (Panama)",t:"Karibisches Tor zum Panamakanal an der Atlantikseite der Landenge.",
-  h:["Agua-Clara-Schleusen","Historisches Colón","Regenwald am Chagres"]},
- {n:"Puntarenas",c:"Costa Rica",r:"Mittelamerika",lat:9.977,lon:-84.838,d1:29,d2:29,arr:"08:00",dep:"20:00",
+ {n:"Panamakanal | Durchfahrt",tz:"America/Panama",c:"Panama",r:"Mittelamerika",lat:9.150,lon:-79.760,d1:26,d2:26,arr:"08:00",dep:"19:00",transit:true,
+  w:"Panamakanal",t:"Ganztägige Passage vom Atlantik zum Pazifik: Gatún-Schleusen, Gatún-See, Culebra Cut, Pedro-Miguel- und Miraflores-Schleusen. Kein Landgang – der Tag gehört dem Deck.",
+  h:["Gatún-Schleusen am Vormittag","Gatún-See und Culebra Cut","Miraflores-Schleusen am Nachmittag"],
+  note:"Geändert laut Costa (Mitteilung vom 24. Aug. 2026): Die Durchfahrt ersetzt den Anlauf Cristóbal/Colón am 19.12."},
+ {n:"Panama-Stadt",tz:"America/Panama",c:"Panama",r:"Mittelamerika",lat:8.918,lon:-79.526,d1:26,d2:27,arr:"21:00",dep:"19:00",
+  w:"Panama-Stadt",t:"Hauptstadt am Pazifikausgang des Kanals mit Übernachtung im Hafen: Altstadt Casco Viejo, moderne Skyline und die Miraflores-Schleusen aus Landsicht.",
+  h:["Casco Viejo, die Altstadt","Miraflores-Schleusen mit Besucherzentrum","Amador Causeway und Biomuseo"],
+  note:"Neu laut Costa (Mitteilung vom 24. Aug. 2026): Ankunft 19.12. um 21:00 Uhr, Übernachtung, Abfahrt 20.12. um 19:00 Uhr. Am 21.12. Seetag, Puntarenas am 22.12. unverändert."},
+ {n:"Puntarenas",tz:"America/Costa_Rica",c:"Costa Rica",r:"Mittelamerika",lat:9.977,lon:-84.838,d1:29,d2:29,arr:"08:00",dep:"20:00",
   w:"Puntarenas",t:"Costa Ricas Pazifikhafen, Ausgangspunkt für Nebelwald und Nationalparks.",
   h:["Nationalpark Manuel Antonio","Nebelwald Monteverde","Hängebrücken-Touren"]},
- {n:"Puerto Quetzal",c:"Guatemala",r:"Mittelamerika",lat:13.925,lon:-90.786,d1:31,d2:31,arr:"08:00",dep:"20:00",
+ {n:"Puerto Quetzal",tz:"America/Guatemala",c:"Guatemala",r:"Mittelamerika",lat:13.925,lon:-90.786,d1:31,d2:31,arr:"08:00",dep:"20:00",
   w:"Puerto Quetzal",t:"Heiligabend in Guatemala – Antigua und Vulkanlandschaften liegen im Hinterland.",
   h:["Antigua Guatemala","Vulkan Pacaya","Kaffee-Fincas"]},
- {n:"Puerto Vallarta",c:"Mexiko",r:"Pazifikküste",lat:20.653,lon:-105.238,d1:34,d2:34,arr:"07:00",dep:"16:00",
+ {n:"Puerto Vallarta",tz:"America/Mexico_City",c:"Mexiko",r:"Pazifikküste",lat:20.653,lon:-105.238,d1:34,d2:34,arr:"07:00",dep:"16:00",
   w:"Puerto Vallarta",t:"Kolonialaltstadt und Malecón, seit den 1960er-Jahren Hollywood-Kulisse.",
   h:["Malecón","Villa Kimberley","Altstadt Zona Romántica"]},
- {n:"Cabo San Lucas",c:"Mexiko",r:"Pazifikküste",lat:22.891,lon:-109.912,d1:35,d2:35,arr:"09:00",dep:"16:00",
+ {n:"Cabo San Lucas",tz:"America/Mazatlan",c:"Mexiko",r:"Pazifikküste",lat:22.891,lon:-109.912,d1:35,d2:35,arr:"09:00",dep:"16:00",
   w:"Cabo San Lucas",t:"Wüste trifft Pazifik: das Felsentor El Arco und die Walsaison vor der Küste.",
   h:["Felsen El Arco","Whale Watching","Playa del Amor"]},
- {n:"San Diego",c:"USA",r:"Pazifikküste",lat:32.712,lon:-117.173,d1:37,d2:37,arr:"10:00",dep:"20:00",
+ {n:"San Diego",tz:"America/Los_Angeles",c:"USA",r:"Pazifikküste",lat:32.712,lon:-117.173,d1:37,d2:37,arr:"10:00",dep:"20:00",
   w:"San Diego",t:"Kalifornische Hafenstadt mit Balboa Park, Museen und der USS Midway am Kai.",
   h:["San Diego Zoo","USS Midway Museum","Old Globe im Balboa Park"]},
- {n:"Los Angeles",c:"USA",r:"Pazifikküste",lat:33.740,lon:-118.263,d1:38,d2:39,arr:"08:00",dep:"20:00",
+ {n:"Los Angeles",tz:"America/Los_Angeles",c:"USA",r:"Pazifikküste",lat:33.740,lon:-118.263,d1:38,d2:39,arr:"08:00",dep:"20:00",
   w:"Los Angeles",t:"Silvester und Neujahr mit Übernachtung im Hafen von Los Angeles.",
   h:["Hollywood Boulevard","Santa Monica Pier","Getty Center"]},
- {n:"San Francisco",c:"USA",r:"Pazifikküste",lat:37.808,lon:-122.416,d1:41,d2:42,arr:"06:00",dep:"18:00",
+ {n:"San Francisco",tz:"America/Los_Angeles",c:"USA",r:"Pazifikküste",lat:37.808,lon:-122.416,d1:41,d2:42,arr:"06:00",dep:"18:00",
   w:"San Francisco",t:"Zwei Tage mit Übernachtung: Einfahrt unter der Golden Gate Bridge, 42 Hügel, Silicon Valley im Süden.",
   h:["Golden Gate Bridge","Alcatraz","Fisherman's Wharf"]},
- {n:"Honolulu",c:"USA · Hawaii",r:"Südsee",lat:21.307,lon:-157.862,d1:48,d2:48,arr:"08:00",dep:"18:00",
+ {n:"Honolulu",tz:"Pacific/Honolulu",c:"USA · Hawaii",r:"Südsee",lat:21.307,lon:-157.862,d1:48,d2:48,arr:"08:00",dep:"18:00",
   w:"Honolulu",t:"Oahu: Waikiki Beach, Pearl Harbor und der Krater Diamond Head.",
   h:["Waikiki Beach","Pearl Harbor","Diamond Head"]},
- {n:"Hilo",c:"USA · Hawaii",r:"Südsee",lat:19.729,lon:-155.090,d1:49,d2:49,arr:"09:00",dep:"19:00",
+ {n:"Hilo",tz:"Pacific/Honolulu",c:"USA · Hawaii",r:"Südsee",lat:19.729,lon:-155.090,d1:49,d2:49,arr:"09:00",dep:"19:00",
   w:"Hilo (Hawaii)",t:"Die grüne Seite von Big Island: Regenwald, Wasserfälle und Vulkane über 4.000 Meter.",
   h:["Rainbow Falls","Akaka Falls","Lava Tree State Monument"]},
- {n:"Papeete | Tahiti",c:"Französisch-Polynesien",r:"Südsee",lat:-17.535,lon:-149.569,d1:55,d2:55,arr:"09:00",dep:"19:00",
+ {n:"Papeete | Tahiti",tz:"Pacific/Tahiti",c:"Französisch-Polynesien",r:"Südsee",lat:-17.535,lon:-149.569,d1:55,d2:55,arr:"09:00",dep:"19:00",
   w:"Papeete",t:"Tahiti: Lagunen, Vulkangipfel und Schnorchelreviere in Französisch-Polynesien.",
   h:["Marché de Papeete","Notre-Dame de Papeete","Lagunen und Riffe"]},
- {n:"Suva",c:"Fidschi",r:"Südsee",lat:-18.141,lon:178.442,d1:61,d2:61,arr:"08:00",dep:"18:00",
+ {n:"Suva",tz:"Pacific/Fiji",c:"Fidschi",r:"Südsee",lat:-18.141,lon:178.442,d1:61,d2:61,arr:"08:00",dep:"18:00",
   w:"Suva",t:"Hauptstadt der Fidschi-Inseln seit 1877, tropisch und kolonial geprägt.",
   h:["Fiji Museum","Thurston Garden","Albert Park"]},
- {n:"Lifou | Loyalitätsinseln",c:"Neukaledonien",r:"Südsee",lat:-20.917,lon:167.267,d1:63,d2:63,arr:"09:00",dep:"19:00",
+ {n:"Lifou | Loyalitätsinseln",tz:"Pacific/Noumea",c:"Neukaledonien",r:"Südsee",lat:-20.917,lon:167.267,d1:63,d2:63,arr:"09:00",dep:"19:00",
   w:"Lifou",t:"Weiße Sandstrände, Kalkklippen und Kanak-Kultur auf der größten Loyalitätsinsel.",
   h:["Jinek Bay","Korallengärten","Kanak-Tänze und Kunsthandwerk"]},
- {n:"Nouméa",c:"Neukaledonien",r:"Südsee",lat:-22.276,lon:166.458,d1:64,d2:64,arr:"07:00",dep:"16:00",
+ {n:"Nouméa",tz:"Pacific/Noumea",c:"Neukaledonien",r:"Südsee",lat:-22.276,lon:166.458,d1:64,d2:64,arr:"07:00",dep:"16:00",
   w:"Nouméa",t:"Rund um die Hauptinsel liegt das zweitgrößte Korallenriff der Welt, UNESCO-Weltnaturerbe.",
   h:["Aquarium des Lagons","Tjibaou-Kulturzentrum","Baie des Citrons"]},
- {n:"Sydney",c:"Australien",r:"Australien",lat:-33.858,lon:151.211,d1:67,d2:68,arr:"06:30",dep:"18:00",
+ {n:"Sydney",tz:"Australia/Sydney",c:"Australien",r:"Australien",lat:-33.858,lon:151.211,d1:67,d2:68,arr:"06:30",dep:"18:00",
   w:"Sydney",t:"Übernachtung im Hafen – Opera House und Harbour Bridge liegen direkt am Anleger.",
   h:["Opera House","Harbour Bridge","Bondi Beach"]},
- {n:"Newcastle | New South Wales",c:"Australien",r:"Australien",lat:-32.926,lon:151.780,d1:69,d2:69,arr:"08:00",dep:"18:00",
+ {n:"Newcastle | New South Wales",tz:"Australia/Sydney",c:"Australien",r:"Australien",lat:-32.926,lon:151.780,d1:69,d2:69,arr:"08:00",dep:"18:00",
   w:"Newcastle (New South Wales)",t:"Australischer Küstenlifestyle: Meeresschwimmbecken, Klippenweg, Altstadt am Wasser.",
   h:["Nobbys Beach","Memorial Walk","Foreshore-Promenade"]},
- {n:"Cairns",c:"Australien",r:"Australien",lat:-16.923,lon:145.778,d1:73,d2:73,arr:"07:00",dep:"18:00",
+ {n:"Cairns",tz:"Australia/Brisbane",c:"Australien",r:"Australien",lat:-16.923,lon:145.778,d1:73,d2:73,arr:"07:00",dep:"18:00",
   w:"Cairns",t:"Tor zum Great Barrier Reef – mit dem Schnellboot rund 1,5 Stunden bis zum Riff.",
   h:["Great Barrier Reef","Daintree-Nationalpark","Green Island"]},
- {n:"Rabaul",c:"Papua-Neuguinea",r:"Südsee",lat:-4.199,lon:152.163,d1:76,d2:76,arr:"08:00",dep:"16:00",
+ {n:"Rabaul",tz:"Pacific/Port_Moresby",c:"Papua-Neuguinea",r:"Südsee",lat:-4.199,lon:152.163,d1:76,d2:76,arr:"08:00",dep:"16:00",
   w:"Rabaul",t:"Vulkanlandschaft und Kriegsgeschichte an der Simpson-Bucht in Neubritannien.",
   h:["Vulkan Tavurvur","Heiße Quellen","Historische Tunnelanlagen"]},
- {n:"Tokio",c:"Japan",r:"Ostasien",lat:35.633,lon:139.792,d1:82,d2:83,arr:"13:30",dep:"20:30",
+ {n:"Tokio",tz:"Asia/Tokyo",c:"Japan",r:"Ostasien",lat:35.633,lon:139.792,d1:82,d2:83,arr:"13:30",dep:"20:30",
   w:"Tokio",t:"Zwei Tage mit Übernachtung: Kaiserpalast, Marunouchi, Ginza und Akihabara.",
   h:["Kaiserpalast Kōkyo","Akihabara","Tokyo Tower"],
   note:"Seit 1. Juli 2026 beträgt die internationale Touristenabgabe 3.000 JPY statt 1.000 JPY (rund 16,50 EUR)."},
- {n:"Kobe",c:"Japan",r:"Ostasien",lat:34.680,lon:135.190,d1:85,d2:85,arr:"08:00",dep:"18:00",
+ {n:"Kobe",tz:"Asia/Tokyo",c:"Japan",r:"Ostasien",lat:34.680,lon:135.190,d1:85,d2:85,arr:"08:00",dep:"18:00",
   w:"Kōbe",t:"Hafenstadt zwischen Rokkō-Gebirge und Bucht, bekannt für Sake, Chinatown und Kitano.",
   h:["Akashi-Kaikyō-Brücke","Rokkō-Gebirge","Nanking-Viertel"],
   note:"Seit 1. Juli 2026 beträgt die internationale Touristenabgabe 3.000 JPY statt 1.000 JPY (rund 16,50 EUR)."},
- {n:"Nagasaki",c:"Japan",r:"Ostasien",lat:32.744,lon:129.873,d1:87,d2:87,arr:"08:00",dep:"18:00",
+ {n:"Nagasaki",tz:"Asia/Tokyo",c:"Japan",r:"Ostasien",lat:32.744,lon:129.873,d1:87,d2:87,arr:"08:00",dep:"18:00",
   w:"Nagasaki",t:"Friedenspark und Atombombenmuseum prägen die wiederaufgebaute Hafenstadt.",
   h:["Friedenspark","Peace Memorial Statue","Atombombenmuseum"],
   note:"Seit 1. Juli 2026 beträgt die internationale Touristenabgabe 3.000 JPY statt 1.000 JPY (rund 16,50 EUR)."},
- {n:"Busan",c:"Südkorea",r:"Ostasien",lat:35.101,lon:129.040,d1:88,d2:88,arr:"07:00",dep:"16:00",
+ {n:"Busan",tz:"Asia/Seoul",c:"Südkorea",r:"Ostasien",lat:35.101,lon:129.040,d1:88,d2:88,arr:"07:00",dep:"16:00",
   w:"Busan",t:"Zweitgrößte Stadt Südkoreas mit Fischmarkt, Tempeln am Meer und riesigen Kaufhäusern.",
   h:["Jagalchi-Markt","Tempel Haedong Yonggungsa","Shinsegae Centum City"]},
- {n:"Keelung | Taipeh",c:"Taiwan",r:"Ostasien",lat:25.132,lon:121.741,d1:90,d2:90,arr:"10:00",dep:"20:00",
+ {n:"Keelung | Taipeh",tz:"Asia/Taipei",c:"Taiwan",r:"Ostasien",lat:25.132,lon:121.741,d1:90,d2:90,arr:"10:00",dep:"20:00",
   w:"Keelung",t:"Der Hafen reicht bis ins Stadtzentrum; nach Taipeh sind es rund 40 Minuten.",
   h:["Nachtmarkt Keelung","Fulong Beach","Sandsteinformationen Lungtung"]},
- {n:"Hongkong",c:"China",r:"Ostasien",lat:22.293,lon:114.170,d1:92,d2:93,arr:"07:00",dep:"17:00",
+ {n:"Hongkong",tz:"Asia/Hong_Kong",c:"China",r:"Ostasien",lat:22.293,lon:114.170,d1:92,d2:93,arr:"07:00",dep:"17:00",
   w:"Hongkong",t:"Übernachtung am Victoria Harbour: Skyline, Peak Tram und Star Ferry.",
   h:["Victoria Peak","Man Mo Tempel","Viertel Stanley"]},
- {n:"Nha Trang",c:"Vietnam",r:"Südostasien",lat:12.243,lon:109.196,d1:95,d2:95,arr:"10:00",dep:"20:00",
+ {n:"Nha Trang",tz:"Asia/Ho_Chi_Minh",c:"Vietnam",r:"Südostasien",lat:12.243,lon:109.196,d1:95,d2:95,arr:"10:00",dep:"20:00",
   w:"Nha Trang",t:"Vietnams Badezentrum mit Cham-Türmen und kilometerlanger Strandpromenade.",
   h:["Cham-Türme Thap Ba Ponagar","Tran Phu Boulevard","Ozeanographisches Museum"]},
- {n:"Phu My | Ho-Chi-Minh-Stadt",c:"Vietnam",r:"Südostasien",lat:10.578,lon:107.028,d1:97,d2:97,arr:"08:00",dep:"18:00",
+ {n:"Phu My | Ho-Chi-Minh-Stadt",tz:"Asia/Ho_Chi_Minh",c:"Vietnam",r:"Südostasien",lat:10.578,lon:107.028,d1:97,d2:97,arr:"08:00",dep:"18:00",
   w:"Ho-Chi-Minh-Stadt",t:"Zugang zu Ho-Chi-Minh-Stadt (rund zwei Stunden Fahrt) oder zum Badeort Vũng Tàu.",
   h:["Ho-Chi-Minh-Stadt","Vũng Tàu","Hafengebiet Phu My"]},
- {n:"Koh Samui",c:"Thailand",r:"Südostasien",lat:9.512,lon:100.061,d1:99,d2:99,arr:"08:00",dep:"17:00",
+ {n:"Koh Samui",tz:"Asia/Bangkok",c:"Thailand",r:"Südostasien",lat:9.512,lon:100.061,d1:99,d2:99,arr:"08:00",dep:"17:00",
   w:"Ko Samui",t:"Thailändische Insel mit Traumstränden und einer 50 km langen Panoramastraße.",
   h:["Hin Ta und Hin Yai","Na-Mueang-Wasserfall","Samui Butterfly Garden"]},
- {n:"Singapur",c:"Singapur",r:"Südostasien",lat:1.264,lon:103.822,d1:101,d2:101,arr:"08:00",dep:"17:00",
+ {n:"Singapur",tz:"Asia/Singapore",c:"Singapur",r:"Südostasien",lat:1.264,lon:103.822,d1:101,d2:101,arr:"08:00",dep:"17:00",
   w:"Singapur",t:"Wolkenkratzer, Gärten und historische Viertel auf engstem Raum.",
   h:["Gardens by the Bay","Insel Sentosa","Chinatown und Little India"]},
- {n:"Port Kelang (Kuala Lumpur)",c:"Malaysia",r:"Südostasien",lat:3.000,lon:101.392,d1:102,d2:102,arr:"07:00",dep:"17:00",
+ {n:"Port Kelang (Kuala Lumpur)",tz:"Asia/Kuala_Lumpur",c:"Malaysia",r:"Südostasien",lat:3.000,lon:101.392,d1:102,d2:102,arr:"07:00",dep:"17:00",
   w:"Port Klang",t:"Hafen von Kuala Lumpur – rund eine Stunde bis zu den Petronas Towers.",
   h:["Kuala Lumpur","Petronas Towers","Batu-Höhlen"]},
- {n:"Penang",c:"Malaysia",r:"Südostasien",lat:5.417,lon:100.343,d1:103,d2:103,arr:"07:00",dep:"13:00",
+ {n:"Penang",tz:"Asia/Kuala_Lumpur",c:"Malaysia",r:"Südostasien",lat:5.417,lon:100.343,d1:103,d2:103,arr:"07:00",dep:"13:00",
   w:"George Town (Penang)",t:"George Town mit Fort Cornwallis und Kek Lok Si, dem größten Tempel Südostasiens.",
   h:["Fort Cornwallis","Tempel Kuan Yin Teng","Tempel Kek Lok Si"]},
- {n:"Colombo",c:"Sri Lanka",r:"Indischer Ozean",lat:6.941,lon:79.845,d1:106,d2:106,arr:"10:00",dep:"19:00",
+ {n:"Colombo",tz:"Asia/Colombo",c:"Sri Lanka",r:"Indischer Ozean",lat:6.941,lon:79.845,d1:106,d2:106,arr:"10:00",dep:"19:00",
   w:"Colombo",t:"Buddhistische und hinduistische Tempel, dazu das Kolonialviertel Fort.",
   h:["Gangaramaya-Tempel","Kelaniya Raja Maha Vihara","Nationalmuseum"]},
- {n:"Malé",c:"Malediven",r:"Indischer Ozean",lat:4.175,lon:73.509,d1:108,d2:108,arr:"08:00",dep:"18:00",
+ {n:"Malé",tz:"Indian/Maldives",c:"Malediven",r:"Indischer Ozean",lat:4.175,lon:73.509,d1:108,d2:108,arr:"08:00",dep:"18:00",
   w:"Malé",t:"Dicht bebaute Hauptstadt des Inselstaates; kein Gebäude überragt die Freitagsmoschee.",
   h:["Freitagsmoschee","Fisch- und Gemüsemarkt","Nationalmuseum"]},
- {n:"Port Louis",c:"Mauritius",r:"Indischer Ozean",lat:-20.160,lon:57.500,d1:113,d2:113,arr:"08:00",dep:"17:00",
+ {n:"Port Louis",tz:"Indian/Mauritius",c:"Mauritius",r:"Indischer Ozean",lat:-20.160,lon:57.500,d1:113,d2:113,arr:"08:00",dep:"17:00",
   w:"Port Louis",t:"Mauritius: Blue Penny Museum, Dodo-Rekonstruktion und die Zitadelle über der Stadt.",
   h:["Blue Penny Museum","Natural History Museum","Fort Adelaide"]},
- {n:"Durban",c:"Südafrika",r:"Südliches Afrika",lat:-29.867,lon:31.030,d1:117,d2:117,arr:"08:00",dep:"20:00",
+ {n:"Durban",tz:"Africa/Johannesburg",c:"Südafrika",r:"Südliches Afrika",lat:-29.867,lon:31.030,d1:117,d2:117,arr:"08:00",dep:"20:00",
   w:"Durban",t:"Drittgrößte Stadt Südafrikas, Golden Mile am Indischen Ozean.",
   h:["Golden Mile","uShaka Marine World","Juma-Moschee"]},
- {n:"Port Elizabeth",c:"Südafrika",r:"Südliches Afrika",lat:-33.962,lon:25.630,d1:119,d2:119,arr:"06:00",dep:"18:30",
+ {n:"Port Elizabeth",tz:"Africa/Johannesburg",c:"Südafrika",r:"Südliches Afrika",lat:-33.962,lon:25.630,d1:119,d2:119,arr:"06:00",dep:"18:30",
   w:"Gqeberha",t:"Hafen an der Algoa Bay, Ausgangspunkt für Safaris im Addo-Elefantenpark.",
   h:["Addo-Elefantenpark","Donkin Reserve","Boardwalk"]},
- {n:"Cape Town",c:"Südafrika",r:"Südliches Afrika",lat:-33.906,lon:18.423,d1:121,d2:121,arr:"07:00",dep:"20:00",
+ {n:"Cape Town",tz:"Africa/Johannesburg",c:"Südafrika",r:"Südliches Afrika",lat:-33.906,lon:18.423,d1:121,d2:121,arr:"07:00",dep:"20:00",
   w:"Kapstadt",t:"Tafelberg, Waterfront und Kap der Guten Hoffnung – 13 Stunden Liegezeit.",
   h:["Tafelberg","V&A Waterfront","Kap der Guten Hoffnung"]},
- {n:"Walvis Bay",c:"Namibia",r:"Südliches Afrika",lat:-22.955,lon:14.505,d1:124,d2:124,arr:"07:00",dep:"18:00",
+ {n:"Walvis Bay",tz:"Africa/Windhoek",c:"Namibia",r:"Südliches Afrika",lat:-22.955,lon:14.505,d1:124,d2:124,arr:"07:00",dep:"18:00",
   w:"Walvis Bay",t:"Lagune mit Flamingos und Pelikanen, dahinter die Dünen von Swakopmund.",
   h:["Naturlagune","Bootstour zu Delfinen und Robben","Dünenfahrt Swakopmund"]},
- {n:"Mindelo | São Vicente",c:"Kap Verde",r:"Atlantik",lat:16.886,lon:-24.988,d1:132,d2:132,arr:"09:00",dep:"19:00",
+ {n:"Mindelo | São Vicente",tz:"Atlantic/Cape_Verde",c:"Kap Verde",r:"Atlantik",lat:16.886,lon:-24.988,d1:132,d2:132,arr:"09:00",dep:"19:00",
   w:"Mindelo",t:"Kulturhauptstadt der Kapverden, überragt vom 750 Meter hohen Monte Verde.",
   h:["Fliegermonument","Kulturzentrum im Alten Zollhaus","Amilcar-Cabral-Platz"]},
- {n:"Las Palmas | Gran Canaria",c:"Spanien",r:"Atlantik",lat:28.140,lon:-15.428,d1:135,d2:135,arr:"07:00",dep:"15:00",
+ {n:"Las Palmas | Gran Canaria",tz:"Atlantic/Canary",c:"Spanien",r:"Atlantik",lat:28.140,lon:-15.428,d1:135,d2:135,arr:"07:00",dep:"15:00",
   w:"Las Palmas de Gran Canaria",t:"Altstadt Vegueta, Bergland um den Pico de las Nieves und die Strandpromenade Las Canteras.",
   h:["Viertel Vegueta","Jardín Canario","Caldera de Bandama"]},
- {n:"Barcelona",c:"Spanien",r:"Mittelmeer",lat:41.385,lon:2.173,d1:138,d2:138,arr:"14:00",dep:"20:00",
+ {n:"Barcelona",tz:"Europe/Madrid",c:"Spanien",r:"Mittelmeer",lat:41.385,lon:2.173,d1:138,d2:138,arr:"14:00",dep:"20:00",
   w:"Barcelona",t:"Zurück im Mittelmeer: Nachmittag und Abend in Barcelona.",
   h:["Sagrada Família","Barceloneta","Gran Teatre del Liceu"]},
- {n:"Marseille",c:"Frankreich",r:"Mittelmeer",lat:43.296,lon:5.370,d1:139,d2:139,arr:"09:00",dep:"18:00",
+ {n:"Marseille",tz:"Europe/Paris",c:"Frankreich",r:"Mittelmeer",lat:43.296,lon:5.370,d1:139,d2:139,arr:"09:00",dep:"18:00",
   w:"Marseille",t:"Zweiter Halt in Marseille, diesmal mit vollem Tag an Land.",
   h:["Notre-Dame de la Garde","Vieux-Port","Nationalpark Calanques"]},
- {n:"Savona",c:"Italien",r:"Mittelmeer",lat:44.308,lon:8.478,d1:140,d2:140,arr:"08:00",dep:"17:00",
+ {n:"Savona",tz:"Europe/Rome",c:"Italien",r:"Mittelmeer",lat:44.308,lon:8.478,d1:140,d2:140,arr:"08:00",dep:"17:00",
   w:"Savona",t:"Letzter Hafen vor der Rückkehr: Ligurien mit Festung Priamar und Badeorten ringsum.",
   h:["Festung Priamar","Turm Leon Pancaldo","Badeorte Alassio und Varazze"]},
- {n:"Civitavecchia | Rom",c:"Italien",r:"Mittelmeer",lat:42.094,lon:11.796,d1:141,d2:141,arr:"09:00",type:"end",
+ {n:"Civitavecchia | Rom",tz:"Europe/Rome",c:"Italien",r:"Mittelmeer",lat:42.094,lon:11.796,d1:141,d2:141,arr:"09:00",type:"end",
   w:"Civitavecchia",t:"Ausschiffungstag um 09:00 Uhr – nach 141 Tagen zurück am Ausgangspunkt.",
   h:["Forte Michelangelo","Rom: Kaiserforen und Spanische Treppe","Rückreise"]}
 ];
 
 /* =======================================================================
-   2 · Datums- und Formathelfer
+   2 · Datum, Zeitzonen, Formate
    ===================================================================== */
 const WD = ["So","Mo","Di","Mi","Do","Fr","Sa"];
 const MO = ["Jan","Feb","Mär","Apr","Mai","Jun","Jul","Aug","Sep","Okt","Nov","Dez"];
@@ -489,298 +755,1386 @@ const dateOf = d => new Date(START + (d - 1) * 86400000);
 const fmtShort = d => { const x = dateOf(d); return `${x.getUTCDate()}. ${MO[x.getUTCMonth()]}`; };
 const fmtFull  = d => { const x = dateOf(d); return `${WD[x.getUTCDay()]}, ${x.getUTCDate()}. ${MO[x.getUTCMonth()]} ${x.getUTCFullYear()}`; };
 const toMin = t => t ? (+t.slice(0,2)) * 60 + (+t.slice(3)) : null;
+const pad = n => String(n).padStart(2, "0");
 
-function hours(call){
+/* Verschiebung einer IANA-Zone zu einem Zeitpunkt, in Minuten */
+const _tzCache = new Map();
+function tzOffsetMin(utcMs, tz){
+  const key = tz + "|" + Math.floor(utcMs / 3600000);
+  if(_tzCache.has(key)) return _tzCache.get(key);
+  let off = 0;
+  try{
+    const parts = {};
+    new Intl.DateTimeFormat("en-US", {
+      timeZone:tz, hour12:false, year:"numeric", month:"2-digit", day:"2-digit",
+      hour:"2-digit", minute:"2-digit", second:"2-digit"
+    }).formatToParts(new Date(utcMs)).forEach(p => parts[p.type] = p.value);
+    const asUtc = Date.UTC(+parts.year, +parts.month - 1, +parts.day,
+      parts.hour === "24" ? 0 : +parts.hour, +parts.minute, +parts.second);
+    off = Math.round((asUtc - utcMs) / 60000);
+  }catch(e){ off = 0; }
+  _tzCache.set(key, off);
+  return off;
+}
+
+/* Eine „Zone“ ist entweder ein IANA-Name oder eine feste Verschiebung in Minuten */
+const offsetOf = (ms, zone) => typeof zone === "string" ? tzOffsetMin(ms, zone) : (zone || 0);
+
+/* Ortszeit „14:20“ */
+function clockIn(ms, zone){
+  const d = new Date(ms + offsetOf(ms, zone) * 60000);
+  return `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())}`;
+}
+function hourIn(ms, zone){
+  return new Date(ms + offsetOf(ms, zone) * 60000).getUTCHours();
+}
+/* Ortsdatum „Do, 3. Dez“ */
+function dateIn(ms, zone){
+  const d = new Date(ms + offsetOf(ms, zone) * 60000);
+  return `${WD[d.getUTCDay()]}, ${d.getUTCDate()}. ${MO[d.getUTCMonth()]}`;
+}
+const stampIn = (ms, zone) => `${dateIn(ms, zone)}, ${clockIn(ms, zone)}`;
+function zoneTag(ms, zone){
+  const m = offsetOf(ms, zone);
+  const s = m < 0 ? "−" : "+", a = Math.abs(m);
+  return `UTC${s}${a % 60 ? `${Math.floor(a/60)}:${pad(a%60)}` : Math.floor(a/60)}`;
+}
+/* Zeitunterschied Hafen ↔ Wien, aus Sicht der Familie */
+function vsHome(ms, zone){
+  const diff = (offsetOf(ms, zone) - offsetOf(ms, HOME.tz)) / 60;
+  if(Math.abs(diff) < 0.01) return `gleiche Zeit wie ${HOME.label}`;
+  const v = Number.isInteger(diff) ? Math.abs(diff) : Math.abs(diff).toFixed(1).replace(".", ",");
+  return `${v} Std. ${diff > 0 ? "vor" : "hinter"} ${HOME.label}`;
+}
+
+/* Ortszeit „19:00“ am Tag d in Zone tz als UTC-Zeitpunkt */
+function zonedToUtc(day, hhmm, tz){
+  if(!hhmm) return null;
+  const x = dateOf(day);
+  const y = x.getUTCFullYear(), mo = x.getUTCMonth(), dd = x.getUTCDate();
+  const hh = +hhmm.slice(0, 2), mi = +hhmm.slice(3);
+  const naive = Date.UTC(y, mo, dd, hh, mi);
+  let ms = naive - tzOffsetMin(naive, tz) * 60000;
+  ms = naive - tzOffsetMin(ms, tz) * 60000;      /* zweiter Durchlauf: Zeitumstellung */
+  return ms;
+}
+
+function hoursInPort(call){
   if(!call.arr || !call.dep) return null;
   return ((call.d2 - call.d1) * 1440 + toMin(call.dep) - toMin(call.arr)) / 60;
 }
 function fmtDur(h){
-  if(h === null) return "—";
+  if(h === null || h === undefined || !isFinite(h)) return "—";
+  if(h < 1) return `${Math.max(1, Math.round(h * 60))} Min.`;
   if(h < 24) return `${Math.round(h)} Std.`;
   const d = Math.floor(h / 24), rest = Math.round(h - d * 24);
   return rest ? `${d} Tg. ${rest} Std.` : `${d} Tage`;
 }
+/* Countdown „3 Tg. 4 Std.“ / „18 Min.“ */
+function fmtCountdown(ms){
+  if(ms <= 0) return "jetzt";
+  const min = Math.round(ms / 60000);
+  if(min < 60) return `${min} Min.`;
+  const h = Math.floor(min / 60), m = min % 60;
+  if(h < 24) return m ? `${h} Std. ${m} Min.` : `${h} Std.`;
+  const d = Math.floor(h / 24), rh = h % 24;
+  return rh ? `${d} Tg. ${rh} Std.` : `${d} Tage`;
+}
+const num = (v, dec = 1) => v === null || v === undefined || !isFinite(v)
+  ? "—" : v.toFixed(dec).replace(".", ",");
 
 /* =======================================================================
-   3 · Kennzahlen
+   3 · Großkreis-Geometrie
+   ===================================================================== */
+const R_NM = 3440.065;
+const rad = x => x * Math.PI / 180, deg = x => x * 180 / Math.PI;
+
+function distNm(aLat, aLon, bLat, bLon){
+  const dLat = rad(bLat - aLat), dLon = rad(bLon - aLon);
+  const s = Math.sin(dLat / 2) ** 2 +
+            Math.cos(rad(aLat)) * Math.cos(rad(bLat)) * Math.sin(dLon / 2) ** 2;
+  return 2 * R_NM * Math.asin(Math.min(1, Math.sqrt(s)));
+}
+function bearingDeg(aLat, aLon, bLat, bLon){
+  const φ1 = rad(aLat), φ2 = rad(bLat), Δλ = rad(bLon - aLon);
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+  return (deg(Math.atan2(y, x)) + 360) % 360;
+}
+/* Punkt auf dem Großkreis, f = 0 … 1 */
+function gcPoint(aLat, aLon, bLat, bLon, f){
+  const φ1 = rad(aLat), λ1 = rad(aLon), φ2 = rad(bLat), λ2 = rad(bLon);
+  const d = distNm(aLat, aLon, bLat, bLon) / R_NM;
+  if(d < 1e-9) return [aLat, aLon];
+  const A = Math.sin((1 - f) * d) / Math.sin(d), B = Math.sin(f * d) / Math.sin(d);
+  const x = A * Math.cos(φ1) * Math.cos(λ1) + B * Math.cos(φ2) * Math.cos(λ2);
+  const y = A * Math.cos(φ1) * Math.sin(λ1) + B * Math.cos(φ2) * Math.sin(λ2);
+  const z = A * Math.sin(φ1) + B * Math.sin(φ2);
+  return [deg(Math.atan2(z, Math.hypot(x, y))), deg(Math.atan2(y, x))];
+}
+const COMPASS = ["N","NNO","NO","ONO","O","OSO","SO","SSO","S","SSW","SW","WSW","W","WNW","NW","NNW"];
+const compass = d => COMPASS[Math.round(((d % 360) + 360) % 360 / 22.5) % 16];
+const fmtLat = (v, d = 3) => `${Math.abs(v).toFixed(d)}° ${v < 0 ? "S" : "N"}`;
+const fmtLon = (v, d = 3) => `${Math.abs(v).toFixed(d)}° ${v < 0 ? "W" : "O"}`;
+
+/* =======================================================================
+   4 · Fahrplan in absoluter Zeit
+   ===================================================================== */
+CALLS.forEach(c => {
+  c.arrUtc = c.arr ? zonedToUtc(c.d1, c.arr, c.tz) : null;
+  c.depUtc = c.dep ? zonedToUtc(c.d2, c.dep, c.tz) : null;
+});
+/* Etappen: Distanz und Nettogeschwindigkeit zwischen zwei Anläufen */
+const LEGS = [];
+for(let i = 0; i < CALLS.length - 1; i++){
+  const a = CALLS[i], b = CALLS[i + 1];
+  const nm = distNm(a.lat, a.lon, b.lat, b.lon);
+  const hrs = a.depUtc && b.arrUtc ? (b.arrUtc - a.depUtc) / 3600000 : null;
+  LEGS.push({from:i, to:i + 1, nm, hrs, kn: hrs ? nm / hrs : null});
+}
+const TOTAL_NM = LEGS.reduce((s, l) => s + l.nm, 0);
+const cumNm = [0];
+LEGS.forEach((l, i) => cumNm[i + 1] = cumNm[i] + l.nm);
+
+/* Wo ist das Schiff laut Fahrplan? */
+function scheduleState(now){
+  const first = CALLS[0], last = CALLS[CALLS.length - 1];
+  if(now < first.depUtc){
+    return {phase:"pre", lat:first.lat, lon:first.lon, sog:0,
+      cog:bearingDeg(first.lat, first.lon, CALLS[1].lat, CALLS[1].lon),
+      portIdx:0, nextIdx:1, nm:0};
+  }
+  if(now >= last.arrUtc){
+    return {phase:"done", lat:last.lat, lon:last.lon, sog:0, cog:0,
+      portIdx:CALLS.length - 1, nextIdx:-1, nm:TOTAL_NM};
+  }
+  for(let i = 0; i < CALLS.length; i++){
+    const c = CALLS[i];
+    if(c.arrUtc && c.depUtc && now >= c.arrUtc && now < c.depUtc){
+      return {phase:"port", lat:c.lat, lon:c.lon, sog:0,
+        cog:i < CALLS.length - 1 ? bearingDeg(c.lat, c.lon, CALLS[i+1].lat, CALLS[i+1].lon) : 0,
+        portIdx:i, nextIdx:i + 1, nm:cumNm[i]};
+    }
+  }
+  for(const leg of LEGS){
+    const a = CALLS[leg.from], b = CALLS[leg.to];
+    if(a.depUtc && b.arrUtc && now >= a.depUtc && now < b.arrUtc){
+      const f = (now - a.depUtc) / (b.arrUtc - a.depUtc);
+      const [lat, lon] = gcPoint(a.lat, a.lon, b.lat, b.lon, f);
+      return {phase:"sea", lat, lon, sog:leg.kn,
+        cog:bearingDeg(lat, lon, b.lat, b.lon),
+        portIdx:-1, prevIdx:leg.from, nextIdx:leg.to, nm:cumNm[leg.from] + leg.nm * f};
+    }
+  }
+  return {phase:"sea", lat:first.lat, lon:first.lon, sog:null, cog:0, portIdx:-1, nextIdx:0, nm:0};
+}
+/* Nächster Anlauf ab jetzt */
+function nextCallIdx(now){
+  for(let i = 0; i < CALLS.length; i++){
+    const c = CALLS[i];
+    const t = c.arrUtc || c.depUtc;
+    if(t && now < t) return i;
+    if(c.arrUtc && c.depUtc && now < c.depUtc) return i;
+  }
+  return -1;
+}
+const dayNoOf = now => Math.min(TOTAL_DAYS,
+  Math.max(0, Math.floor((now - START) / 86400000) + 1));
+
+/* =======================================================================
+   5 · Kennzahlen im Kopf
    ===================================================================== */
 const portDays = new Set();
 CALLS.forEach(c => { for(let d = c.d1; d <= c.d2; d++) portDays.add(d); });
+const PORTS = CALLS.filter(c => !c.transit);            /* Anläufe ohne Kanaldurchfahrt */
 const countries = new Set(CALLS.map(c => c.c.split(" · ")[0]));
 const seaDayCount = TOTAL_DAYS - portDays.size;
-const daysToGo = Math.ceil((START - Date.now()) / 86400000);
 
-document.getElementById("stats").innerHTML = [
-  [TOTAL_DAYS, "Reisetage"],
-  [CALLS.length, "Anläufe"],
-  [countries.size, "Länder"],
-  [seaDayCount, "Seetage"],
-  daysToGo > 0 ? [daysToGo, "Tage bis Abfahrt"] : null
-].filter(Boolean).map(([b, s]) => `<div class="stat"><b>${b}</b><span>${s}</span></div>`).join("");
+function renderStats(){
+  const now = Date.now();
+  const toGo = Math.floor((CALLS[0].depUtc - now) / 86400000);
+  const day = dayNoOf(now);
+  const home = now >= CALLS[CALLS.length - 1].arrUtc;
+  const items = [];
+  if(now < CALLS[0].depUtc) items.push([Math.max(0, toGo), "Tage bis Abfahrt", "live"]);
+  else if(home) items.push([TOTAL_DAYS, "Tage vollendet", "live"]);
+  else if(day >= 1 && day <= TOTAL_DAYS) items.push([`${day}`, `von ${TOTAL_DAYS} Reisetagen`, "live"]);
+  document.getElementById("stats").innerHTML = items
+    .map(([b, s, cls]) => `<div class="stat${cls ? " " + cls : ""}"><b>${b}</b><span>${s}</span></div>`).join("");
+}
+renderStats();
+document.getElementById("shipLine").textContent =
+  `${SHIP.name} · ${SHIP.line} · IMO ${SHIP.imo} · MMSI ${SHIP.mmsi}`;
 
-/* Kopfhöhe für die Bühnenhöhe */
 const setHeadH = () => document.documentElement.style.setProperty(
   "--head-h", document.getElementById("masthead").offsetHeight + "px");
 setHeadH();
 addEventListener("resize", setHeadH);
 
+
 /* =======================================================================
-   4 · Karte
+   6 · Karte, Route, Schiff, Farbschema
    ===================================================================== */
+const el = id => document.getElementById(id);
+const cssVar = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const isDark = () => document.documentElement.dataset.theme === "dark";
+
+/* Farbschema: gespeichert, sonst Systemeinstellung */
+(function initTheme(){
+  let t = null;
+  try{ t = localStorage.getItem(LS + "theme"); }catch(e){}
+  if(!t && matchMedia("(prefers-color-scheme: dark)").matches) t = "dark";
+  if(t === "dark") document.documentElement.dataset.theme = "dark";
+})();
+
 const map = L.map("map", {
   worldCopyJump:true, minZoom:2, maxZoom:12, zoomControl:true,
   attributionControl:true, scrollWheelZoom:true
 });
-L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-  attribution:'&copy; OpenStreetMap, &copy; CARTO · Reisedaten: eigene Buchung',
+const TILES = {
+  light:"https://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}{r}.png",
+  dark:"https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
+};
+const tiles = L.tileLayer(TILES[isDark() ? "dark" : "light"], {
+  attribution:'&copy; OpenStreetMap, &copy; CARTO · Wetter: Open-Meteo · Reisedaten: eigene Buchung',
   subdomains:"abcd", maxZoom:19
 }).addTo(map);
+const labels = L.tileLayer("https://{s}.basemaps.cartocdn.com/rastertiles/voyager_only_labels/{z}/{x}/{y}{r}.png",
+  {subdomains:"abcd", maxZoom:19, opacity:.9, pane:"shadowPane"});
+if(!isDark()) labels.addTo(map);
 
-/* Route: Segmente am 180. Längengrad sauber teilen */
-const routeSegments = [];
-for(let i = 0; i < CALLS.length - 1; i++){
-  const a = CALLS[i], b = CALLS[i + 1];
-  let lon2 = b.lon, d = lon2 - a.lon;
-  if(d > 180) lon2 -= 360; else if(d < -180) lon2 += 360;
-  if(lon2 >= -180 && lon2 <= 180){
-    routeSegments.push([[a.lat, a.lon], [b.lat, b.lon]]);
-  } else {
-    const edge = lon2 > 180 ? 180 : -180;
-    const t = (edge - a.lon) / (lon2 - a.lon);
-    const latX = a.lat + t * (b.lat - a.lat);
-    routeSegments.push([[a.lat, a.lon], [latX, edge]]);
-    routeSegments.push([[latX, -edge], [b.lat, b.lon]]);
+function splitAtDateline(points){
+  const out = [];
+  for(let i = 0; i < points.length - 1; i++){
+    const [aLat, aLon] = points[i], [bLat, bLon] = points[i + 1];
+    let lon2 = bLon, d = lon2 - aLon;
+    if(d > 180) lon2 -= 360; else if(d < -180) lon2 += 360;
+    if(lon2 >= -180 && lon2 <= 180){
+      out.push([[aLat, aLon], [bLat, bLon]]);
+    } else {
+      const edge = lon2 > 180 ? 180 : -180;
+      const t = (edge - aLon) / (lon2 - aLon);
+      const latX = aLat + t * (bLat - aLat);
+      out.push([[aLat, aLon], [latX, edge]]);
+      out.push([[latX, -edge], [bLat, bLon]]);
+    }
   }
+  return out;
 }
-L.polyline(routeSegments, {color:"#E8B04B", weight:7, opacity:.10}).addTo(map);
-L.polyline(routeSegments, {color:"#E8B04B", weight:1.6, opacity:.85, dashArray:"1 5", lineCap:"round"}).addTo(map);
+const routePts = CALLS.map(c => [c.lat, c.lon]);
+const routeSegments = splitAtDateline(routePts);
+const routeGlow = L.polyline(routeSegments, {weight:9, opacity:.12}).addTo(map);
+const routeLine = L.polyline(routeSegments, {weight:2.2, opacity:.9, dashArray:"1 7", lineCap:"round"}).addTo(map);
+const sailedLine = L.polyline([], {weight:3.5, opacity:.95}).addTo(map);
 
 const markers = CALLS.map((c, i) => {
-  const long = (hours(c) || 0) > 24;
-  const m = L.circleMarker([c.lat, c.lon], {
-    radius: long ? 6 : 4.5, color:"#0B1A2A", weight:1.5,
-    fillColor:"#E8B04B", fillOpacity:1
-  }).addTo(map);
+  const long = (hoursInPort(c) || 0) > 24;
+  const m = L.circleMarker([c.lat, c.lon], {radius: long ? 7 : 5.5, weight:2, fillOpacity:1}).addTo(map);
   m.bindTooltip(`<b>${c.n}</b><i>Tag ${c.d1}${c.d2 > c.d1 ? "–" + c.d2 : ""} · ${fmtShort(c.d1)}</i>`,
-    {className:"port-tip", direction:"top", offset:[0, -6]});
+    {className:"port-tip", direction:"top", offset:[0, -8]});
   m.on("click", () => select(i, true));
   return m;
 });
-const halo = L.circleMarker([0, 0], {
-  radius:12, color:"#6FD3C6", weight:2, fill:false, opacity:0, interactive:false
+const halo = L.circleMarker([0, 0], {radius:14, weight:3, fill:false, opacity:0, interactive:false}).addTo(map);
+const shipMarker = L.marker([0, 0], {
+  icon: L.divIcon({className:"", html:`<div class="ship-icon est"><svg viewBox="-13 -13 26 26"><polygon points="0,-11 8,9 0,5 -8,9"/></svg></div>`,
+    iconSize:[26, 26], iconAnchor:[13, 13]}),
+  zIndexOffset:800, opacity:0
 }).addTo(map);
+shipMarker.bindTooltip("", {className:"ship-tip", direction:"top", offset:[0, -14]});
 
-const allBounds = L.latLngBounds(CALLS.map(c => [c.lat, c.lon]));
+function applyMapTheme(){
+  const brass = cssVar("--brass"), live = cssVar("--live"), card = cssVar("--card");
+  routeGlow.setStyle({color:brass});
+  routeLine.setStyle({color:brass});
+  sailedLine.setStyle({color:live});
+  markers.forEach((m, k) => m.setStyle({color:card, fillColor: k === activeIdx ? live : brass}));
+  halo.setStyle({color:live});
+  tiles.setUrl(TILES[isDark() ? "dark" : "light"]);
+  if(isDark()) map.removeLayer(labels); else if(!map.hasLayer(labels)) labels.addTo(map);
+}
+function setTheme(dark){
+  if(dark) document.documentElement.dataset.theme = "dark";
+  else delete document.documentElement.dataset.theme;
+  try{ localStorage.setItem(LS + "theme", dark ? "dark" : "light"); }catch(e){}
+  el("themeBtn").setAttribute("aria-pressed", String(dark));
+  el("themeBtn").textContent = dark ? "Tagmodus" : "Nachtmodus";
+  document.querySelector('meta[name="theme-color"]').content = cssVar("--paper");
+  applyMapTheme();
+}
+
+const allBounds = L.latLngBounds(routePts);
 const fitAll = () => map.fitBounds(allBounds, {padding:[40, 40]});
 fitAll();
-document.getElementById("fitBtn").addEventListener("click", () => { fitAll(); });
+el("fitBtn").addEventListener("click", fitAll);
+el("shipBtn").addEventListener("click", () => {
+  const p = livePos();
+  map.flyTo([p.lat, p.lon], Math.max(map.getZoom(), 5), {duration:.9});
+});
 
 /* =======================================================================
-   5 · Routenliste
+   7 · Routenliste
    ===================================================================== */
-const stopsEl = document.getElementById("stops");
-let showSea = true, query = "", activeIdx = -1;
+const stopsEl = el("stops");
+let showSea = true, onlyAhead = false, query = "", activeIdx = -1;
 
 function renderList(){
   const q = query.trim().toLowerCase();
+  const now = Date.now();
   let html = "", shown = 0;
 
   CALLS.forEach((c, i) => {
+    const past = (c.depUtc || c.arrUtc) < now;
+    if(onlyAhead && past) return;
     const match = !q || c.n.toLowerCase().includes(q) || c.c.toLowerCase().includes(q) || c.r.toLowerCase().includes(q);
 
     if(showSea && !q && i > 0){
       const gap = c.d1 - CALLS[i - 1].d2 - 1;
       if(gap > 0){
-        html += `<li class="sea">${gap} ${gap === 1 ? "Seetag" : "Seetage"} · ${fmtShort(CALLS[i-1].d2+1)} – ${fmtShort(c.d1-1)}</li>`;
+        html += `<li class="sea">${gap} ${gap === 1 ? "Seetag" : "Seetage"} · ${fmtShort(CALLS[i-1].d2+1)}${gap > 1 ? " – " + fmtShort(c.d1-1) : ""}</li>`;
       }
+      const ch = CLOCK_CHANGES.find(x => x.to === i);
+      if(ch) html += `<li class="clockrow">${icon("clock")}<span>${clockText(ch)} · Bordzeit dann ${zoneTag(c.arrUtc || c.depUtc, c.tz)}</span></li>`;
     }
     if(!match) return;
     shown++;
 
-    const h = hours(c);
+    const h = hoursInPort(c);
     const times = c.type === "start" ? `Ablegen ${c.dep}`
               : c.type === "end"   ? `Ankunft ${c.arr}`
               : `${c.arr} – ${c.dep}`;
-    html += `<li><button class="stop${i === activeIdx ? " is-active" : ""}" data-i="${i}">
-        <span class="day-no">TAG ${c.d1}${c.d2 > c.d1 ? "–" + c.d2 : ""}<small>${fmtShort(c.d1)}</small></span>
-        <span><span class="name">${c.n}</span><span class="sub">${c.c}</span></span>
-        <span class="dur">${times}<em>${h === null ? (c.type === "start" ? "Start" : "Ziel") : fmtDur(h)}</em></span>
+    const exc = excursionsFor(i).length;
+    const sub = [c.c, c.transit ? `<span class="tag">Kanalpassage, kein Landgang</span>`
+      : exc ? `<span class="tag">${exc} ${exc === 1 ? "Landausflug" : "Landausflüge"}</span>` : `dort jetzt ${clockIn(now, c.tz)}`].join(" · ");
+    html += `<li><button class="stop${i === activeIdx ? " is-active" : ""}${past ? " is-past" : ""}" data-i="${i}">
+        <span class="day-no num">Tag ${c.d1}${c.d2 > c.d1 ? "–" + c.d2 : ""}<small>${fmtShort(c.d1)}</small></span>
+        <span style="min-width:0"><span class="name">${c.n.replace(" | ", ", ")}</span><span class="sub">${sub}</span></span>
+        <span class="dur num">${times}<em>${h === null ? (c.type === "start" ? "Start" : "Ziel") : c.transit ? "Durchfahrt" : fmtDur(h)}</em></span>
       </button></li>`;
   });
-
-  stopsEl.innerHTML = shown ? html : `<li class="empty">Kein Hafen gefunden. Suchbegriff anpassen oder Feld leeren.</li>`;
+  stopsEl.innerHTML = shown ? html : `<li class="empty">Kein Hafen gefunden. Suchbegriff anpassen oder Filter lösen.</li>`;
 }
 stopsEl.addEventListener("click", e => {
   const btn = e.target.closest(".stop");
   if(btn) select(+btn.dataset.i, true);
 });
-document.getElementById("search").addEventListener("input", e => { query = e.target.value; renderList(); });
-const seaBtn = document.getElementById("seaToggle");
-seaBtn.addEventListener("click", () => {
-  showSea = !showSea;
-  seaBtn.setAttribute("aria-pressed", String(showSea));
-  renderList();
+el("search").addEventListener("input", e => { query = e.target.value; renderList(); });
+el("seaToggle").addEventListener("click", e => {
+  showSea = !showSea; e.currentTarget.setAttribute("aria-pressed", String(showSea)); renderList();
+});
+el("aheadToggle").addEventListener("click", e => {
+  onlyAhead = !onlyAhead; e.currentTarget.setAttribute("aria-pressed", String(onlyAhead)); renderList();
 });
 
 /* =======================================================================
-   6 · Reise-Log (Tagesband)
+   8 · Reise-Log (Tagesband)
    ===================================================================== */
 const dayOwner = new Array(TOTAL_DAYS + 1).fill(-1);
 CALLS.forEach((c, i) => { for(let d = c.d1; d <= c.d2; d++) dayOwner[d] = i; });
-
-const monthsEl = document.getElementById("logMonths");
-const daysEl = document.getElementById("logDays");
-let mHtml = "", start = 1;
-for(let d = 1; d <= TOTAL_DAYS; d++){
-  const isLast = d === TOTAL_DAYS;
-  const changes = !isLast && dateOf(d + 1).getUTCMonth() !== dateOf(d).getUTCMonth();
-  if(changes || isLast){
-    const x = dateOf(start), span = d - start + 1;
-    mHtml += `<span style="grid-column:${start} / span ${span}">${MO_LONG[x.getUTCMonth()].slice(0,3)}</span>`;
-    start = d + 1;
+const daysEl = el("logDays");
+{
+  let mHtml = "", mStart = 1;
+  for(let d = 1; d <= TOTAL_DAYS; d++){
+    const isLast = d === TOTAL_DAYS;
+    const changes = !isLast && dateOf(d + 1).getUTCMonth() !== dateOf(d).getUTCMonth();
+    if(changes || isLast){
+      const x = dateOf(mStart), span = d - mStart + 1;
+      mHtml += `<span style="grid-column:${mStart} / span ${span}">${span < 12 ? MO[x.getUTCMonth()] : MO_LONG[x.getUTCMonth()]}</span>`;
+      mStart = d + 1;
+    }
   }
+  el("logMonths").innerHTML = mHtml;
 }
-monthsEl.innerHTML = mHtml;
-
 daysEl.innerHTML = Array.from({length:TOTAL_DAYS}, (_, k) => {
   const d = k + 1, idx = dayOwner[d], c = idx >= 0 ? CALLS[idx] : null;
   const cls = c ? (c.d2 > c.d1 ? "day port multi" : "day port") : "day";
   const label = c ? `Tag ${d}, ${fmtFull(d)} · ${c.n}` : `Tag ${d}, ${fmtFull(d)} · Seetag`;
   return `<button class="${cls}" data-day="${d}" data-i="${idx}" title="${label}" aria-label="${label}"></button>`;
 }).join("");
-
+function markToday(){
+  const d = dayNoOf(Date.now());
+  daysEl.querySelectorAll(".day.is-today").forEach(x => x.classList.remove("is-today"));
+  const x = daysEl.querySelector(`.day[data-day="${d}"]`);
+  if(x && d >= 1) x.classList.add("is-today");
+}
 daysEl.addEventListener("click", e => {
   const b = e.target.closest(".day");
   if(!b) return;
   const i = +b.dataset.i;
   if(i >= 0) select(i, true);
-  else document.getElementById("logHint").textContent = `Tag ${b.dataset.day}: Seetag, ${fmtFull(+b.dataset.day)}`;
+  else el("logHint").textContent = `Tag ${b.dataset.day}: Seetag, ${fmtFull(+b.dataset.day)}`;
 });
-
 function markLogDays(i){
-  daysEl.querySelectorAll(".day.is-active").forEach(el => el.classList.remove("is-active"));
+  daysEl.querySelectorAll(".day.is-active").forEach(x => x.classList.remove("is-active"));
   if(i < 0) return;
   const c = CALLS[i];
   for(let d = c.d1; d <= c.d2; d++){
-    const el = daysEl.querySelector(`.day[data-day="${d}"]`);
-    if(el) el.classList.add("is-active");
+    const x = daysEl.querySelector(`.day[data-day="${d}"]`);
+    if(x) x.classList.add("is-active");
   }
+}
+/* =======================================================================
+   9 · Wetter (Open-Meteo, ohne Schlüssel)
+   ===================================================================== */
+const WMO = {
+  0:["Klar","sun"], 1:["Überwiegend klar","partly"], 2:["Teils bewölkt","partly"], 3:["Bedeckt","cloud"],
+  45:["Nebel","fog"], 48:["Reifnebel","fog"],
+  51:["Leichter Nieselregen","rain"], 53:["Nieselregen","rain"], 55:["Starker Nieselregen","rain"],
+  56:["Gefrierender Niesel","rain"], 57:["Gefrierender Niesel","rain"],
+  61:["Leichter Regen","rain"], 63:["Regen","rain"], 65:["Starker Regen","rain"],
+  66:["Gefrierender Regen","rain"], 67:["Gefrierender Regen","rain"],
+  71:["Leichter Schneefall","snow"], 73:["Schneefall","snow"], 75:["Starker Schneefall","snow"],
+  77:["Schneegriesel","snow"],
+  80:["Leichte Schauer","rain"], 81:["Schauer","rain"], 82:["Heftige Schauer","storm"],
+  85:["Schneeschauer","snow"], 86:["Starke Schneeschauer","snow"],
+  95:["Gewitter","storm"], 96:["Gewitter mit Hagel","storm"], 99:["Schweres Gewitter","storm"]
+};
+const wmo = code => WMO[code] || ["Wetterlage unbekannt","cloud"];
+const icon = (id, cls = "ic") => `<svg class="${cls}" aria-hidden="true"><use href="#i-${id}"/></svg>`;
+
+function cacheGet(key, ttl){
+  try{
+    const raw = localStorage.getItem(LS + key);
+    if(!raw) return null;
+    const o = JSON.parse(raw);
+    return {fresh: Date.now() - o.t < ttl, data:o.d};
+  }catch(e){ return null; }
+}
+function cacheSet(key, data){
+  try{ localStorage.setItem(LS + key, JSON.stringify({t:Date.now(), d:data})); }catch(e){}
+}
+
+const wxPending = new Map();
+async function fetchJson(url){
+  const res = await fetch(url, {cache:"no-store"});
+  if(!res.ok) throw new Error("HTTP " + res.status);
+  return res.json();
+}
+/* kind: "port" (km/h, Tagesvorhersage) oder "ship" (Knoten) */
+async function weatherAt(lat, lon, kind = "port"){
+  const key = `wx.${kind}.${lat.toFixed(2)},${lon.toFixed(2)}`;
+  const hit = cacheGet(key, WX_TTL_MS);
+  if(hit && hit.fresh) return hit.data;
+  if(wxPending.has(key)) return wxPending.get(key);
+
+  const unit = kind === "ship" ? "kn" : "kmh";
+  const url = "https://api.open-meteo.com/v1/forecast"
+    + `?latitude=${lat.toFixed(4)}&longitude=${lon.toFixed(4)}`
+    + "&current=temperature_2m,apparent_temperature,relative_humidity_2m,is_day,"
+    + "weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m,precipitation"
+    + "&hourly=weather_code,wind_gusts_10m,wind_speed_10m,temperature_2m"
+    + "&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,"
+    + "precipitation_probability_max,wind_speed_10m_max,wind_gusts_10m_max"
+    + `&timezone=auto&forecast_days=16&wind_speed_unit=${unit}`;
+  const p = fetchJson(url)
+    .then(d => { cacheSet(key, d); wxPending.delete(key); return d; })
+    .catch(e => { wxPending.delete(key); return hit ? hit.data : null; });
+  wxPending.set(key, p);
+  return p;
+}
+async function marineAt(lat, lon){
+  const key = `mar.${lat.toFixed(1)},${lon.toFixed(1)}`;
+  const hit = cacheGet(key, WX_TTL_MS);
+  if(hit && hit.fresh) return hit.data;
+  const url = "https://marine-api.open-meteo.com/v1/marine"
+    + `?latitude=${lat.toFixed(3)}&longitude=${lon.toFixed(3)}`
+    + "&current=wave_height,wave_period,sea_surface_temperature"
+    + "&hourly=wave_height,sea_surface_temperature&forecast_days=7&timezone=auto";
+  try{
+    const d = await fetchJson(url);
+    cacheSet(key, d);
+    return d;
+  }catch(e){ return hit ? hit.data : null; }
+}
+/* Tagesindex für ein Datum in der Vorhersage finden */
+function dailyIndexFor(wx, dayNo){
+  if(!wx || !wx.daily || !wx.daily.time) return -1;
+  const x = dateOf(dayNo);
+  const iso = `${x.getUTCFullYear()}-${pad(x.getUTCMonth()+1)}-${pad(x.getUTCDate())}`;
+  return wx.daily.time.indexOf(iso);
+}
+const hhmm = iso => typeof iso === "string" && iso.length >= 16 ? iso.slice(11, 16) : "—";
+/* Wassertemperatur um 12 Uhr Ortszeit an einem Reisetag, sonst der aktuelle Wert */
+function sstFor(marine, dayNo){
+  if(!marine) return {value:null, forecast:false};
+  const H = marine.hourly;
+  if(H && H.time && H.sea_surface_temperature && dayNo){
+    const x = dateOf(dayNo);
+    const iso = `${x.getUTCFullYear()}-${pad(x.getUTCMonth()+1)}-${pad(x.getUTCDate())}T12:00`;
+    const k = H.time.indexOf(iso);
+    if(k >= 0 && isFinite(H.sea_surface_temperature[k])) return {value:H.sea_surface_temperature[k], forecast:true};
+  }
+  const cur = marine.current && marine.current.sea_surface_temperature;
+  return {value: isFinite(cur) ? cur : null, forecast:false};
+}
+const bathing = t => t >= 26 ? "badewarm" : t >= 22 ? "angenehm" : t >= 18 ? "frisch" : "kalt";
+
+/* =======================================================================
+   10 · Schiffsposition: Datei, AIS, manuell, Fahrplan
+   ===================================================================== */
+const cfg = Object.assign({mode:"auto", key:"", manual:null}, (() => {
+  try{ return JSON.parse(localStorage.getItem(LS + "cfg") || "{}"); }catch(e){ return {}; }
+})());
+const saveCfg = () => { try{ localStorage.setItem(LS + "cfg", JSON.stringify(cfg)); }catch(e){} };
+
+let filePos = null, aisPos = null, aisSocket = null, aisError = "";
+let shipZone = (() => {                               /* IANA-Zone an der Schiffsposition */
+  try{ return JSON.parse(localStorage.getItem(LS + "shipZone") || "null"); }catch(e){ return null; }
+})();
+
+const SRC_LABEL = {
+  manual:"Position manuell eingetragen",
+  file:"Position aus Positionsdatei",
+  ais:"AIS live · aisstream.io",
+  schedule:"Fahrplan-Schätzung"
+};
+
+async function loadFilePosition(){
+  try{
+    const d = await fetchJson(POS_FILE + "?_=" + Date.now());
+    const t = Date.parse(d.timestamp || d.time || d.utc || "");
+    if(isFinite(d.lat) && isFinite(d.lon)){
+      filePos = {lat:+d.lat, lon:+d.lon,
+        sog: isFinite(d.sog) ? +d.sog : null,
+        cog: isFinite(d.cog) ? +d.cog : null,
+        t: isFinite(t) ? t : Date.now(),
+        note: d.note || ""};
+    }
+  }catch(e){ filePos = null; }        /* Datei ist optional */
+}
+
+function connectAis(){
+  if(!cfg.key || aisSocket) return;
+  try{
+    aisSocket = new WebSocket("wss://stream.aisstream.io/v0/stream");
+  }catch(e){ aisError = "Verbindung nicht möglich"; return; }
+  aisSocket.addEventListener("open", () => {
+    aisSocket.send(JSON.stringify({
+      APIKey: cfg.key,
+      BoundingBoxes: [[[-90, -180], [90, 180]]],
+      FiltersShipMMSI: [String(SHIP.mmsi)],
+      FilterMessageTypes: ["PositionReport"]
+    }));
+  });
+  aisSocket.addEventListener("message", ev => {
+    let m;
+    try{ m = JSON.parse(ev.data); }catch(e){ return; }
+    if(m && (m.error || m.Error)){ aisError = String(m.error || m.Error); return; }
+    const pr = m && m.Message && (m.Message.PositionReport || m.Message.positionReport);
+    const meta = m && (m.MetaData || m.Metadata) || {};
+    const lat = pr ? (pr.Latitude ?? pr.latitude ?? meta.latitude) : meta.latitude;
+    const lon = pr ? (pr.Longitude ?? pr.longitude ?? meta.longitude) : meta.longitude;
+    if(!isFinite(lat) || !isFinite(lon)) return;
+    const t = Date.parse((meta.time_utc || "").replace(" +0000 UTC", "Z").replace(" ", "T"));
+    aisPos = {lat:+lat, lon:+lon,
+      sog: pr && isFinite(pr.Sog) ? +pr.Sog : null,
+      cog: pr && isFinite(pr.Cog) ? +pr.Cog : null,
+      t: isFinite(t) ? t : Date.now()};
+    aisError = "";
+    refreshView();
+  });
+  aisSocket.addEventListener("close", () => { aisSocket = null; });
+  aisSocket.addEventListener("error", () => { aisError = "AIS-Stream nicht erreichbar"; });
+}
+
+function pickFix(now){
+  if(cfg.mode === "schedule") return null;
+  const cands = [];
+  if(cfg.manual && (cfg.mode === "auto" || cfg.mode === "manual")) cands.push({...cfg.manual, src:"manual"});
+  if(filePos && (cfg.mode === "auto")) cands.push({...filePos, src:"file"});
+  if(aisPos && (cfg.mode === "auto" || cfg.mode === "ais")) cands.push({...aisPos, src:"ais"});
+  const fresh = cands.filter(c => isFinite(c.t) && now - c.t < POS_MAX_AGE_H * 3600000);
+  fresh.sort((a, b) => b.t - a.t);
+  return fresh[0] || null;
+}
+
+/* Aktuelle Lage: Fahrplan als Rahmen, echte Meldung als Position */
+function livePos(){
+  const now = Date.now();
+  const s = scheduleState(now);
+  const fix = pickFix(now);
+  const out = Object.assign({}, s, {src:"schedule", t:now, live:false});
+  if(fix){
+    out.lat = fix.lat; out.lon = fix.lon;
+    if(isFinite(fix.sog)) out.sog = fix.sog;
+    if(isFinite(fix.cog)) out.cog = fix.cog;
+    out.t = fix.t; out.src = fix.src; out.live = true;
+    if(s.phase === "sea" && s.prevIdx >= 0){
+      const a = CALLS[s.prevIdx];
+      out.nm = cumNm[s.prevIdx] + distNm(a.lat, a.lon, out.lat, out.lon);
+    }
+    if(out.nextIdx >= 0){
+      const b = CALLS[out.nextIdx];
+      out.cog = isFinite(fix.cog) ? fix.cog : bearingDeg(out.lat, out.lon, b.lat, b.lon);
+    }
+  }
+  return out;
+}
+/* Zeitzone an der Schiffsposition: notfalls nautische Zonenzeit */
+const nauticalZone = lon => Math.round(lon / 15) * 60;
+function shipZoneOf(fix){
+  return shipZone && shipZone.key === (Math.round(fix.lon) + "|" + Math.round(fix.lat))
+    ? shipZone.tz : nauticalZone(fix.lon);
+}
+
+
+/* =======================================================================
+   11 · Zeitumstellungen an Bord
+   ===================================================================== */
+function computeClockChanges(){
+  const out = [];
+  for(let i = 0; i < CALLS.length - 1; i++){
+    const a = CALLS[i], b = CALLS[i + 1];
+    const tA = a.depUtc || a.arrUtc, tB = b.arrUtc || b.depUtc;
+    let diff = tzOffsetMin(tB, b.tz) - tzOffsetMin(tA, a.tz);
+    let dateline = 0;
+    if(diff > 720){ diff -= 1440; dateline = 1; }
+    else if(diff < -720){ diff += 1440; dateline = -1; }
+    if(diff === 0 && !dateline) continue;
+    out.push({from:i, to:i + 1, diff, dateline, nights:Math.max(1, b.d1 - a.d2), at:tB});
+  }
+  return out;
+}
+const CLOCK_CHANGES = computeClockChanges();
+function fmtDiff(min){
+  const a = Math.abs(min), h = Math.floor(a / 60), m = a % 60;
+  const t = h && m ? `${h} Std. ${m} Min.` : h ? `${h} Std.` : `${m} Min.`;
+  return `Uhr ${t} ${min < 0 ? "zurück" : "vor"}`;
+}
+function clockText(ch){
+  const parts = [];
+  if(ch.dateline === 1) parts.push("Datumsgrenze: der Kalender springt einen Tag vor");
+  if(ch.dateline === -1) parts.push("Datumsgrenze: ein Tag wird wiederholt");
+  if(ch.diff) parts.push(fmtDiff(ch.diff));
+  return parts.join(", ");
+}
+function nextClockChange(now){
+  return CLOCK_CHANGES.find(ch => ch.at > now) || null;
+}
+function renderTzDialog(){
+  const now = Date.now();
+  const next = nextClockChange(now);
+  if(!CLOCK_CHANGES.length){ el("tzBody").innerHTML = "<p>Keine Zeitumstellungen auf dieser Route.</p>"; return; }
+  const items = CLOCK_CHANGES.map(ch => {
+    const a = CALLS[ch.from], b = CALLS[ch.to];
+    const cls = ch.at < now ? "past" : (ch === next ? "next" : "");
+    const spread = Math.abs(ch.diff) >= 120 && ch.nights >= 2
+      ? ` Bei ${ch.nights} Nächten auf See stellt Costa meist in mehreren Schritten um.` : "";
+    return `<li class="${cls}">${icon("clock")}
+      <b>${clockText(ch)}</b>
+      <span>Zwischen ${a.n.split(" | ")[0]} (${zoneTag(a.depUtc || a.arrUtc, a.tz)}) und ${b.n.split(" | ")[0]} (${zoneTag(b.arrUtc || b.depUtc, b.tz)}),
+      Ankunft ${dateIn(b.arrUtc || b.depUtc, b.tz)} · Tag ${b.d1}.${spread}</span></li>`;
+  }).join("");
+  const back = CLOCK_CHANGES.filter(c => c.diff < 0).length, fwd = CLOCK_CHANGES.filter(c => c.diff > 0).length;
+  el("tzBody").innerHTML = `
+    <p>${CLOCK_CHANGES.length} Umstellungen: ${back}× zurück (Reise nach Westen), ${fwd}× vor, dazu ${CLOCK_CHANGES.filter(c => c.dateline).length}× die Datumsgrenze.
+    Die genaue Nacht steht im Bordprogramm – üblicherweise wird um 02:00 Uhr umgestellt.</p>
+    <ul class="tzlist">${items}</ul>`;
 }
 
 /* =======================================================================
-   7 · Detailblatt
+   12 · Landausflüge
    ===================================================================== */
-const sheet = document.getElementById("sheet");
-const sheetBody = document.getElementById("sheetBody");
-const imgCache = new Map();
+let sharedExc = [];
+let localExc = (() => { try{ return JSON.parse(localStorage.getItem(LS + "exc") || "[]"); }catch(e){ return []; } })();
+const saveExc = () => { try{ localStorage.setItem(LS + "exc", JSON.stringify(localExc)); }catch(e){} };
+const excKey = c => `${c.n}|${c.d1}`;
+const esc = s => String(s ?? "").replace(/[&<>"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));
 
+async function loadSharedExcursions(){
+  try{
+    const d = await fetchJson(EXC_FILE + "?_=" + Math.floor(Date.now() / 600000));
+    if(Array.isArray(d)) sharedExc = d.filter(e => e && e.port && e.title);
+  }catch(e){ /* Datei ist optional */ }
+}
+function excursionsFor(i){
+  const k = excKey(CALLS[i]);
+  const list = [
+    ...sharedExc.filter(e => e.port === k).map(e => Object.assign({shared:true}, e)),
+    ...localExc.filter(e => e.port === k)
+  ];
+  return list.sort((a, b) => String(a.time || "99").localeCompare(String(b.time || "99")));
+}
+function addExcursion(i, data){
+  localExc.push(Object.assign({id:Date.now().toString(36), port:excKey(CALLS[i])}, data));
+  saveExc();
+}
+function removeExcursion(id){
+  localExc = localExc.filter(e => e.id !== id);
+  saveExc();
+}
+/* Der Hafen, für den ein Ausflug jetzt relevant ist: aktueller oder nächster */
+function excursionFocus(fix, now){
+  const idx = fix.portIdx >= 0 ? fix.portIdx : (fix.nextIdx >= 0 ? fix.nextIdx : nextCallIdx(now));
+  return idx;
+}
+function excCard(e){
+  return `<div class="exc${e.shared ? " shared" : ""}" data-id="${esc(e.id || "")}">
+    <span class="time">${esc(e.time || "–")}</span>
+    <span class="title">${esc(e.title)}</span>
+    <button class="del" title="Eintrag löschen" data-del="${esc(e.id || "")}">${icon("trash", "ic")}</button>
+    <span class="meta">${[e.dur, e.meet ? "Treffpunkt " + e.meet : "", e.shared ? "gemeinsame Liste" : "", e.note].filter(Boolean).map(esc).join(" · ")}</span>
+  </div>`;
+}
+
+/* =======================================================================
+   13 · Wetterwarnungen (regelbasiert aus Open-Meteo)
+   ===================================================================== */
+const SEVERE = new Set([65, 82, 95, 96, 99]);
+function shipWarnings(wx, marine){
+  const out = [];
+  if(wx && wx.hourly && wx.hourly.time){
+    const H = wx.hourly, n = Math.min(48, H.time.length);
+    let gust = 0, storm = false;
+    for(let k = 0; k < n; k++){
+      gust = Math.max(gust, H.wind_gusts_10m ? H.wind_gusts_10m[k] || 0 : 0);
+      if([95, 96, 99].includes(H.weather_code ? H.weather_code[k] : 0)) storm = true;
+    }
+    if(gust >= 48) out.push(`Sturmböen bis ${Math.round(gust)} kn in den nächsten 48 Std.`);
+    else if(gust >= 34) out.push(`Stürmische Böen bis ${Math.round(gust)} kn in den nächsten 48 Std.`);
+    if(storm) out.push("Gewitter in den nächsten 48 Std. möglich");
+  }
+  if(marine && marine.hourly && marine.hourly.wave_height){
+    const w = marine.hourly.wave_height.slice(0, 48).filter(v => isFinite(v));
+    const max = Math.max(0, ...w);
+    if(max >= 4) out.push(`Hoher Seegang: Wellen bis ${num(max, 1)} m`);
+    else if(max >= 2.5) out.push(`Kräftiger Seegang: Wellen bis ${num(max, 1)} m`);
+  }
+  return out;
+}
+function portWarnings(c, wx){
+  const out = [];
+  const di = dailyIndexFor(wx, c.d1);
+  if(di < 0 || !wx.daily) return out;
+  const D = wx.daily, name = c.n.split(" | ")[0];
+  const gust = D.wind_gusts_10m_max ? D.wind_gusts_10m_max[di] : 0;
+  if(gust >= 75) out.push(`${name}: Sturmböen bis ${Math.round(gust)} km/h am Anlauftag`);
+  else if(gust >= 60) out.push(`${name}: starke Böen bis ${Math.round(gust)} km/h am Anlauftag`);
+  if(SEVERE.has(D.weather_code[di])) out.push(`${name}: ${wmo(D.weather_code[di])[0]} am Anlauftag`);
+  if(D.temperature_2m_max[di] >= 35) out.push(`${name}: Hitze bis ${Math.round(D.temperature_2m_max[di])} °C`);
+  if(D.precipitation_probability_max && D.precipitation_probability_max[di] >= 80 && !SEVERE.has(D.weather_code[di]))
+    out.push(`${name}: Regen sehr wahrscheinlich (${Math.round(D.precipitation_probability_max[di])} %)`);
+  return out;
+}
+let warnState = {items:[], checked:0};
+async function refreshWarnings(){
+  const now = Date.now(), fix = livePos();
+  const claim = fix.live || fix.phase !== "pre";
+  const items = [];
+  if(claim && fix.phase !== "done"){
+    const [wx, mar] = await Promise.all([weatherAt(fix.lat, fix.lon, "ship"), marineAt(fix.lat, fix.lon)]);
+    items.push(...shipWarnings(wx, mar));
+  }
+  const start = nextCallIdx(now);
+  if(start >= 0){
+    const ports = CALLS.slice(start, start + 3).filter(c => c.arrUtc && c.arrUtc - now < 16 * 86400000);
+    const wxs = await Promise.all(ports.map(c => weatherAt(c.lat, c.lon, "port")));
+    ports.forEach((c, k) => { if(wxs[k]) items.push(...portWarnings(c, wxs[k])); });
+  }
+  warnState = {items, checked:Date.now()};
+  renderWarnBox();
+}
+function renderWarnBox(){
+  const box = el("warnBox");
+  if(!warnState.checked){ box.className = "warnbox ok"; box.innerHTML = `${icon("ok")}<div>Wetterwarnungen werden geprüft …</div>`; return; }
+  if(!warnState.items.length){
+    box.className = "warnbox ok";
+    box.innerHTML = `${icon("ok")}<div><b>Keine Wetterwarnungen</b> für die nächsten 48 Stunden an Bord und die nächsten Häfen.</div>`;
+    return;
+  }
+  box.className = "warnbox";
+  box.innerHTML = `${icon("warn")}<div><b>Wetterwarnung</b><ul>${warnState.items.map(t => `<li>${esc(t)}</li>`).join("")}</ul></div>`;
+}
+
+/* =======================================================================
+   14 · Die Reise in Zahlen
+   ===================================================================== */
+function computeStats(now){
+  const fix = livePos();
+  const done = PORTS.filter(c => (c.depUtc || c.arrUtc) < now);
+  const offsets = new Set(CALLS.map(c => tzOffsetMin(c.arrUtc || c.depUtc, c.tz)));
+  let equator = 0, longest = LEGS[0], stay = CALLS[0], north = CALLS[0], south = CALLS[0];
+  LEGS.forEach(l => {
+    const a = CALLS[l.from], b = CALLS[l.to];
+    if((a.lat >= 0) !== (b.lat >= 0)) equator++;
+    if(l.nm > longest.nm) longest = l;
+  });
+  PORTS.forEach(c => {
+    if((hoursInPort(c) || 0) > (hoursInPort(stay) || 0)) stay = c;
+    if(c.lat > north.lat) north = c;
+    if(c.lat < south.lat) south = c;
+  });
+  let notes = 0;
+  try{ for(let k = 0; k < localStorage.length; k++) if(localStorage.key(k).startsWith(LS + "note.")) notes++; }catch(e){}
+  return {
+    fix, portsDone:done.length, countriesDone:new Set(done.map(c => c.c.split(" · ")[0])).size,
+    nmDone:fix.phase === "pre" ? 0 : fix.nm, daysDone:fix.phase === "pre" ? 0 : dayNoOf(now),
+    zones:offsets.size, changes:CLOCK_CHANGES.length, dateline:CLOCK_CHANGES.filter(c => c.dateline).length,
+    equator, longest, stay, north, south, notes, excursions:sharedExc.length + localExc.length
+  };
+}
+function renderStatsDialog(){
+  const s = computeStats(Date.now());
+  const n = v => Math.round(v).toLocaleString("de-DE");
+  const finished = s.fix.phase === "done";
+  el("statsBody").innerHTML = `
+    <p>${finished ? "Die Reise ist vollendet – hier die Bilanz." : `Stand heute, Tag ${s.daysDone} von ${TOTAL_DAYS}. Die Zahlen wachsen mit der Reise.`}</p>
+    <div class="statgrid">
+      <div><b class="num">${n(s.nmDone)}</b><span>von ${n(TOTAL_NM)} Seemeilen</span></div>
+      <div><b class="num">${s.portsDone}</b><span>von ${PORTS.length} Anläufen</span></div>
+      <div><b class="num">${s.countriesDone}</b><span>von ${countries.size} Ländern</span></div>
+      <div><b class="num">${s.daysDone}</b><span>von ${TOTAL_DAYS} Reisetagen</span></div>
+      <div><b class="num">${s.zones}</b><span>Zeitzonen unterwegs</span></div>
+      <div><b class="num">${s.changes}</b><span>Zeitumstellungen, ${s.dateline}× Datumsgrenze</span></div>
+    </div>
+    <div class="rows">
+      <div><span>Äquatorüberquerungen</span><b>${s.equator}</b></div>
+      <div><span>Längste Etappe</span><b>${CALLS[s.longest.from].n.split(" | ")[0]} → ${CALLS[s.longest.to].n.split(" | ")[0]}, ${n(s.longest.nm)} sm</b></div>
+      <div><span>Längste Liegezeit</span><b>${s.stay.n.split(" | ")[0]}, ${fmtDur(hoursInPort(s.stay))}</b></div>
+      <div><span>Nördlichster Hafen</span><b>${s.north.n.split(" | ")[0]}, ${fmtLat(s.north.lat)}</b></div>
+      <div><span>Südlichster Hafen</span><b>${s.south.n.split(" | ")[0]}, ${fmtLat(s.south.lat)}</b></div>
+      <div><span>Seetage insgesamt</span><b>${seaDayCount}</b></div>
+      <div><span>Landausflüge eingetragen</span><b>${s.excursions}</b></div>
+      <div><span>Notizen in diesem Browser</span><b>${s.notes}</b></div>
+    </div>
+    <p class="note">Seemeilen als Großkreisdistanz von Hafen zu Hafen; die tatsächliche Fahrstrecke liegt etwas darüber.</p>`;
+}
+
+/* =======================================================================
+   15 · Bordkarte
+   ===================================================================== */
+function etaFor(fix, idx){
+  const b = CALLS[idx];
+  const nm = distNm(fix.lat, fix.lon, b.lat, b.lon);
+  const leg = LEGS.find(l => l.to === idx);
+  const planKn = leg && leg.kn ? leg.kn : 16;
+  const moving = isFinite(fix.sog) && fix.sog > 1.5;
+  const kn = moving ? fix.sog : planKn;
+  const eta = fix.phase === "port" || fix.phase === "pre" ? (b.arrUtc || null) : Date.now() + (nm / kn) * 3600000;
+  const delta = eta && b.arrUtc ? eta - b.arrUtc : null;
+  return {nm, kn, eta, delta, moving, planKn};
+}
+function deltaBadge(delta){
+  if(delta === null || delta === undefined) return "";
+  const min = Math.round(delta / 60000);
+  if(Math.abs(min) <= 20) return `<span class="delta ontime">im Plan</span>`;
+  return `<span class="delta ${min < 0 ? "early" : "late"}">${fmtCountdown(Math.abs(delta))} ${min < 0 ? "früher" : "später"}</span>`;
+}
+const short = n => n.split(" | ")[0];
+
+function renderNow(){
+  const now = Date.now();
+  const fix = livePos();
+  const zone = shipZoneOf(fix);
+  const c = fix.portIdx >= 0 ? CALLS[fix.portIdx] : null;
+  const nextIdx = fix.nextIdx >= 0 ? fix.nextIdx : nextCallIdx(now);
+  const claim = fix.live || fix.phase !== "pre";
+  const day = dayNoOf(now);
+
+  /* Quelle und Status */
+  el("srcDot").className = "dot" + (fix.live ? "" : " est");
+  el("srcLine").className = "now-eyebrow" + (fix.live ? "" : " est");
+  el("srcLabel").textContent = fix.live ? `${SRC_LABEL[fix.src]} · vor ${fmtCountdown(now - fix.t)}` : SRC_LABEL.schedule;
+
+  let head = "", sub = "";
+  if(fix.phase === "pre"){
+    const toDep = CALLS[0].depUtc - now;
+    head = toDep > 86400000 ? `Reise beginnt in ${fmtCountdown(toDep)}` : `Noch in ${short(CALLS[0].n)}`;
+    sub = `Einschiffung ${stampIn(CALLS[0].depUtc, CALLS[0].tz)} Ortszeit in ${short(CALLS[0].n)}`;
+  } else if(fix.phase === "port" && c && c.transit){
+    head = `Durchfahrt ${short(c.n)}`;
+    sub = `Passage bis ${clockIn(c.depUtc, c.tz)} Ortszeit, noch ${fmtCountdown(c.depUtc - now)} · Tag ${day} von ${TOTAL_DAYS}`;
+  } else if(fix.phase === "port" && c){
+    head = `Im Hafen von ${short(c.n)}`;
+    sub = `Auslaufen ${stampIn(c.depUtc, c.tz)} Ortszeit, in ${fmtCountdown(c.depUtc - now)} · Tag ${day} von ${TOTAL_DAYS}`;
+  } else if(fix.phase === "done"){
+    head = "Reise vollendet";
+    sub = `Angekommen ${stampIn(CALLS[CALLS.length-1].arrUtc, CALLS[CALLS.length-1].tz)} in ${short(CALLS[CALLS.length-1].n)}`;
+  } else {
+    const a = fix.prevIdx >= 0 ? CALLS[fix.prevIdx] : CALLS[0];
+    head = "Auf See";
+    sub = `zwischen ${short(a.n)} und ${CALLS[nextIdx] ? short(CALLS[nextIdx].n) : "—"} · Tag ${day} von ${TOTAL_DAYS}`;
+  }
+  el("nowStatus").innerHTML = `${head}<small>${sub}</small>`;
+  const clockZone = claim ? zone : CALLS[0].tz;
+  el("nowClock").textContent = clockIn(now, clockZone);
+  el("nowTz").textContent = claim
+    ? zoneTag(now, zone) + (typeof zone === "string" ? "" : " (nautisch)")
+    : `${zoneTag(now, CALLS[0].tz)}, Starthafen`;
+
+  /* Kennzahlen */
+  const sog = isFinite(fix.sog) ? fix.sog : null;
+  const doneNm = claim ? (fix.nm || 0) : 0;
+  const tiles = claim ? [
+    ["Position", `<b class="pos num"><span style="white-space:nowrap">${fmtLat(fix.lat, 2)}</span><br><span style="white-space:nowrap">${fmtLon(fix.lon, 2)}</span></b>`],
+    ["Fahrt · Kurs", `<b class="pos num"><span style="white-space:nowrap">${sog === null ? "—" : num(sog, 1)} kn</span><br><span style="white-space:nowrap">${isFinite(fix.cog) ? Math.round(fix.cog) + "° " + compass(fix.cog) : "—"}</span></b>`],
+    ["Wetter", `<b><em id="shipWx" class="loading">lädt …</em></b>`],
+    ["Wasser", `<b class="pos num"><em id="shipSst" class="loading">lädt …</em></b>`]
+  ] : [
+    ["Schiff", `<b style="font-size:15px;white-space:normal;line-height:1.3">${SHIP.name}, vor der Weltreise auf anderer Route</b>`],
+    ["Einschiffung", `<b class="num" style="font-size:16px;white-space:normal;line-height:1.3">${stampIn(CALLS[0].depUtc, CALLS[0].tz)} Ortszeit</b>`],
+    ["Wetter im Starthafen", `<b><em id="shipWx" class="loading">lädt …</em></b>`],
+    ["Wasser im Starthafen", `<b class="pos num"><em id="shipSst" class="loading">lädt …</em></b>`]
+  ];
+  el("nowGrid").innerHTML = tiles.map(([l, v]) => `<div class="metric"><span>${l}</span>${v}</div>`).join("");
+
+  /* Nächster Hafen */
+  if(nextIdx >= 0 && nextIdx < CALLS.length){
+    const b = CALLS[nextIdx], e = etaFor(fix, nextIdx);
+    const basis = fix.phase === "sea"
+      ? `gerechnet mit ${num(e.kn, 1)} kn ${e.moving ? "aktueller Fahrt" : "Fahrplanmittel"}`
+      : (fix.phase === "pre" ? "Reise noch nicht gestartet" : "Schiff liegt am Kai");
+    el("nowNext").innerHTML = `
+      <div class="top">
+        <div class="port">
+          <span class="lbl">${b.transit ? "Nächste Station" : "Nächster Hafen"}</span>
+          <span class="name">${short(b.n)}, ${b.c.split(" · ")[0]}</span>
+          <em>Tag ${b.d1}${b.d2 > b.d1 ? "–" + b.d2 : ""} · noch ${Math.round(e.nm).toLocaleString("de-DE")} sm · dort jetzt ${clockIn(now, b.tz)}</em>
+        </div>
+        <div class="cd"><b class="num">${fmtCountdown((b.arrUtc || b.depUtc) - now)}</b><em>bis Ankunft</em></div>
+      </div>
+      <div class="eta-rows">
+        <span>Geplant</span><b>${stampIn(b.arrUtc, b.tz)}</b><i class="sp"></i>
+        <span>Erwartet</span><b>${fix.phase === "sea" ? stampIn(e.eta, b.tz) : "laut Plan"}</b>${fix.phase === "sea" ? deltaBadge(e.delta) : '<i class="sp"></i>'}
+        <span>In ${HOME.label}</span><b>${stampIn(b.arrUtc, HOME.tz)}</b><i class="sp"></i>
+        <div class="eta-note">Ortszeit ${short(b.n)} · ${basis}</div>
+      </div>`;
+    el("nowNext").hidden = false;
+  } else {
+    el("nowNext").hidden = true;
+  }
+
+  /* Landausflug und Zeitumstellung */
+  const extra = [];
+  const fIdx = fix.phase === "done" ? -1 : excursionFocus(fix, now);
+  if(fIdx >= 0 && !CALLS[fIdx].transit){
+    const list = excursionsFor(fIdx), p = CALLS[fIdx];
+    const when = fix.phase === "port" && fix.portIdx === fIdx ? "Heute" : `Tag ${p.d1}`;
+    extra.push(list.length
+      ? `<button class="tile" data-open="${fIdx}">${icon("flag")}<div><span>${when} in ${short(p.n)} · ${list.length} ${list.length === 1 ? "Landausflug" : "Landausflüge"}</span><b>${esc(list[0].title)}${list[0].time ? ", " + esc(list[0].time) : ""}${list[0].meet ? ", Treffpunkt " + esc(list[0].meet) : ""}</b></div></button>`
+      : `<button class="tile" data-open="${fIdx}">${icon("flag")}<div><span>${when} in ${short(p.n)}</span><b>Noch kein Landausflug eingetragen</b></div></button>`);
+  }
+  const ch = nextClockChange(now);
+  if(ch){
+    const b = CALLS[ch.to];
+    extra.push(`<button class="tile" data-tz="1">${icon("clock")}<div><span>Nächste Zeitumstellung · vor ${short(b.n)}</span><b>${clockText(ch)}</b></div></button>`);
+  }
+  el("nowExtra").innerHTML = extra.join("");
+  el("nowExtra").hidden = !extra.length;
+
+  /* Fortschritt */
+  const pct = fix.phase === "pre" ? 0 : Math.min(100, 100 * doneNm / TOTAL_NM);
+  const bar = el("progBar");
+  bar.style.width = pct.toFixed(1) + "%";
+  bar.className = fix.phase === "done" ? "done" : "";
+  el("progLeft").textContent = fix.phase === "pre" ? `Start in ${fmtCountdown(CALLS[0].depUtc - now)}`
+    : fix.phase === "done" ? `${TOTAL_DAYS} Tage rund um die Welt` : `Tag ${day} von ${TOTAL_DAYS}`;
+  el("progRight").textContent = fix.phase === "pre" ? "" : `${pct.toFixed(0)} % der Strecke`;
+  el("nowFoot").innerHTML = claim
+    ? `${Math.round(doneNm).toLocaleString("de-DE")} von ${Math.round(TOTAL_NM).toLocaleString("de-DE")} sm gefahren · <em id="shipWind" style="font-style:normal">Wind …</em> · <em id="shipSea" style="font-style:normal">Seegang …</em>`
+    : `Gesamtstrecke ${Math.round(TOTAL_NM).toLocaleString("de-DE")} sm über ${PORTS.length} Anläufe in ${countries.size} Ländern`;
+
+  /* Anruf-Fenster */
+  const hint = el("callHint");
+  if(fix.phase === "pre" || fix.phase === "done"){
+    hint.hidden = true;
+  } else {
+    const h = hourIn(now, zone), good = h >= 7 && h < 22;
+    hint.hidden = false;
+    hint.className = "call-hint" + (good ? "" : " night");
+    hint.innerHTML = good
+      ? `<b>Guter Moment für einen Anruf.</b> An Bord ist es ${clockIn(now, zone)}, in ${HOME.label} ${clockIn(now, HOME.tz)}.`
+      : `<b>An Bord ist Nacht (${clockIn(now, zone)}).</b> In ${HOME.label} ist es ${clockIn(now, HOME.tz)} – besser später anrufen.`;
+  }
+
+  /* Schiff auf der Karte */
+  shipMarker.setLatLng([fix.lat, fix.lon]).setOpacity(claim ? 1 : 0);
+  shipMarker.setIcon(L.divIcon({
+    className:"",
+    html:`<div class="ship-icon${fix.live ? "" : " est"}"><svg viewBox="-13 -13 26 26" style="transform:rotate(${Math.round(fix.cog || 0)}deg)"><polygon points="0,-11 8,9 0,5 -8,9"/></svg></div>`,
+    iconSize:[26, 26], iconAnchor:[13, 13]
+  }));
+  shipMarker.setTooltipContent(`<b>${SHIP.name}</b><br>${clockIn(now, zone)} Bordzeit · ${sog === null ? "—" : num(sog, 1) + " kn"}<br>${fmtLat(fix.lat)} · ${fmtLon(fix.lon)}<br><span style="color:var(--ink-2)">${fix.live ? SRC_LABEL[fix.src] : "Fahrplan-Schätzung"}</span>`);
+  const sailedPts = !claim ? [] : CALLS.slice(0, Math.max(0, (fix.prevIdx >= 0 ? fix.prevIdx : fix.portIdx) + 1)).map(x => [x.lat, x.lon]);
+  if(claim) sailedPts.push([fix.lat, fix.lon]);
+  sailedLine.setLatLngs(sailedPts.length > 1 ? splitAtDateline(sailedPts) : []);
+
+  /* Wetter am Schiff */
+  weatherAt(fix.lat, fix.lon, claim ? "ship" : "port").then(wx => {
+    const t = el("shipWx");
+    if(!t) return;
+    if(!wx || !wx.current){ t.textContent = "nicht verfügbar"; t.className = ""; return; }
+    const [txt, ic] = wmo(wx.current.weather_code);
+    t.className = "";
+    t.innerHTML = `${icon(ic)} ${Math.round(wx.current.temperature_2m)} <i style="font-style:normal;font-size:14px;color:var(--ink-2)">°C</i>`;
+    t.title = `${txt}, gefühlt ${Math.round(wx.current.apparent_temperature)} °C`;
+    const wind = el("shipWind");
+    if(wind) wind.textContent = `Wind ${num(wx.current.wind_speed_10m, 0)} ${claim ? "kn" : "km/h"} ${compass(wx.current.wind_direction_10m)} · ${txt}`;
+    if(wx.timezone && claim){
+      const key = Math.round(fix.lon) + "|" + Math.round(fix.lat);
+      if(!shipZone || shipZone.key !== key || shipZone.tz !== wx.timezone){
+        shipZone = {key, tz:wx.timezone};
+        try{ localStorage.setItem(LS + "shipZone", JSON.stringify(shipZone)); }catch(e){}
+        renderNow();
+      }
+    }
+  });
+  marineAt(fix.lat, fix.lon).then(m => {
+    const cur = m && m.current;
+    const t = el("shipSea");
+    if(t){
+      if(!cur || !isFinite(cur.wave_height)) t.textContent = "Seegang unbekannt";
+      else t.textContent = `Seegang ${num(cur.wave_height, 1)} m` + (isFinite(cur.wave_period) ? `, Periode ${num(cur.wave_period, 0)} s` : "");
+    }
+    const w = el("shipSst");
+    if(w){
+      w.className = "";
+      const sst = cur && cur.sea_surface_temperature;
+      w.innerHTML = isFinite(sst)
+        ? `${Math.round(sst)} °C<br><i style="font-style:normal;font-size:14px;color:var(--ink-2)">${bathing(sst)}</i>`
+        : `<i style="font-style:normal;font-size:14px;color:var(--ink-2)">keine Daten</i>`;
+    }
+  });
+}
+el("nowExtra").addEventListener("click", e => {
+  const t = e.target.closest("button[data-open]"), z = e.target.closest("button[data-tz]");
+  if(t) select(+t.dataset.open, true);
+  if(z){ renderTzDialog(); el("tzDlg").showModal(); }
+});
+
+/* =======================================================================
+   16 · Detailblatt je Station
+   ===================================================================== */
+const sheet = el("sheet");
+const sheetBody = el("sheetBody");
+const imgCache = new Map();
 async function wikiImage(title){
   if(imgCache.has(title)) return imgCache.get(title);
-  const langs = ["de", "en"];
-  for(const lang of langs){
+  for(const lang of ["de", "en"]){
     try{
       const res = await fetch(`https://${lang}.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`);
       if(!res.ok) continue;
       const data = await res.json();
       const src = data.thumbnail && data.thumbnail.source;
       if(src){
-        const big = src.replace(/\/\d+px-/, "/1000px-");
-        const out = {src:big, page:data.content_urls && data.content_urls.desktop.page};
+        const out = {src: src.replace(/\/\d+px-/, "/1000px-"), page: data.content_urls && data.content_urls.desktop.page};
         imgCache.set(title, out);
         return out;
       }
-    }catch(e){ /* offline oder blockiert: Platzhalter zeigen */ }
+    }catch(e){ /* offline: Platzhalter */ }
   }
   imgCache.set(title, null);
   return null;
 }
+const noteKey = i => `${LS}note.${CALLS[i].n}.${CALLS[i].d1}`;
+const getNote = i => { try{ return localStorage.getItem(noteKey(i)) || ""; }catch(e){ return ""; } };
+
+function wxRow(ic, temp, title, sub){
+  return `<div class="wx">${icon(ic, "ic")}<span class="wx-temp num">${temp}</span><div class="wx-text"><b>${title}</b><span>${sub}</span></div></div>`;
+}
+function renderExcursions(i){
+  const list = excursionsFor(i);
+  const box = el("excList");
+  if(!box) return;
+  box.innerHTML = list.length ? list.map(excCard).join("")
+    : CALLS[i].transit
+      ? `<div class="exc-empty">Kein Landgang – hier lassen sich Programmpunkte an Bord notieren, etwa der Platz an Deck für die Schleusen.</div>`
+      : `<div class="exc-empty">Noch kein Landausflug für ${short(CALLS[i].n)} eingetragen. Ausflug, Uhrzeit, Treffpunkt und Hinweise unten erfassen – so weiß jeder, wo Mama gerade ist.</div>`;
+}
 
 function renderSheet(i){
-  const c = CALLS[i], h = hours(c);
+  const c = CALLS[i], h = hoursInPort(c), now = Date.now();
+  const fix = livePos();
   const dateLine = c.d2 > c.d1 ? `${fmtFull(c.d1)} – ${fmtFull(c.d2)}` : fmtFull(c.d1);
-  const timeLine = c.type === "start" ? `Ablegen ${c.dep}` : c.type === "end" ? `Ankunft ${c.arr}` : `${c.arr} – ${c.dep} Uhr`;
+  const timeLine = c.type === "start" ? `Ablegen ${c.dep}` : c.type === "end" ? `Ankunft ${c.arr}` : `${c.arr} – ${c.dep}${h ? " · " + fmtDur(h) : ""}`;
+  const stayLabel = c.transit ? "Durchfahrt" : "Liegezeit";
+  const isNext = i === (fix.nextIdx >= 0 ? fix.nextIdx : nextCallIdx(now));
+  const isPast = (c.depUtc || c.arrUtc) < now;
+  const nmFromShip = distNm(fix.lat, fix.lon, c.lat, c.lon);
+  const ch = CLOCK_CHANGES.find(x => x.to === i);
+
+  let etaBlock = "";
+  if(isNext){
+    const e = etaFor(fix, i);
+    etaBlock = `<div class="wx-box eta-box"><div class="lbl">Ankunftsprognose</div>
+      <div class="eta-rows">
+        <span>Entfernung</span><b>${Math.round(e.nm).toLocaleString("de-DE")} sm</b><i class="sp"></i>
+        <span>Geplant</span><b>${stampIn(c.arrUtc, c.tz)}</b><i class="sp"></i>
+        <span>Erwartet</span><b>${fix.phase === "sea" ? stampIn(e.eta, c.tz) : "laut Plan"}</b>${fix.phase === "sea" ? deltaBadge(e.delta) : '<i class="sp"></i>'}
+        <div class="eta-note">${fix.live ? SRC_LABEL[fix.src] : "Fahrplan-Schätzung"}${fix.phase === "sea" ? ", " + num(e.kn, 1) + " kn" : ""} · Ortszeit ${short(c.n)}</div>
+      </div></div>`;
+  }
 
   sheetBody.innerHTML = `
     <figure class="hero" id="hero">
       <div class="placeholder">Bild wird geladen</div>
       <figcaption>
         <div class="region">Tag ${c.d1}${c.d2 > c.d1 ? "–" + c.d2 : ""} · ${c.r}</div>
-        <h2>${c.n}</h2>
-        <div class="country">${c.c}</div>
+        <h2>${short(c.n)}</h2>
+        <div class="country">${c.n.includes(" | ") ? c.n.split(" | ")[1] + " · " : ""}${c.c}</div>
       </figcaption>
     </figure>
     <div class="facts">
       <div class="fact"><span>Datum</span><b>${dateLine}</b></div>
-      <div class="fact"><span>Liegezeit</span><b>${timeLine}</b></div>
-      <div class="fact"><span>Dauer an Land</span><b>${h === null ? "—" : fmtDur(h)}</b></div>
-      <div class="fact"><span>Position</span><b style="font-family:'IBM Plex Mono',monospace;font-size:12.5px">${c.lat.toFixed(3)}, ${c.lon.toFixed(3)}</b></div>
+      <div class="fact"><span>${stayLabel}</span><b class="num">${timeLine}</b></div>
+      <div class="fact"><span>Dort jetzt</span><b class="num">${clockIn(now, c.tz)} <i>${zoneTag(now, c.tz)} · ${vsHome(now, c.tz)}</i></b></div>
+      <div class="fact"><span>Vom Schiff</span><b class="num">${Math.round(nmFromShip).toLocaleString("de-DE")} sm</b></div>
     </div>
     <div class="body">
+      ${etaBlock}
+      ${ch ? `<div class="hint" style="margin:0 0 14px;display:flex;gap:10px;align-items:flex-start">${icon("clock")}<div><b>Zeitumstellung vor diesem Hafen:</b> ${clockText(ch)}.</div></div>` : ""}
+      <div class="wx-box" id="wxNow"><div class="lbl">Wetter vor Ort</div><div class="loading">wird geladen …</div></div>
+      <div class="wx-box" id="wxDay" hidden></div>
       <p>${c.t}</p>
-      <h3>Nicht versäumen</h3>
-      <ul>${c.h.map(x => `<li>${x}</li>`).join("")}</ul>
-      ${c.note ? `<p class="hint">${c.note}</p>` : ""}
-      <div class="links">
-        <a href="https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lon}" target="_blank" rel="noopener">In Google Maps öffnen</a>
-        <a href="https://de.wikipedia.org/wiki/${encodeURIComponent(c.w)}" target="_blank" rel="noopener">Wikipedia</a>
-      </div>
-      <p class="credit">Bild: Wikipedia / Wikimedia Commons</p>
-    </div>`;
 
-  const hero = document.getElementById("hero");
+      <h3>${c.transit ? "An Bord während der Passage" : "Landausflüge"} <button class="more" id="excAdd">+ ${c.transit ? "Programmpunkt" : "Ausflug"} eintragen</button></h3>
+      <div id="excList"></div>
+      <form class="exc-form" id="excForm" hidden>
+        <label class="wide">Was<input name="title" required placeholder="z. B. Stadtrundfahrt mit Costa"></label>
+        <label>Uhrzeit<input name="time" type="time" placeholder="09:15"></label>
+        <label>Dauer<input name="dur" placeholder="4 Std."></label>
+        <label class="wide">Treffpunkt<input name="meet" placeholder="Theater Deck 3"></label>
+        <label class="wide">Hinweise<textarea name="note" placeholder="Gebucht über Costa, festes Schuhwerk, Rückkehr spätestens 17:00"></textarea></label>
+        <div class="row"><button class="btn primary" type="submit">Speichern</button><button class="btn" type="button" id="excCancel">Abbrechen</button><span class="loading">bleibt in diesem Browser · zum Teilen als JSON kopieren</span></div>
+      </form>
+
+      <h3>Nicht versäumen</h3>
+      <ul class="plain">${c.h.map(x => `<li>${x}</li>`).join("")}</ul>
+      ${c.note ? `<p class="hint">${c.note}</p>` : ""}
+
+      <h3>Notizen</h3>
+      <div class="journal">
+        <textarea id="noteBox" placeholder="Was war hier schön? Wen habt ihr getroffen? Was soll Mama nicht vergessen?">${esc(getNote(i))}</textarea>
+        <div class="row"><span>bleibt in diesem Browser</span><span class="saved" id="noteSaved"></span></div>
+      </div>
+      <div class="links">
+        <a class="chip" href="https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lon}" target="_blank" rel="noopener">Google Maps</a>
+        <a class="chip" href="https://de.wikipedia.org/wiki/${encodeURIComponent(c.w)}" target="_blank" rel="noopener">Wikipedia</a>
+        <a class="chip" href="https://www.windy.com/${c.lat}/${c.lon}?${c.lat},${c.lon},8" target="_blank" rel="noopener">Windy</a>
+        <button class="chip" id="shareBtn">Link kopieren</button>
+        <button class="chip" id="excCopy">Ausflüge als JSON</button>
+      </div>
+    </div>
+    <p class="credit">Bild: Wikipedia / Wikimedia Commons · Wetter: Open-Meteo${isPast ? " · Dieser Hafen liegt bereits hinter uns" : ""}</p>`;
+  sheetBody.dataset.i = i;
+  renderExcursions(i);
+
+  /* Bild */
+  const hero = el("hero");
   wikiImage(c.w).then(res => {
-    if(!res || sheetBody.dataset.i != i) {
-      if(!res) hero.querySelector(".placeholder").textContent = c.n;
-      return;
-    }
+    if(sheetBody.dataset.i != i) return;
+    if(!res){ const ph = hero.querySelector(".placeholder"); if(ph) ph.textContent = short(c.n); return; }
     const img = new Image();
-    img.alt = c.n;
-    img.src = res.src;
-    img.addEventListener("load", () => {
-      img.classList.add("is-loaded");
-      const ph = hero.querySelector(".placeholder");
-      if(ph) ph.remove();
-    });
+    img.alt = c.n; img.src = res.src;
+    img.addEventListener("load", () => { img.classList.add("is-loaded"); const ph = hero.querySelector(".placeholder"); if(ph) ph.remove(); });
     hero.insertBefore(img, hero.firstChild);
   });
-  sheetBody.dataset.i = i;
+
+  /* Wetter und Wassertemperatur */
+  Promise.all([weatherAt(c.lat, c.lon, "port"), marineAt(c.lat, c.lon)]).then(([wx, marine]) => {
+    if(sheetBody.dataset.i != i) return;
+    const sstNow = sstFor(marine, null), sstDay = sstFor(marine, c.d1);
+    const sstNowTxt = isFinite(sstNow.value) ? ` · Wasser ${Math.round(sstNow.value)} °C, ${bathing(sstNow.value)}` : "";
+    const sstDayTxt = isFinite(sstDay.value)
+      ? ` · Wasser ${Math.round(sstDay.value)} °C${sstDay.forecast ? "" : " (derzeit)"}` : "";
+    const box = el("wxNow");
+    if(!wx || !wx.current){ box.innerHTML = `<div class="lbl">Wetter vor Ort</div><div class="loading">gerade nicht abrufbar</div>`; return; }
+    const cur = wx.current, [txt, ic] = wmo(cur.weather_code);
+    const d0 = wx.daily && wx.daily.time ? 0 : -1;
+    box.innerHTML = `<div class="lbl">Wetter vor Ort · ${clockIn(Date.now(), c.tz)} Ortszeit</div>` +
+      wxRow(ic, `${Math.round(cur.temperature_2m)}°`, txt,
+        `gefühlt ${Math.round(cur.apparent_temperature)} °C · ${Math.round(cur.relative_humidity_2m)} % Luftfeuchte · Wind ${num(cur.wind_speed_10m, 0)} km/h ${compass(cur.wind_direction_10m)}`
+        + (d0 >= 0 ? ` · ${Math.round(wx.daily.temperature_2m_min[d0])}–${Math.round(wx.daily.temperature_2m_max[d0])} °C heute · Sonne ${hhmm(wx.daily.sunrise[d0])}–${hhmm(wx.daily.sunset[d0])}` : "")
+        + sstNowTxt);
+    const di = dailyIndexFor(wx, c.d1), dayBox = el("wxDay");
+    if(di > 0 && !isPast){
+      const [dtxt, dic] = wmo(wx.daily.weather_code[di]);
+      const warn = portWarnings(c, wx);
+      dayBox.hidden = false;
+      dayBox.innerHTML = `<div class="lbl">Wetter am Anlauftag · ${fmtShort(c.d1)}</div>` +
+        wxRow(dic, `${Math.round(wx.daily.temperature_2m_max[di])}°`, dtxt,
+          `${Math.round(wx.daily.temperature_2m_min[di])}–${Math.round(wx.daily.temperature_2m_max[di])} °C` +
+          (wx.daily.precipitation_probability_max ? ` · ${Math.round(wx.daily.precipitation_probability_max[di])} % Regen` : "") +
+          (wx.daily.wind_gusts_10m_max ? ` · Böen bis ${Math.round(wx.daily.wind_gusts_10m_max[di])} km/h` : "") +
+          sstDayTxt +
+          ` · Sonne ${hhmm(wx.daily.sunrise[di])}–${hhmm(wx.daily.sunset[di])}`) +
+        (warn.length ? `<div class="warnbox" style="margin-top:10px">${icon("warn")}<div><b>Warnung:</b> ${warn.map(esc).join(" · ")}</div></div>` : "");
+    } else dayBox.hidden = true;
+  });
+
+  /* Landausflüge */
+  const form = el("excForm");
+  el("excAdd").addEventListener("click", () => { form.hidden = false; form.title.focus(); });
+  el("excCancel").addEventListener("click", () => { form.hidden = true; form.reset(); });
+  form.addEventListener("submit", e => {
+    e.preventDefault();
+    const f = new FormData(form);
+    addExcursion(i, {title:f.get("title").trim(), time:f.get("time"), dur:f.get("dur").trim(), meet:f.get("meet").trim(), note:f.get("note").trim()});
+    form.reset(); form.hidden = true;
+    renderExcursions(i); renderList(); renderNow();
+  });
+  el("excList").addEventListener("click", e => {
+    const d = e.target.closest("button[data-del]");
+    if(d && d.dataset.del){ removeExcursion(d.dataset.del); renderExcursions(i); renderList(); renderNow(); }
+  });
+  el("excCopy").addEventListener("click", async e => {
+    const json = JSON.stringify(localExc.map(({id, ...rest}) => rest), null, 2);
+    try{ await navigator.clipboard.writeText(json); e.target.textContent = "JSON kopiert"; }
+    catch(err){ e.target.textContent = "Kopieren nicht möglich"; }
+  });
+
+  /* Notizen */
+  const box = el("noteBox"), saved = el("noteSaved");
+  let timer = null;
+  box.addEventListener("input", () => {
+    clearTimeout(timer);
+    timer = setTimeout(() => {
+      try{
+        if(box.value.trim()) localStorage.setItem(noteKey(i), box.value); else localStorage.removeItem(noteKey(i));
+        saved.textContent = "gespeichert " + clockIn(Date.now(), HOME.tz);
+      }catch(e){ saved.textContent = "Speichern nicht möglich"; }
+    }, 600);
+  });
+  el("shareBtn").addEventListener("click", async e => {
+    const url = location.origin + location.pathname + `#hafen-${i}`;
+    try{ await navigator.clipboard.writeText(url); e.target.textContent = "Link kopiert"; }
+    catch(err){ location.hash = `hafen-${i}`; e.target.textContent = "Link in der Adresszeile"; }
+  });
 }
 
 function select(i, fly){
+  if(i < 0 || i >= CALLS.length) return;
   activeIdx = i;
-  renderList();
-  markLogDays(i);
-  renderSheet(i);
+  renderList(); markLogDays(i); renderSheet(i);
   sheet.classList.add("is-open");
-
+  history.replaceState(null, "", `#hafen-${i}`);
   const c = CALLS[i];
   halo.setLatLng([c.lat, c.lon]).setStyle({opacity:.9});
-  markers.forEach((m, k) => m.setStyle({fillColor: k === i ? "#6FD3C6" : "#E8B04B"}));
+  applyMapTheme();
   if(fly) map.flyTo([c.lat, c.lon], Math.max(map.getZoom(), 5), {duration:.9});
-
   const row = stopsEl.querySelector(`.stop[data-i="${i}"]`);
   if(row) row.scrollIntoView({block:"nearest"});
 }
-
 function closeSheet(){
   sheet.classList.remove("is-open");
   activeIdx = -1;
   halo.setStyle({opacity:0});
-  markers.forEach(m => m.setStyle({fillColor:"#E8B04B"}));
-  markLogDays(-1);
-  renderList();
+  applyMapTheme(); markLogDays(-1); renderList();
+  history.replaceState(null, "", location.pathname);
 }
-document.getElementById("backBtn").addEventListener("click", closeSheet);
-addEventListener("keydown", e => { if(e.key === "Escape") closeSheet(); });
+el("backBtn").addEventListener("click", closeSheet);
+addEventListener("keydown", e => { if(e.key === "Escape" && !document.querySelector("dialog[open]")) closeSheet(); });
+el("nextBtn").addEventListener("click", () => { const idx = nextCallIdx(Date.now()); select(idx < 0 ? CALLS.length - 1 : idx, true); });
 
-/* Nächster Hafen ab heute */
-document.getElementById("nextBtn").addEventListener("click", () => {
-  const today = Math.floor((Date.now() - START) / 86400000) + 1;
-  const idx = CALLS.findIndex(c => c.d2 >= today);
-  select(idx < 0 ? CALLS.length - 1 : idx, true);
+/* =======================================================================
+   17 · Kalender, Dialoge, Einstellungen
+   ===================================================================== */
+const icsTime = ms => new Date(ms).toISOString().replace(/[-:]/g, "").slice(0, 15) + "Z";
+const icsEsc = s => String(s).replace(/\\/g, "\\\\").replace(/[,;]/g, m => "\\" + m).replace(/\n/g, "\\n");
+function buildIcs(){
+  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Weltreise//Costa Deliziosa//DE", "CALSCALE:GREGORIAN"];
+  CALLS.forEach((c, i) => {
+    const start = c.arrUtc || c.depUtc, end = c.depUtc || c.arrUtc;
+    if(!start) return;
+    const h = hoursInPort(c);
+    const exc = excursionsFor(i).map(e => `${e.time || ""} ${e.title}${e.meet ? " (Treffpunkt " + e.meet + ")" : ""}`.trim());
+    lines.push("BEGIN:VEVENT", `UID:weltreise-${i}@costa-deliziosa`, `DTSTAMP:${icsTime(Date.now())}`,
+      `DTSTART:${icsTime(start)}`, `DTEND:${icsTime(end === start ? start + 3600000 : end)}`,
+      `SUMMARY:Tag ${c.d1} · ${icsEsc(c.n)}`, `LOCATION:${icsEsc(c.n + ", " + c.c)}`,
+      `DESCRIPTION:${icsEsc(c.t + (h ? ` (${fmtDur(h)} an Land, Ortszeit ${c.arr}–${c.dep})` : "") + (exc.length ? "\nLandausflüge: " + exc.join("; ") : ""))}`,
+      `GEO:${c.lat};${c.lon}`, "END:VEVENT");
+  });
+  CLOCK_CHANGES.forEach((ch, k) => {
+    const b = CALLS[ch.to], night = ch.at - 6 * 3600000;
+    lines.push("BEGIN:VEVENT", `UID:weltreise-tz-${k}@costa-deliziosa`, `DTSTAMP:${icsTime(Date.now())}`,
+      `DTSTART:${icsTime(night)}`, `DTEND:${icsTime(night + 3600000)}`,
+      `SUMMARY:${icsEsc(clockText(ch))}`, `DESCRIPTION:${icsEsc("Vor der Ankunft in " + b.n + ". Genaue Nacht laut Bordprogramm.")}`, "END:VEVENT");
+  });
+  lines.push("END:VCALENDAR");
+  return lines.join("\r\n");
+}
+el("icsBtn").addEventListener("click", () => {
+  const blob = new Blob([buildIcs()], {type:"text/calendar;charset=utf-8"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob); a.download = "weltreise-2026-2027.ics"; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
 });
+document.querySelectorAll("dialog.panel [data-close]").forEach(b => b.addEventListener("click", () => b.closest("dialog").close()));
+document.querySelectorAll("dialog.panel").forEach(d => d.addEventListener("click", e => { if(e.target === d) d.close(); }));
+el("statsBtn").addEventListener("click", () => { renderStatsDialog(); el("statsDlg").showModal(); });
+el("tzBtn").addEventListener("click", () => { renderTzDialog(); el("tzDlg").showModal(); });
+el("themeBtn").addEventListener("click", () => setTheme(!isDark()));
 
-renderList();
+const dlg = el("cfgDlg");
+function syncCfgForm(){
+  el("cfgMode").value = cfg.mode;
+  el("cfgKey").value = cfg.key || "";
+  const m = cfg.manual || {};
+  el("cfgLat").value = m.lat ?? ""; el("cfgLon").value = m.lon ?? "";
+  el("cfgSog").value = m.sog ?? ""; el("cfgCog").value = m.cog ?? "";
+  el("cfgManual").hidden = !(cfg.mode === "manual" || cfg.mode === "auto");
+  el("cfgAis").hidden = !(cfg.mode === "ais" || cfg.mode === "auto");
+  const fix = livePos();
+  el("cfgStatus").textContent = fix.live
+    ? `Aktuell aktiv: ${SRC_LABEL[fix.src]}, gemeldet vor ${fmtCountdown(Date.now() - fix.t)}.`
+    : `Aktuell aktiv: Fahrplan-Schätzung.${aisError ? " AIS: " + aisError : ""}`;
+}
+el("cfgBtn").addEventListener("click", () => { syncCfgForm(); dlg.showModal(); });
+el("cfgMode").addEventListener("change", () => { cfg.mode = el("cfgMode").value; syncCfgForm(); });
+el("cfgSave").addEventListener("click", () => {
+  cfg.mode = el("cfgMode").value; cfg.key = el("cfgKey").value.trim();
+  const lat = parseFloat(el("cfgLat").value.replace(",", ".")), lon = parseFloat(el("cfgLon").value.replace(",", "."));
+  if(isFinite(lat) && isFinite(lon)){
+    cfg.manual = {lat, lon, sog:parseFloat(el("cfgSog").value.replace(",", ".")), cog:parseFloat(el("cfgCog").value.replace(",", ".")), t:Date.now()};
+  } else if(!el("cfgLat").value && !el("cfgLon").value) cfg.manual = null;
+  saveCfg();
+  if(cfg.key) connectAis();
+  refreshView(); dlg.close();
+});
+el("cfgCopy").addEventListener("click", async () => {
+  const fix = livePos();
+  const json = JSON.stringify({lat:+fix.lat.toFixed(4), lon:+fix.lon.toFixed(4), sog:isFinite(fix.sog) ? +(+fix.sog).toFixed(1) : null,
+    cog:isFinite(fix.cog) ? Math.round(fix.cog) : null, timestamp:new Date(fix.t).toISOString(), source:fix.live ? fix.src : "schedule"}, null, 2);
+  try{ await navigator.clipboard.writeText(json); el("cfgStatus").textContent = "JSON in der Zwischenablage."; }
+  catch(e){ el("cfgStatus").textContent = json; }
+});
+const foldBtn = el("foldBtn"), nowEl = el("now");
+function setFold(folded){
+  nowEl.classList.toggle("is-folded", folded);
+  foldBtn.innerHTML = `<svg class="ic" style="width:20px;height:20px"><use href="#i-${folded ? "down" : "up"}"/></svg>`;
+  foldBtn.setAttribute("aria-expanded", String(!folded));
+  try{ localStorage.setItem(LS + "fold", folded ? "1" : "0"); }catch(e){}
+}
+foldBtn.addEventListener("click", () => setFold(!nowEl.classList.contains("is-folded")));
+try{ if(localStorage.getItem(LS + "fold") === "1") setFold(true); }catch(e){}
+el("vfLink").href = SHIP.vf; el("mtLink").href = SHIP.mt;
+el("refreshBtn").addEventListener("click", async () => { await Promise.all([loadFilePosition(), loadSharedExcursions()]); refreshView(); refreshWarnings(); });
+
+/* =======================================================================
+   18 · Start und Takt
+   ===================================================================== */
+function refreshView(){
+  renderStats(); markToday(); renderNow();
+  if(sheet.classList.contains("is-open") && activeIdx >= 0) renderSheet(activeIdx); else renderList();
+}
+function openFromHash(){
+  const m = /^#hafen-(\d+)$/.exec(location.hash);
+  if(m) select(+m[1], true);
+}
+setTheme(isDark());
+renderList(); markToday(); renderNow(); renderWarnBox();
+Promise.all([loadFilePosition(), loadSharedExcursions()]).then(() => { refreshView(); refreshWarnings(); });
+if(cfg.key && (cfg.mode === "auto" || cfg.mode === "ais")) connectAis();
+openFromHash();
+addEventListener("hashchange", openFromHash);
+setInterval(renderNow, 20000);
+setInterval(() => { loadFilePosition().then(refreshView); }, 5 * 60000);
+setInterval(refreshWarnings, 30 * 60000);
+setInterval(renderList, 10 * 60000);
+document.addEventListener("visibilitychange", () => { if(!document.hidden){ loadFilePosition().then(refreshView); refreshWarnings(); } });
+if("serviceWorker" in navigator && location.protocol.startsWith("http")){
+  navigator.serviceWorker.register("sw.js").catch(() => {});
+}
 </script>
 </body>
 </html>

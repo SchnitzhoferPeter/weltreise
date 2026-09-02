@@ -1,0 +1,9 @@
+{
+  "lat": -18.36,
+  "lon": -177.53,
+  "sog": 16.4,
+  "cog": 273,
+  "timestamp": "2027-01-22T06:00:00Z",
+  "source": "VesselFinder, manuell abgelesen",
+  "note": "optional: Freitext, wird derzeit nicht angezeigt"
+}

@@ -1,0 +1,18 @@
+[
+  {
+    "port": "Suva|61",
+    "title": "Colo-i-Suva-Regenwald",
+    "time": "09:15",
+    "dur": "4 Std.",
+    "meet": "Theater Deck 3",
+    "note": "Gebucht über Costa, festes Schuhwerk"
+  },
+  {
+    "port": "Sydney|67",
+    "title": "Opernhaus und Bondi Beach",
+    "time": "08:30",
+    "dur": "Ganztag",
+    "meet": "Pier, Ausgang Deck 4",
+    "note": "Der Schlüssel port ist Hafenname wie in der Route plus Reisetag der Ankunft, getrennt durch |"
+  }
+]
