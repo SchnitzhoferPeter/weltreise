@@ -2067,8 +2067,11 @@ function renderSheet(i){
   if(diary.url){
     const dh = el("diaryHint");
     dh.hidden = false;
-    dh.innerHTML = `Was hier erlebt wurde, steht im <a href="#" id="diaryOpen">Reisetagebuch auf FindPenguins</a> – mit Fotos und Text von Bord.`;
-    el("diaryOpen").addEventListener("click", e => { e.preventDefault(); openDiary(); });
+    dh.innerHTML = diary.embed
+      ? `Was hier erlebt wurde, steht im <a href="#" id="diaryOpen">Reisetagebuch auf FindPenguins</a> – mit Fotos und Text von Bord.`
+      : `Was hier erlebt wurde, steht im <a href="${esc(diary.url)}" target="_blank" rel="noopener">Reisetagebuch auf FindPenguins</a> – mit Fotos und Text von Bord.`;
+    const dl = el("diaryOpen");
+    if(dl) dl.addEventListener("click", e => { e.preventDefault(); openDiary(); });
   }
   el("shareBtn").addEventListener("click", async e => {
     const url = location.origin + location.pathname + `#hafen-${i}`;
@@ -2239,7 +2242,11 @@ function openDiary(){
   showSheet();
   history.replaceState(null, "", "#tagebuch");
 }
-el("diaryBtn").addEventListener("click", openDiary);
+/* Ohne Einbettung führt der Knopf direkt zu FindPenguins (privater Trip, ein Klick) */
+el("diaryBtn").addEventListener("click", () => {
+  if(diary.embed) openDiary();
+  else window.open(diary.url, "_blank", "noopener");
+});
 
 function openShip(){
   const fix = livePos(), claim = fix.live || fix.phase !== "pre";
@@ -2373,7 +2380,7 @@ function openFromHash(){
   const m = /^#hafen-(\d+)$/.exec(location.hash);
   if(m) select(+m[1], true);
   else if(location.hash === "#schiff") openShip();
-  else if(location.hash === "#tagebuch") loadDiaryConfig().then(openDiary);
+  else if(location.hash === "#tagebuch") loadDiaryConfig().then(() => { if(diary.embed) openDiary(); else if(diary.url) location.replace(diary.url); });
 }
 applyMapTheme();
 if(/^#ais=/.test(location.hash)) history.replaceState(null, "", location.pathname);   /* alte Einladungslinks */
