@@ -34,7 +34,11 @@ jobs:
         run: |
           mkdir -p out
           if git fetch --depth 1 origin position-data 2>/dev/null; then
-            git show origin/position-data:position.json > out/position.json 2>/dev/null || true
+            if git show origin/position-data:position.json > out/position.tmp 2>/dev/null && [ -s out/position.tmp ]; then
+              mv out/position.tmp out/position.json
+            else
+              rm -f out/position.tmp
+            fi
           fi
 
       - name: Position über aisstream abfragen

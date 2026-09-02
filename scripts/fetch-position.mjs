@@ -12,8 +12,11 @@ const OUT = process.env.OUT_DIR || "out";
 if(!KEY){ console.error("AISSTREAM_KEY fehlt (Repository-Secret)."); process.exit(1); }
 mkdirSync(OUT, { recursive: true });
 
-const previous = existsSync(`${OUT}/position.json`)
-  ? JSON.parse(readFileSync(`${OUT}/position.json`, "utf8")) : null;
+let previous = null;
+try{
+  const raw = existsSync(`${OUT}/position.json`) ? readFileSync(`${OUT}/position.json`, "utf8").trim() : "";
+  previous = raw ? JSON.parse(raw) : null;
+}catch(e){ previous = null; }
 
 let fix = null, error = "", finished = false;
 const started = Date.now();
