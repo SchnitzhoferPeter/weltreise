@@ -78,9 +78,14 @@ Der Entwurf liegt als Design-Canvas vor: https://claude.ai/code/artifact/2898c28
    [VesselFinder](https://www.vesselfinder.com/vessels/details/9398917) abliest, trägt sie
    dort ein (Vorlage: `data/position.example.json`), committet – und alle sehen dasselbe.
    Meldungen älter als 18 Stunden werden ignoriert.
-2. **AIS live über [aisstream.io](https://aisstream.io)** – kostenloser API-Key, der nur im
-   Browser gespeichert wird (`localStorage`). AIS über Landstationen erreicht das Schiff nur
-   in Küstennähe; mitten im Pazifik gibt es keine Meldung.
+2. **AIS live über [aisstream.io](https://aisstream.io)** – kostenloser API-Key (Anmeldung mit
+   GitHub-Konto, dann „API Keys“). Den Key unter **Positionsquelle** eintragen; er bleibt im
+   Browser (`localStorage`) und geht nur an aisstream.io. Über **Einladungslink kopieren** entsteht
+   ein Link der Form `index.html#ais=…`, der den Key beim Öffnen lokal übernimmt – so bekommt die
+   Familie AIS live ohne eigene Eingabe. Der Key gehört nicht ins (öffentliche) Repository.
+   Die Verbindung baut sich nach Abbrüchen selbst wieder auf; der Status steht im Dialog und in der
+   Bordkarte. AIS über Landstationen erreicht das Schiff in Häfen und bis etwa 40 sm vor der Küste;
+   auf hoher See bleibt die Fahrplan-Schätzung.
 3. **Manuell eingetragene Position** – im Dialog eintippen, gilt nur im eigenen Browser.
    Der Knopf „Position als JSON kopieren“ liefert direkt den Inhalt für Punkt 1.
 4. **Fahrplan-Schätzung** – Großkreis zwischen den beiden Häfen, zeitlich interpoliert.
