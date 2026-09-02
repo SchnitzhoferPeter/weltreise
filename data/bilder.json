@@ -1,0 +1,134 @@
+{
+  "civitavecchia": {
+    "file": "img/civitavecchia.jpg",
+    "title": "Civitavecchia",
+    "wiki": "https://de.wikipedia.org/wiki/Civitavecchia",
+    "lang": "de",
+    "author": "",
+    "license": "",
+    "licenseUrl": "",
+    "page": "https://commons.wikimedia.org/wiki/File:Civitavecchia_dall'aereo.JPG%3Futm_source%3Dde.wikipedia.org%26utm_campaign%3Dapi%26utm_content%3Dthumbnail_unscaled",
+    "bytes": 1092960
+  },
+  "savona": {
+    "file": "img/savona.jpg",
+    "title": "Savona",
+    "wiki": "https://de.wikipedia.org/wiki/Savona",
+    "lang": "de",
+    "author": "",
+    "license": "",
+    "licenseUrl": "",
+    "page": "https://commons.wikimedia.org/wiki/File:Savona_(260099167).jpeg%3Futm_source%3Dde.wikipedia.org%26utm_campaign%3Dapi%26utm_content%3Dthumbnail_unscaled",
+    "bytes": 799175
+  },
+  "marseille": {
+    "file": "img/marseille.jpg",
+    "title": "Marseille",
+    "wiki": "https://de.wikipedia.org/wiki/Marseille",
+    "lang": "de",
+    "author": "",
+    "license": "",
+    "licenseUrl": "",
+    "page": "https://commons.wikimedia.org/wiki/File:3840px-Marseille_-_Vieux-Port2.jpg%3Futm_source%3Dde.wikipedia.org%26utm_campaign%3Dapi%26utm_content%3Dthumbnail",
+    "bytes": 2344470
+  },
+  "lissabon": {
+    "file": "img/lissabon.jpg",
+    "title": "Lissabon",
+    "wiki": "https://de.wikipedia.org/wiki/Lissabon",
+    "lang": "de",
+    "author": "",
+    "license": "",
+    "licenseUrl": "",
+    "page": "https://commons.wikimedia.org/wiki/File:langde-960px-Coat_of_Arms_of_Lisbon.svg.png%3Futm_source%3Dde.wikipedia.org%26utm_campaign%3Dapi%26utm_content%3Dthumbnail",
+    "bytes": 94571
+  },
+  "new-york-city": {
+    "file": "img/new-york-city.jpg",
+    "title": "New York City",
+    "wiki": "https://en.wikipedia.org/wiki/New_York_City",
+    "lang": "en",
+    "author": "",
+    "license": "",
+    "licenseUrl": "",
+    "page": "https://commons.wikimedia.org/wiki/File:3840px-View_of_Empire_State_Building_from_Rockefeller_Center_New_York_City_dllu_(cropped).jpg%3Futm_source%3Den.wikipedia.org%26utm_campaign%3Dapi%26utm_content%3Dthumbnail",
+    "bytes": 1829312
+  },
+  "los-angeles": {
+    "file": "img/los-angeles.jpg",
+    "title": "Los Angeles",
+    "wiki": "https://en.wikipedia.org/wiki/Los_Angeles",
+    "lang": "en",
+    "author": "",
+    "license": "",
+    "licenseUrl": "",
+    "page": "https://commons.wikimedia.org/wiki/File:3840px-Hollywood_sign_(8485145044).jpg%3Futm_source%3Den.wikipedia.org%26utm_campaign%3Dapi%26utm_content%3Dthumbnail",
+    "bytes": 1155245
+  },
+  "nha-trang": {
+    "file": "img/nha-trang.jpg",
+    "title": "Nha Trang",
+    "wiki": "https://de.wikipedia.org/wiki/Nha_Trang",
+    "lang": "de",
+    "author": "",
+    "license": "",
+    "licenseUrl": "",
+    "page": "https://commons.wikimedia.org/wiki/File:Nha_Trang%2C_Kh%C3%A1nh_H%C3%B2a.png%3Futm_source%3Dde.wikipedia.org%26utm_campaign%3Dapi%26utm_content%3Dthumbnail_unscaled",
+    "bytes": 1076299
+  },
+  "ho-chi-minh-stadt": {
+    "file": "img/ho-chi-minh-stadt.jpg",
+    "title": "Ho-Chi-Minh-Stadt",
+    "wiki": "https://de.wikipedia.org/wiki/Ho-Chi-Minh-Stadt",
+    "lang": "de",
+    "author": "",
+    "license": "",
+    "licenseUrl": "",
+    "page": "https://commons.wikimedia.org/wiki/File:3840px-Ho_Chi_Minh_City_panorama_2019_(cropped2).jpg%3Futm_source%3Dde.wikipedia.org%26utm_campaign%3Dapi%26utm_content%3Dthumbnail",
+    "bytes": 2071134
+  },
+  "singapur": {
+    "file": "img/singapur.jpg",
+    "title": "Singapur",
+    "wiki": "https://de.wikipedia.org/wiki/Singapur",
+    "lang": "de",
+    "author": "",
+    "license": "",
+    "licenseUrl": "",
+    "page": "https://commons.wikimedia.org/wiki/File:langde-960px-Flag_of_Singapore.svg.png%3Futm_source%3Dde.wikipedia.org%26utm_campaign%3Dapi%26utm_content%3Dthumbnail",
+    "bytes": 2648
+  },
+  "port-klang": {
+    "file": "img/port-klang.jpg",
+    "title": "Kuala Lumpur",
+    "wiki": "https://de.wikipedia.org/wiki/Kuala_Lumpur",
+    "lang": "de",
+    "author": "",
+    "license": "",
+    "licenseUrl": "",
+    "page": "https://commons.wikimedia.org/wiki/File:3840px-Kuala_Lumpur_at_dawn_(18794580599).jpg%3Futm_source%3Dde.wikipedia.org%26utm_campaign%3Dapi%26utm_content%3Dthumbnail",
+    "bytes": 1471275
+  },
+  "george-town-penang": {
+    "file": "img/george-town-penang.jpg",
+    "title": "George Town (Penang)",
+    "wiki": "https://de.wikipedia.org/wiki/George_Town_(Penang)",
+    "lang": "de",
+    "author": "",
+    "license": "",
+    "licenseUrl": "",
+    "page": "https://commons.wikimedia.org/wiki/File:3840px-Georgetown_Penang_1.jpg%3Futm_source%3Dde.wikipedia.org%26utm_campaign%3Dapi%26utm_content%3Dthumbnail",
+    "bytes": 2548728
+  },
+  "colombo": {
+    "file": "img/colombo.jpg",
+    "title": "Colombo",
+    "wiki": "https://en.wikipedia.org/wiki/Colombo",
+    "lang": "en",
+    "author": "",
+    "license": "",
+    "licenseUrl": "",
+    "page": "https://commons.wikimedia.org/wiki/File:Colombo_city_skyline_at_night.png%3Futm_source%3Den.wikipedia.org%26utm_campaign%3Dapi%26utm_content%3Dthumbnail_unscaled",
+    "bytes": 2238354
+  }
+}
