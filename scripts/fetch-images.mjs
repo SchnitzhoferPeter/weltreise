@@ -55,20 +55,30 @@ async function license(fileTitle){
   };
 }
 
+/* Kandidaten je Hafen: Zeichenkette oder Liste; „en:Titel“ erzwingt die englische Wikipedia.
+   Karten, Wappen und Grafiken (svg/gif) werden übersprungen, damit ein Foto herauskommt. */
 const targets = new Map();
 CALLS.forEach(c => targets.set(c.w, overrides[c.n] || overrides[c.w] || c.w));
 targets.set("Costa Deliziosa", overrides["Costa Deliziosa"] || "Costa Deliziosa");
+const isPhoto = src => /\.(jpe?g|png|webp)(\?|$)/i.test(String(src)) && !/\.svg\.png(\?|$)/i.test(String(src));
 
 const out = {}, misses = [];
-for(const [key, title] of targets){
+for(const [key, spec] of targets){
   const slug = slugify(key);
-  let info = null, lastErr = "";
-  for(const lang of ["de", "en"]){
-    const r = await pageImage(lang, title, WIDTH);
-    if(!r.error){ info = r; break; }
-    lastErr = `${lang}: ${r.error}`;
+  const candidates = Array.isArray(spec) ? spec : [spec];
+  let info = null, lastErr = "", usedTitle = "";
+  for(const cand of candidates){
+    const forced = /^en:/.test(cand), title = cand.replace(/^en:/, "");
+    for(const lang of forced ? ["en"] : ["de", "en"]){
+      const r = await pageImage(lang, title, WIDTH);
+      if(r.error){ lastErr = `${lang}: ${r.error}`; continue; }
+      if(!isPhoto(r.src)){ lastErr = `${lang}: Artikelbild ist Grafik (${r.file})`; continue; }
+      info = r; usedTitle = title; break;
+    }
+    if(info) break;
   }
-  if(!info){ misses.push(`${key} (gesucht: ${title}) – ${lastErr}`); continue; }
+  const title = usedTitle || candidates[candidates.length - 1];
+  if(!info){ misses.push(`${key} (gesucht: ${candidates.join(" | ")}) – ${lastErr}`); continue; }
 
   let buf = await get(info.src, "bin");
   await sleep(1000);

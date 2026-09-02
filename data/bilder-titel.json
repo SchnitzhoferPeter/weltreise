@@ -1,11 +1,29 @@
 {
-  "Half Moon Cay": "Little San Salvador Island",
-  "Panamakanal | Durchfahrt": "Panamakanal",
+  "Half Moon Cay": [
+    "en:Half Moon Cay",
+    "en:Little San Salvador Island",
+    "Bahamas"
+  ],
+  "Panamakanal | Durchfahrt": [
+    "en:Miraflores (Panama)",
+    "en:Panama Canal",
+    "Panamakanal"
+  ],
   "Phu My | Ho-Chi-Minh-Stadt": "Notre-Dame Cathedral Basilica of Saigon",
   "Port Kelang (Kuala Lumpur)": "Petronas Towers",
-  "Lifou | Loyalitätsinseln": "Lifou",
-  "Praia da Vitória | Azoren": "Praia da Vitória",
-  "Keelung | Taipeh": "Jiufen",
+  "Lifou | Loyalitätsinseln": [
+    "en:Lifou",
+    "Loyalitätsinseln"
+  ],
+  "Praia da Vitória | Azoren": [
+    "Terceira",
+    "en:Praia da Vitória"
+  ],
+  "Keelung | Taipeh": [
+    "en:Jiufen",
+    "en:Keelung",
+    "Taipeh"
+  ],
   "Cristobal | Colón": "Colón (Panama)",
   "Civitavecchia | Rom": "Kolosseum",
   "Marseille": "Notre-Dame de la Garde",
@@ -14,7 +32,11 @@
   "Ponta Delgada | Azoren": "Lagoa das Sete Cidades",
   "New York": "Freiheitsstatue",
   "Puntarenas": "Nationalpark Manuel Antonio",
-  "Puerto Quetzal": "Antigua Guatemala",
+  "Puerto Quetzal": [
+    "Volcán de Agua",
+    "Antigua Guatemala",
+    "en:Antigua Guatemala"
+  ],
   "Los Angeles": "Hollywood Sign",
   "San Francisco": "Golden Gate Bridge",
   "Honolulu": "Waikiki",
@@ -31,6 +53,34 @@
   "Singapur": "Marina Bay Sands",
   "Penang": "George Town (Penang)",
   "Port Louis": "Le Morne Brabant",
-  "Port Elizabeth": "Addo-Elephant-Nationalpark",
-  "Cape Town": "Tafelberg (Südafrika)"
+  "Port Elizabeth": [
+    "en:Addo Elephant National Park",
+    "Gqeberha"
+  ],
+  "Cape Town": "Tafelberg (Südafrika)",
+  "Panama-Stadt": [
+    "en:Casco Viejo, Panama",
+    "en:Panama City",
+    "Panama-Stadt"
+  ],
+  "Puerto Vallarta": [
+    "en:Puerto Vallarta",
+    "en:Bahía de Banderas"
+  ],
+  "Cabo San Lucas": [
+    "en:Arch of Cabo San Lucas",
+    "en:Cabo San Lucas"
+  ],
+  "Nouméa": [
+    "en:Nouméa",
+    "Neukaledonien"
+  ],
+  "Nha Trang": [
+    "en:Nha Trang",
+    "Nha Trang"
+  ],
+  "Durban": [
+    "en:Durban",
+    "Durban"
+  ]
 }
