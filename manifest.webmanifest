@@ -1,0 +1,20 @@
+{
+  "name": "Weltreise · Costa Deliziosa 2026/27",
+  "short_name": "Weltreise",
+  "description": "Schiffsposition, Ankunftsprognose, Wetter und alle Häfen der 141-tägigen Weltkreuzfahrt.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0B1A2A",
+  "theme_color": "#0B1A2A",
+  "lang": "de",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%230B1A2A'/%3E%3Ccircle cx='256' cy='256' r='150' fill='none' stroke='%23E8B04B' stroke-width='10'/%3E%3Cpath d='M256 86v340M86 256h340' stroke='%231E3D5A' stroke-width='8'/%3E%3Cpath d='M256 176l38 96h-76z' fill='%236FD3C6'/%3E%3C/svg%3E",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
