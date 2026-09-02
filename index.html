@@ -211,22 +211,33 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 .search:focus{outline:none;border-color:var(--brass)}
 .stops{list-style:none;margin:0;padding:0 0 40px}
 .stop{
-  display:grid;grid-template-columns:72px minmax(0,1fr) auto;gap:14px;align-items:baseline;
-  width:100%;text-align:left;padding:13px 22px;border-bottom:1px solid var(--line-soft);
-  transition:background .14s ease;
+  display:grid;grid-template-columns:76px minmax(0,1fr) auto;gap:14px;align-items:baseline;
+  width:100%;text-align:left;padding:14px 22px;border-bottom:1px solid var(--line-soft);
+  background:var(--card);transition:background .14s ease;
 }
-.stop:hover{background:var(--card)}
+.stop:hover{background:var(--card-2)}
 .stop.is-active{background:var(--card-2);box-shadow:inset 4px 0 0 var(--brass)}
 .stop.is-past{opacity:.66}
-.stop .day-no{font-size:14px;font-weight:700;color:var(--brass);line-height:1.3}
+.stop .day-no{font-size:14px;font-weight:700;color:var(--brass);line-height:1.3;display:flex;flex-direction:column;gap:2px}
+.stop .day-no i{display:flex;align-items:center;gap:5px;font-style:normal}
+.stop .day-no svg{width:15px;height:15px;stroke:var(--brass);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .stop .day-no small{display:block;font-weight:400;color:var(--ink-2);font-size:14px}
 .stop .name{font-size:19px;font-weight:600;line-height:1.25}
 .stop .sub{font-size:15px;color:var(--ink-2);margin-top:2px;display:block}
 .stop .sub .tag{color:var(--brass);font-weight:600}
 .stop .dur{font-size:16px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
 .stop .dur em{font-style:normal;display:block;font-size:14px;color:var(--brass);font-weight:600;margin-top:2px}
-.sea,.clockrow{display:flex;align-items:center;gap:10px;padding:9px 22px 9px 108px;font-size:15px;color:var(--ink-2);border-bottom:1px solid var(--line-soft)}
-.clockrow{color:var(--ink);background:var(--card)}
+/* Seetage: eigenes blaues Band, deutlich abgesetzt von den Hafenkarten */
+.sea{
+  display:grid;grid-template-columns:76px minmax(0,1fr);gap:14px;align-items:center;
+  padding:13px 22px;border-bottom:1px solid var(--line-soft);
+  background:#DCE8EF;color:#1F3A52;box-shadow:inset 4px 0 0 #7FA3B8;
+}
+.sea .wave{display:flex;justify-content:center}
+.sea .wave svg{width:34px;height:34px;stroke:#3F6B88;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sea b{display:block;font-size:17px;font-weight:700;line-height:1.25}
+.sea span{display:block;font-size:15px;color:#3F5468;margin-top:2px}
+.clockrow{display:flex;align-items:center;gap:10px;padding:9px 22px 9px 112px;font-size:15px;color:var(--ink);border-bottom:1px solid var(--line-soft);background:var(--card)}
 .clockrow svg{color:var(--brass);width:18px;height:18px}
 .empty{padding:28px 22px;color:var(--ink-2);font-size:16px}
 
@@ -369,7 +380,9 @@ dialog.panel .note code{font-size:14px}
   .stops{overflow:visible}
   .now-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .stop{grid-template-columns:64px minmax(0,1fr) auto;padding:13px 18px}
-  .sea,.clockrow{padding-left:96px}
+  .sea .wave svg{width:30px;height:30px}
+  .sea{grid-template-columns:64px minmax(0,1fr);padding:12px 18px}
+  .clockrow{padding-left:96px}
 }
 @media (max-width:560px){
   .masthead{padding:12px 16px 10px;gap:8px 14px}
@@ -414,6 +427,8 @@ dialog.panel .note code{font-size:14px}
     <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
     <symbol id="i-down" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
     <symbol id="i-up" viewBox="0 0 24 24"><path d="M6 15l6-6 6 6"/></symbol>
+    <symbol id="i-wave" viewBox="0 0 24 24"><path d="M2 12c2 0 2.5-2 4.5-2s2.5 2 4.5 2 2.5-2 4.5-2 2.5 2 4.5 2M2 17c2 0 2.5-2 4.5-2s2.5 2 4.5 2 2.5-2 4.5-2 2.5 2 4.5 2M12 3v3M9 5l3 1 3-1"/></symbol>
+    <symbol id="i-anchor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.5"/><path d="M12 7.5V21M5 12H2a10 10 0 0 0 20 0h-3M8 12h8"/></symbol>
     <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
   </defs>
 </svg>
@@ -1085,7 +1100,10 @@ function renderList(){
     if(showSea && !q && i > 0){
       const gap = c.d1 - CALLS[i - 1].d2 - 1;
       if(gap > 0){
-        html += `<li class="sea">${gap} ${gap === 1 ? "Seetag" : "Seetage"} · ${fmtShort(CALLS[i-1].d2+1)}${gap > 1 ? " – " + fmtShort(c.d1-1) : ""}</li>`;
+        const from = CALLS[i-1].d2 + 1, to = c.d1 - 1;
+        html += `<li class="sea"><span class="wave">${icon("wave")}</span><div>
+          <b>${gap === 1 ? "Seetag" : gap + " Seetage"}</b>
+          <span>${gap === 1 ? fmtDM(from) : `${fmtDM(from)} bis ${fmtDM(to)}`} · ${c.r === CALLS[i-1].r ? c.r : CALLS[i-1].r + " → " + c.r}</span></div></li>`;
       }
       const ch = CLOCK_CHANGES.find(x => x.to === i);
       if(ch) html += `<li class="clockrow">${icon("clock")}<span>${clockText(ch)} · Bordzeit dann ${zoneTag(c.arrUtc || c.depUtc, c.tz)}</span></li>`;
@@ -1099,7 +1117,7 @@ function renderList(){
     const sub = [c.c, c.transit ? `<span class="tag">Kanalpassage, kein Landgang</span>`
       : exc ? `<span class="tag">${exc} ${exc === 1 ? "Landausflug" : "Landausflüge"}</span>` : `dort jetzt ${clockIn(now, c.tz)}`].join(" · ");
     html += `<li><button class="stop${i === activeIdx ? " is-active" : ""}${past ? " is-past" : ""}" data-i="${i}">
-        <span class="day-no num">Tag ${c.d1}${c.d2 > c.d1 ? "–" + c.d2 : ""}<small>${c.d2 > c.d1 ? `${dateOf(c.d1).getUTCDate()}.–${fmtShort(c.d2)}` : fmtShort(c.d1)}</small></span>
+        <span class="day-no num"><i>${icon(c.transit ? "wave" : "anchor")}Tag ${c.d1}${c.d2 > c.d1 ? "–" + c.d2 : ""}</i><small>${c.d2 > c.d1 ? `${dateOf(c.d1).getUTCDate()}.–${fmtShort(c.d2)}` : fmtShort(c.d1)}</small></span>
         <span style="min-width:0"><span class="name">${c.n.replace(" | ", ", ")}</span><span class="sub">${sub}</span></span>
         <span class="dur num">${times}<em>${h === null ? (c.type === "start" ? "Start" : "Ziel") : c.transit ? "Durchfahrt" : fmtDur(h)}</em></span>
       </button></li>`;
