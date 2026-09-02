@@ -116,7 +116,7 @@ Fahrplan und Hafeninhalte stehen in `index.html` im Array `CALLS`:
 `arr`/`dep` sind **Ortszeiten**; `tz` ist die IANA-Zeitzone und wird für alle
 Uhrzeiten- und Prognoserechnungen gebraucht. `d1`/`d2` sind Reisetage (Tag 1 = 24. Nov 2026).
 
-Quellen: Kartenkacheln OpenStreetMap/CARTO, Wetter [Open-Meteo](https://open-meteo.com),
+Quellen: Kartenkacheln Esri World Ocean (Ersatz: OpenStreetMap), Wetter [Open-Meteo](https://open-meteo.com),
 Bilder Wikipedia/Wikimedia Commons, Schiffsdaten Costa Deliziosa (IMO 9398917, MMSI 247282900).
 
 ## Ideen für später
