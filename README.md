@@ -72,27 +72,26 @@ Der Entwurf liegt als Design-Canvas vor: https://claude.ai/code/artifact/2898c28
 
 ## Woher kommt die Schiffsposition?
 
-Über den Knopf **Positionsquelle** einstellbar, Reihenfolge im Automatikmodus:
+aisstream.io erlaubt keine Verbindungen direkt aus dem Browser. Deshalb holt ein Job im
+Repository die Position serverseitig und die Seite liest nur noch das Ergebnis:
 
-1. **`data/position.json`** – die gemeinsame Quelle. Wer die Position bei
-   [VesselFinder](https://www.vesselfinder.com/vessels/details/9398917) abliest, trägt sie
-   dort ein (Vorlage: `data/position.example.json`), committet – und alle sehen dasselbe.
-   Meldungen älter als 18 Stunden werden ignoriert.
-2. **AIS live über [aisstream.io](https://aisstream.io)** – kostenloser API-Key (Anmeldung mit
-   GitHub-Konto, dann „API Keys“). Den Key unter **Positionsquelle** eintragen; er bleibt im
-   Browser (`localStorage`) und geht nur an aisstream.io. Über **Einladungslink kopieren** entsteht
-   ein Link der Form `index.html#ais=…`, der den Key beim Öffnen lokal übernimmt – so bekommt die
-   Familie AIS live ohne eigene Eingabe. Der Key gehört nicht ins (öffentliche) Repository.
-   Die Verbindung baut sich nach Abbrüchen selbst wieder auf; der Status steht im Dialog und in der
-   Bordkarte. AIS über Landstationen erreicht das Schiff in Häfen und bis etwa 40 sm vor der Küste;
-   auf hoher See bleibt die Fahrplan-Schätzung.
-3. **Manuell eingetragene Position** – im Dialog eintippen, gilt nur im eigenen Browser.
-   Der Knopf „Position als JSON kopieren“ liefert direkt den Inhalt für Punkt 1.
-4. **Fahrplan-Schätzung** – Großkreis zwischen den beiden Häfen, zeitlich interpoliert.
-   Immer verfügbar, deutlich als Schätzung gekennzeichnet (gedämpfter Punkt, brauner Pfeil).
+1. **AIS-Abgleich über GitHub Action** (`.github/workflows/position.yml`, Skript
+   `scripts/fetch-position.mjs`): läuft alle 15 Minuten, lauscht bis 2,5 Minuten auf eine
+   Positionsmeldung der MMSI 247282900 und schreibt `position.json` und `status.json` auf den
+   Branch `position-data`. Die Seite liest beide von `raw.githubusercontent.com`.
+   Voraussetzung: das Repository-Secret **`AISSTREAM_KEY`** (Settings → Secrets and variables →
+   Actions). Der Job lässt sich unter „Actions“ auch von Hand starten.
+   Meldungen älter als 18 Stunden werden ignoriert; `status.json` zeigt, wann zuletzt geprüft
+   wurde und ob das Schiff in Reichweite einer Landstation war.
+2. **Manuell eingetragene Position** – im Dialog **Positionsquelle** eintippen, gilt nur im
+   eigenen Browser. „Position als JSON kopieren“ liefert den Inhalt für eine Notlösung über
+   `data/position.json` im Repository.
+3. **Fahrplan-Schätzung** – Großkreis zwischen den beiden Häfen, zeitlich interpoliert.
+   Immer verfügbar, deutlich als Schätzung gekennzeichnet.
 
-Ein echtes VesselFinder- oder MarineTraffic-API-Abo lässt sich ergänzen, indem ein
-Server-Job `data/position.json` schreibt – die Seite selbst muss dafür nicht geändert werden.
+Terrestrisches AIS erreicht das Schiff in Häfen und bis etwa 40 sm vor der Küste. Auf hoher See
+bleibt es bei der Schätzung; dafür bräuchte es ein bezahltes Satelliten-AIS-Abo, das der Job
+ebenso einlesen könnte.
 
 ## Routenänderungen
 

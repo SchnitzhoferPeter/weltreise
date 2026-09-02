@@ -497,12 +497,13 @@ dialog.panel .note code{font-size:14px}
 <dialog class="panel" id="cfgDlg">
   <h2>Woher kommt die Schiffsposition? <button data-close aria-label="Schließen"><svg class="ic" style="width:20px;height:20px"><use href="#i-close"/></svg></button></h2>
   <div class="inner">
-    <p>Ohne Live-Quelle rechnet die Seite die Position aus dem Fahrplan (Großkreis zwischen den Häfen). Das reicht für den Überblick, ist aber keine echte AIS-Meldung.</p>
+    <p>Die echte Position kommt alle 15 Minuten über AIS: Ein Job im Repository fragt aisstream.io ab und legt die
+      Meldung ab, die Seite liest sie. Niemand muss dafür etwas eingeben. Landstationen empfangen das Schiff in Häfen
+      und bis etwa 40 sm vor der Küste; auf hoher See rechnet die Seite die Position aus dem Fahrplan.</p>
     <label for="cfgMode">Quelle</label>
     <select id="cfgMode">
-      <option value="auto">Automatisch (Datei → AIS → Fahrplan)</option>
+      <option value="auto">Automatisch (AIS-Abgleich, sonst Fahrplan)</option>
       <option value="manual">Manuell eingetragene Position</option>
-      <option value="ais">AIS live über aisstream.io</option>
       <option value="schedule">Nur Fahrplan-Schätzung</option>
     </select>
     <div id="cfgManual">
@@ -516,20 +517,12 @@ dialog.panel .note code{font-size:14px}
       </div>
       <p class="note">Position bei <a href="https://www.vesselfinder.com/vessels/details/9398917" target="_blank" rel="noopener">VesselFinder</a> ablesen und hier eintragen. Der Zeitstempel wird automatisch gesetzt.</p>
     </div>
-    <div id="cfgAis">
-      <label for="cfgKey">API-Key von aisstream.io</label>
-      <input id="cfgKey" placeholder="kostenloser Key, bleibt nur in diesem Browser" autocomplete="off">
-      <p class="note">So kommt man zum Key: auf <a href="https://aisstream.io" target="_blank" rel="noopener">aisstream.io</a> mit einem GitHub-Konto anmelden,
-        unter „API Keys“ einen Schlüssel erzeugen, hier einfügen, speichern. Der Key bleibt in diesem Browser und geht nur an aisstream.io.
-        AIS über Landstationen erreicht das Schiff in Häfen und bis etwa 40 sm vor der Küste; auf hoher See bleibt die Fahrplan-Schätzung.</p>
-    </div>
     <div class="foot">
       <button class="btn primary" id="cfgSave">Speichern</button>
-      <button class="btn" id="cfgInvite" hidden title="Link mit AIS-Zugang für die Familie">Einladungslink kopieren</button>
       <button class="btn" id="cfgCopy">Position als JSON kopieren</button>
     </div>
     <p class="note" id="cfgStatus"></p>
-    <p class="note">Für alle gemeinsam: die kopierte JSON als <code>data/position.json</code> ins Repository legen – dann sehen alle dieselbe Position.</p>
+    <p class="note">Notlösung ohne AIS-Abgleich: die kopierte JSON als <code>data/position.json</code> ins Repository legen – dann sehen alle dieselbe Position.</p>
   </div>
 </dialog>
 
@@ -1239,120 +1232,63 @@ function sstFor(marine, dayNo){
 const bathing = t => t >= 26 ? "badewarm" : t >= 22 ? "angenehm" : t >= 18 ? "frisch" : "kalt";
 
 /* =======================================================================
-   10 · Schiffsposition: Datei, AIS, manuell, Fahrplan
+   10 · Schiffsposition: Server-AIS, Datei, manuell, Fahrplan
+   aisstream.io erlaubt keine Browser-Verbindungen. Deshalb holt eine
+   GitHub Action (.github/workflows/position.yml) die Position alle 15 Min.
+   und legt sie auf dem Branch position-data ab; die Seite liest sie hier.
    ===================================================================== */
-const cfg = Object.assign({mode:"auto", key:"", manual:null}, (() => {
-  try{ return JSON.parse(localStorage.getItem(LS + "cfg") || "{}"); }catch(e){ return {}; }
+const cfg = Object.assign({mode:"auto", manual:null}, (() => {
+  try{ const c = JSON.parse(localStorage.getItem(LS + "cfg") || "{}"); delete c.key; if(c.mode === "ais") c.mode = "auto"; return c; }catch(e){ return {}; }
 })());
 const saveCfg = () => { try{ localStorage.setItem(LS + "cfg", JSON.stringify(cfg)); }catch(e){} };
 
-let filePos = null, aisPos = null, aisSocket = null, aisError = "";
+const POS_REMOTE = "https://raw.githubusercontent.com/SchnitzhoferPeter/weltreise/position-data/";
+let filePos = null, aisCheck = null;
 let shipZone = (() => {                               /* IANA-Zone an der Schiffsposition */
   try{ return JSON.parse(localStorage.getItem(LS + "shipZone") || "null"); }catch(e){ return null; }
 })();
 
 const SRC_LABEL = {
   manual:"Position manuell eingetragen",
-  file:"Position aus Positionsdatei",
-  ais:"AIS live · aisstream.io",
+  file:"AIS live · alle 15 Min. abgeholt",
   schedule:"Fahrplan-Schätzung"
 };
 
+function parseFix(d){
+  const t = Date.parse(d.timestamp || d.time || d.utc || "");
+  if(!isFinite(d.lat) || !isFinite(d.lon)) return null;
+  return {lat:+d.lat, lon:+d.lon,
+    sog: isFinite(d.sog) ? +d.sog : null,
+    cog: isFinite(d.cog) ? +d.cog : null,
+    t: isFinite(t) ? t : Date.now(),
+    note: d.source || d.note || ""};
+}
+/* Zuerst der Server-Branch, dann die Datei im Repository (Fallback für lokale Nutzung) */
 async function loadFilePosition(){
+  const bust = "?_=" + Math.floor(Date.now() / 300000);
   try{
-    const d = await fetchJson(POS_FILE + "?_=" + Date.now());
-    const t = Date.parse(d.timestamp || d.time || d.utc || "");
-    if(isFinite(d.lat) && isFinite(d.lon)){
-      filePos = {lat:+d.lat, lon:+d.lon,
-        sog: isFinite(d.sog) ? +d.sog : null,
-        cog: isFinite(d.cog) ? +d.cog : null,
-        t: isFinite(t) ? t : Date.now(),
-        note: d.note || ""};
+    const [pos, st] = await Promise.allSettled([fetchJson(POS_REMOTE + "position.json" + bust), fetchJson(POS_REMOTE + "status.json" + bust)]);
+    if(st.status === "fulfilled" && st.value && st.value.checked){
+      aisCheck = {checked: Date.parse(st.value.checked), received: !!st.value.received, error: st.value.error || null};
     }
-  }catch(e){ filePos = null; }        /* Datei ist optional */
+    if(pos.status === "fulfilled" && pos.value){ filePos = parseFix(pos.value); if(filePos) return; }
+  }catch(e){}
+  try{ filePos = parseFix(await fetchJson(POS_FILE + bust)); }catch(e){ if(!filePos) filePos = null; }
 }
-
-/* AIS-Verbindung mit Wiederaufnahme; Status für Dialog und Bordkarte */
-let aisStatus = "", aisRetry = null, aisBackoff = 15000, aisLastMsg = 0;
-function connectAis(){
-  if(!cfg.key || aisSocket) return;
-  if(!(cfg.mode === "auto" || cfg.mode === "ais")) return;
-  clearTimeout(aisRetry);
-  aisStatus = "verbindet …";
-  try{
-    aisSocket = new WebSocket("wss://stream.aisstream.io/v0/stream");
-  }catch(e){ aisSocket = null; aisError = "Verbindung nicht möglich"; aisStatus = aisError; scheduleAisRetry(); return; }
-  aisSocket.addEventListener("open", () => {
-    aisBackoff = 15000;
-    aisStatus = "verbunden, wartet auf Meldung aus Reichweite einer Landstation";
-    aisSocket.send(JSON.stringify({
-      APIKey: cfg.key,
-      BoundingBoxes: [[[-90, -180], [90, 180]]],
-      FiltersShipMMSI: [String(SHIP.mmsi)],
-      FilterMessageTypes: ["PositionReport"]
-    }));
-    renderNow();
-  });
-  aisSocket.addEventListener("message", ev => {
-    let m;
-    try{ m = JSON.parse(ev.data); }catch(e){ return; }
-    if(m && (m.error || m.Error)){
-      aisError = String(m.error || m.Error);
-      aisStatus = /key/i.test(aisError) ? "API-Key abgelehnt – bitte prüfen" : "Fehler: " + aisError;
-      renderNow(); return;
-    }
-    const pr = m && m.Message && (m.Message.PositionReport || m.Message.positionReport);
-    const meta = m && (m.MetaData || m.Metadata) || {};
-    const lat = pr ? (pr.Latitude ?? pr.latitude ?? meta.latitude) : meta.latitude;
-    const lon = pr ? (pr.Longitude ?? pr.longitude ?? meta.longitude) : meta.longitude;
-    if(!isFinite(lat) || !isFinite(lon)) return;
-    const t = Date.parse((meta.time_utc || "").replace(" +0000 UTC", "Z").replace(" ", "T"));
-    aisPos = {lat:+lat, lon:+lon,
-      sog: pr && isFinite(pr.Sog) ? +pr.Sog : null,
-      cog: pr && isFinite(pr.Cog) ? +pr.Cog : null,
-      t: isFinite(t) ? t : Date.now()};
-    aisLastMsg = Date.now();
-    aisError = ""; aisStatus = "verbunden";
-    refreshView();
-  });
-  aisSocket.addEventListener("close", () => {
-    aisSocket = null;
-    if(!aisError) aisStatus = "Verbindung getrennt, neuer Versuch folgt";
-    scheduleAisRetry();
-  });
-  aisSocket.addEventListener("error", () => { aisError = "AIS-Stream nicht erreichbar"; aisStatus = aisError; });
-}
-function scheduleAisRetry(){
-  clearTimeout(aisRetry);
-  if(/abgelehnt/.test(aisStatus)) return;          /* falscher Key: nicht endlos versuchen */
-  aisRetry = setTimeout(() => { connectAis(); }, aisBackoff);
-  aisBackoff = Math.min(aisBackoff * 2, 5 * 60000);
-}
-function disconnectAis(){
-  clearTimeout(aisRetry);
-  if(aisSocket){ try{ aisSocket.close(); }catch(e){} aisSocket = null; }
-  aisStatus = "";
-}
-/* Einladungslink: der Key steht nur im Fragment und wird beim Öffnen lokal gespeichert */
-function aisInviteLink(){
-  return location.origin + location.pathname + "#ais=" + encodeURIComponent(cfg.key || "");
-}
-function adoptKeyFromHash(){
-  const m = /^#ais=([^&]+)/.exec(location.hash);
-  if(!m) return false;
-  try{ cfg.key = decodeURIComponent(m[1]).trim(); }catch(e){ cfg.key = m[1].trim(); }
-  if(cfg.mode === "schedule" || cfg.mode === "manual") cfg.mode = "auto";
-  saveCfg();
-  history.replaceState(null, "", location.pathname);
-  return true;
+/* Kurzer Zustand des Server-Abgleichs für Bordkarte und Schiffsblatt */
+function aisCheckText(now){
+  if(!aisCheck) return "AIS-Abgleich noch ohne Ergebnis";
+  const age = fmtCountdown(now - aisCheck.checked);
+  if(aisCheck.error) return `AIS-Abgleich vor ${age} fehlgeschlagen: ${aisCheck.error}`;
+  if(now - aisCheck.checked > 3 * 3600000) return `AIS-Abgleich zuletzt vor ${age} – läuft der Job?`;
+  return aisCheck.received ? `AIS-Meldung vor ${age} empfangen` : `AIS vor ${age} geprüft, Schiff außer Reichweite der Landstationen`;
 }
 
 function pickFix(now){
   if(cfg.mode === "schedule") return null;
   const cands = [];
   if(cfg.manual && (cfg.mode === "auto" || cfg.mode === "manual")) cands.push({...cfg.manual, src:"manual"});
-  if(filePos && (cfg.mode === "auto")) cands.push({...filePos, src:"file"});
-  if(aisPos && (cfg.mode === "auto" || cfg.mode === "ais")) cands.push({...aisPos, src:"ais"});
+  if(filePos && cfg.mode === "auto") cands.push({...filePos, src:"file"});
   const fresh = cands.filter(c => isFinite(c.t) && now - c.t < POS_MAX_AGE_H * 3600000);
   fresh.sort((a, b) => b.t - a.t);
   return fresh[0] || null;
@@ -1386,7 +1322,6 @@ function shipZoneOf(fix){
   return shipZone && shipZone.key === (Math.round(fix.lon) + "|" + Math.round(fix.lat))
     ? shipZone.tz : nauticalZone(fix.lon);
 }
-
 
 /* =======================================================================
    11 · Zeitumstellungen an Bord
@@ -1644,9 +1579,9 @@ function renderNow(){
   /* Quelle und Status */
   el("srcDot").className = "dot" + (fix.live ? "" : " est");
   el("srcLine").className = "now-eyebrow" + (fix.live ? "" : " est");
-  const aisNote = !fix.live && cfg.key && (cfg.mode === "auto" || cfg.mode === "ais") && aisStatus
-    ? ` · AIS ${aisStatus.replace("verbunden, wartet auf Meldung aus Reichweite einer Landstation", "verbunden, Schiff außer Reichweite")}` : "";
-  el("srcLabel").textContent = fix.live ? `${SRC_LABEL[fix.src]} · vor ${fmtCountdown(now - fix.t)}` : SRC_LABEL.schedule + aisNote;
+  el("srcLabel").textContent = fix.live
+    ? `${SRC_LABEL[fix.src]} · Meldung vor ${fmtCountdown(now - fix.t)}`
+    : `${SRC_LABEL.schedule} · ${aisCheckText(now)}`;
 
   let head = "", sub = "";
   if(fix.phase === "pre"){
@@ -2034,7 +1969,6 @@ function renderShipSheet(){
   const c = fix.portIdx >= 0 ? CALLS[fix.portIdx] : null;
   const nextIdx = fix.nextIdx >= 0 ? fix.nextIdx : nextCallIdx(now);
   const sog = isFinite(fix.sog) ? fix.sog : null;
-  const aisActive = cfg.key && (cfg.mode === "auto" || cfg.mode === "ais");
 
   let status = "";
   if(fix.phase === "pre") status = claim ? `Vor der Weltreise, derzeit auf anderer Route` : `Vor der Weltreise – Einschiffung ${stampIn(CALLS[0].depUtc, CALLS[0].tz)} in ${short(CALLS[0].n)}`;
@@ -2043,16 +1977,16 @@ function renderShipSheet(){
   else status = `Auf See zwischen ${short(CALLS[fix.prevIdx >= 0 ? fix.prevIdx : 0].n)} und ${CALLS[nextIdx] ? short(CALLS[nextIdx].n) : "—"}`;
 
   const sourceLine = fix.live
-    ? `${SRC_LABEL[fix.src]}, gemeldet vor ${fmtCountdown(now - fix.t)}`
-    : `Fahrplan-Schätzung${aisActive ? ` · AIS ${aisStatus || "nicht verbunden"}` : " · keine Live-Quelle eingerichtet"}`;
+    ? `${SRC_LABEL[fix.src]}, Meldung vor ${fmtCountdown(now - fix.t)}`
+    : `Fahrplan-Schätzung · ${aisCheckText(now)}`;
 
   let liveHint = "";
   if(!fix.live){
-    liveHint = aisActive
-      ? (/abgelehnt|Fehler|erreichbar/.test(aisStatus)
-          ? `AIS meldet: ${aisStatus}. Unter „Positionsquelle“ den Key prüfen.`
-          : `AIS ist ${aisStatus || "noch nicht verbunden"}. Landstationen empfangen das Schiff in Häfen und bis etwa 40 sm vor der Küste; auf hoher See bleibt es bei der Fahrplan-Schätzung. Die Anzeige aktualisiert sich von selbst.`)
-      : `Für die echte Position unter „Positionsquelle“ den AIS-Zugang einrichten oder den Einladungslink öffnen.`;
+    liveHint = aisCheck && aisCheck.error
+      ? `Der automatische AIS-Abgleich meldet einen Fehler: ${aisCheck.error}. Bitte den Schlüssel im Repository prüfen.`
+      : aisCheck
+        ? `Die Position wird alle 15 Minuten über AIS abgefragt. Landstationen empfangen das Schiff in Häfen und bis etwa 40 sm vor der Küste; auf hoher See bleibt es bei der Fahrplan-Schätzung. Die Anzeige aktualisiert sich von selbst.`
+        : `Der automatische AIS-Abgleich hat noch kein Ergebnis geliefert. Läuft er, erscheint hier die echte Position, sobald eine Landstation das Schiff empfängt.`;
   }
 
   let nextBlock = "";
@@ -2138,7 +2072,7 @@ function openShip(){
   sheet.classList.add("is-open");
   history.replaceState(null, "", "#schiff");
   if(claim) map.flyTo([fix.lat, fix.lon], Math.max(map.getZoom(), 5), {duration:.9});
-  else toast(cfg.key ? `Noch keine Live-Position – AIS ${aisStatus || "verbindet"}.` : "Noch keine Live-Position eingerichtet.");
+  else toast(`Noch keine Live-Position – ${aisCheckText(Date.now())}.`);
 }
 shipMarker.on("click", openShip);
 
@@ -2207,36 +2141,25 @@ el("tzBtn").addEventListener("click", () => { renderTzDialog(); el("tzDlg").show
 const dlg = el("cfgDlg");
 function syncCfgForm(){
   el("cfgMode").value = cfg.mode;
-  el("cfgKey").value = cfg.key || "";
   const m = cfg.manual || {};
   el("cfgLat").value = m.lat ?? ""; el("cfgLon").value = m.lon ?? "";
   el("cfgSog").value = m.sog ?? ""; el("cfgCog").value = m.cog ?? "";
   el("cfgManual").hidden = !(cfg.mode === "manual" || cfg.mode === "auto");
-  el("cfgAis").hidden = !(cfg.mode === "ais" || cfg.mode === "auto");
-  const fix = livePos();
-  const aisLine = cfg.key && (cfg.mode === "auto" || cfg.mode === "ais")
-    ? ` AIS: ${aisStatus || "nicht verbunden"}${aisLastMsg ? ", letzte Meldung vor " + fmtCountdown(Date.now() - aisLastMsg) : ""}.` : "";
+  const fix = livePos(), now = Date.now();
   el("cfgStatus").textContent = (fix.live
-    ? `Aktuell aktiv: ${SRC_LABEL[fix.src]}, gemeldet vor ${fmtCountdown(Date.now() - fix.t)}.`
-    : `Aktuell aktiv: Fahrplan-Schätzung.`) + aisLine;
-  el("cfgInvite").hidden = !cfg.key;
+    ? `Aktuell aktiv: ${SRC_LABEL[fix.src]}, Meldung vor ${fmtCountdown(now - fix.t)}.`
+    : `Aktuell aktiv: Fahrplan-Schätzung.`) + ` ${aisCheckText(now)}.`;
 }
 el("cfgBtn").addEventListener("click", () => { syncCfgForm(); dlg.showModal(); });
 el("cfgMode").addEventListener("change", () => { cfg.mode = el("cfgMode").value; syncCfgForm(); });
 el("cfgSave").addEventListener("click", () => {
-  cfg.mode = el("cfgMode").value; cfg.key = el("cfgKey").value.trim();
+  cfg.mode = el("cfgMode").value;
   const lat = parseFloat(el("cfgLat").value.replace(",", ".")), lon = parseFloat(el("cfgLon").value.replace(",", "."));
   if(isFinite(lat) && isFinite(lon)){
     cfg.manual = {lat, lon, sog:parseFloat(el("cfgSog").value.replace(",", ".")), cog:parseFloat(el("cfgCog").value.replace(",", ".")), t:Date.now()};
   } else if(!el("cfgLat").value && !el("cfgLon").value) cfg.manual = null;
   saveCfg();
-  disconnectAis(); aisPos = null; aisError = "";
-  if(cfg.key) connectAis();
   refreshView(); dlg.close();
-});
-el("cfgInvite").addEventListener("click", async () => {
-  try{ await navigator.clipboard.writeText(aisInviteLink()); el("cfgStatus").textContent = "Einladungslink kopiert – wer ihn öffnet, bekommt AIS live ohne weitere Eingabe."; }
-  catch(e){ el("cfgStatus").textContent = aisInviteLink(); }
 });
 el("cfgCopy").addEventListener("click", async () => {
   const fix = livePos();
@@ -2272,11 +2195,9 @@ function openFromHash(){
   else if(location.hash === "#schiff") openShip();
 }
 applyMapTheme();
-const adopted = adoptKeyFromHash();
+if(/^#ais=/.test(location.hash)) history.replaceState(null, "", location.pathname);   /* alte Einladungslinks */
 renderList(); markToday(); renderNow(); renderWarnBox();
-if(adopted) toast("AIS-Zugang übernommen – die Schiffsposition erscheint, sobald eine Landstation das Schiff empfängt.", 7000);
 Promise.all([loadFilePosition(), loadSharedExcursions()]).then(() => { refreshView(); refreshWarnings(); });
-if(cfg.key && (cfg.mode === "auto" || cfg.mode === "ais")) connectAis();
 openFromHash();
 addEventListener("hashchange", openFromHash);
 setInterval(() => { renderNow(); if(sheet.classList.contains("is-open") && sheetMode === "ship") renderShipSheet(); }, 20000);
