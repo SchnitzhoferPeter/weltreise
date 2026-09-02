@@ -76,13 +76,16 @@ aisstream.io erlaubt keine Verbindungen direkt aus dem Browser. Deshalb holt ein
 Repository die Position serverseitig und die Seite liest nur noch das Ergebnis:
 
 1. **AIS-Abgleich über GitHub Action** (`.github/workflows/position.yml`, Skript
-   `scripts/fetch-position.mjs`): läuft alle 15 Minuten, lauscht bis 2,5 Minuten auf eine
+   `scripts/fetch-position.mjs`): läuft alle 10 Minuten, lauscht bis 4 Minuten auf eine
    Positionsmeldung der MMSI 247282900 und schreibt `position.json` und `status.json` auf den
    Branch `position-data`. Die Seite liest beide von `raw.githubusercontent.com`.
    Voraussetzung: das Repository-Secret **`AISSTREAM_KEY`** (Settings → Secrets and variables →
    Actions). Der Job lässt sich unter „Actions“ auch von Hand starten.
-   Meldungen älter als 18 Stunden werden ignoriert; `status.json` zeigt, wann zuletzt geprüft
-   wurde und ob das Schiff in Reichweite einer Landstation war.
+   Meldungen älter als 18 Stunden gelten nicht mehr als aktuelle Position; die Seite zeigt sie
+   aber weiterhin als „Letzte AIS-Meldung vor …“ (vor der Reise als Schiffsposition, unterwegs als
+   Marke „zuletzt gesehen“). `status.json` zeigt, wann zuletzt geprüft wurde und ob das Schiff in
+   Reichweite einer Landstation war. Der Job kennt einen Diagnosemodus (Eingabe „diag“ beim
+   manuellen Start), der alle Schiffe im Mittelmeer zählt und prüft, ob die Deliziosa darunter ist.
 2. **Manuell eingetragene Position** – im Dialog **Positionsquelle** eintippen, gilt nur im
    eigenen Browser. „Position als JSON kopieren“ liefert den Inhalt für eine Notlösung über
    `data/position.json` im Repository.

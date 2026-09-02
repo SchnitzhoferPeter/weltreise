@@ -1035,6 +1035,8 @@ const shipMarker = L.marker([0, 0], {
   zIndexOffset:800, opacity:0
 }).addTo(map);
 shipMarker.bindTooltip("", {className:"ship-tip", direction:"top", offset:[0, -14]});
+const lastSeenMarker = L.circleMarker([0, 0], {radius:9, weight:2, dashArray:"3 3", opacity:0, fillOpacity:0, interactive:true}).addTo(map);
+lastSeenMarker.bindTooltip("", {className:"ship-tip", direction:"top", offset:[0, -10]});
 
 /* Kartenfarben aus dem Stylesystem */
 function applyMapTheme(){
@@ -1044,6 +1046,7 @@ function applyMapTheme(){
   sailedLine.setStyle({color:live});
   markers.forEach((m, k) => m.setStyle({color:card, fillColor: k === activeIdx ? live : brass}));
   halo.setStyle({color:live});
+  lastSeenMarker.setStyle({color:live, fillColor:live});
 }
 
 const allBounds = L.latLngBounds(routePts);
@@ -1266,7 +1269,8 @@ let shipZone = (() => {                               /* IANA-Zone an der Schiff
 
 const SRC_LABEL = {
   manual:"Position manuell eingetragen",
-  file:"AIS live · alle 15 Min. abgeholt",
+  file:"AIS live · alle 10 Min. abgeholt",
+  stale:"Letzte AIS-Meldung",
   schedule:"Fahrplan-Schätzung"
 };
 
@@ -1309,13 +1313,26 @@ function pickFix(now){
   fresh.sort((a, b) => b.t - a.t);
   return fresh[0] || null;
 }
+/* Letzte AIS-Meldung, egal wie alt – zum Anzeigen, nicht zum Rechnen */
+function lastAis(){
+  return cfg.mode !== "schedule" && filePos && isFinite(filePos.t) ? filePos : null;
+}
 
 /* Aktuelle Lage: Fahrplan als Rahmen, echte Meldung als Position */
 function livePos(){
   const now = Date.now();
   const s = scheduleState(now);
   const fix = pickFix(now);
-  const out = Object.assign({}, s, {src:"schedule", t:now, live:false});
+  const out = Object.assign({}, s, {src:"schedule", t:now, live:false, stale:false});
+  const last = lastAis();
+  /* Vor der Reise gibt es keine Fahrplanposition: dann zählt die letzte AIS-Meldung, auch wenn sie alt ist */
+  if(!fix && last && s.phase === "pre"){
+    Object.assign(out, {lat:last.lat, lon:last.lon, t:last.t, src:"stale", live:true, stale:true});
+    if(isFinite(last.sog)) out.sog = last.sog;
+    if(isFinite(last.cog)) out.cog = last.cog;
+    return out;
+  }
+  out.lastSeen = !fix && last ? last : null;             /* unterwegs: als „zuletzt gesehen“ zusätzlich zeigen */
   if(fix){
     out.lat = fix.lat; out.lon = fix.lon;
     if(isFinite(fix.sog)) out.sog = fix.sog;
@@ -1593,17 +1610,21 @@ function renderNow(){
   const day = dayNoOf(now);
 
   /* Quelle und Status */
-  el("srcDot").className = "dot" + (fix.live ? "" : " est");
-  el("srcLine").className = "now-eyebrow" + (fix.live ? "" : " est");
-  el("srcLabel").textContent = fix.live
+  const fresh = fix.live && !fix.stale;
+  el("srcDot").className = "dot" + (fresh ? "" : " est");
+  el("srcLine").className = "now-eyebrow" + (fresh ? "" : " est");
+  el("srcLabel").textContent = fresh
     ? `${SRC_LABEL[fix.src]} · Meldung vor ${fmtCountdown(now - fix.t)}`
-    : `${SRC_LABEL.schedule} · ${aisCheckText(now)}`;
+    : fix.stale
+      ? `${SRC_LABEL.stale} vor ${fmtCountdown(now - fix.t)} · ${aisCheckText(now)}`
+      : `${SRC_LABEL.schedule} · ${aisCheckText(now)}${fix.lastSeen ? ` · letzte AIS-Meldung vor ${fmtCountdown(now - fix.lastSeen.t)}` : ""}`;
 
   let head = "", sub = "";
   if(fix.phase === "pre"){
     const toDep = CALLS[0].depUtc - now;
     head = toDep > 86400000 ? `Reise beginnt in ${fmtCountdown(toDep)}` : `Noch in ${short(CALLS[0].n)}`;
-    sub = `Einschiffung ${stampIn(CALLS[0].depUtc, CALLS[0].tz)} Ortszeit in ${short(CALLS[0].n)}`;
+    sub = (fix.live ? `Schiff derzeit auf anderer Route${fix.stale ? ", Position von vor " + fmtCountdown(now - fix.t) : ""} · ` : "")
+      + `Einschiffung ${stampIn(CALLS[0].depUtc, CALLS[0].tz)} Ortszeit in ${short(CALLS[0].n)}`;
   } else if(fix.phase === "port" && c && c.transit){
     head = `Durchfahrt ${short(c.n)}`;
     sub = `Passage bis ${clockIn(c.depUtc, c.tz)} Ortszeit, noch ${fmtCountdown(c.depUtc - now)} · Tag ${day} von ${TOTAL_DAYS}`;
@@ -1714,10 +1735,14 @@ function renderNow(){
   shipMarker.setLatLng([fix.lat, fix.lon]).setOpacity(claim ? 1 : 0);
   shipMarker.setIcon(L.divIcon({
     className:"",
-    html:`<div class="ship-icon${fix.live ? "" : " est"}"><svg viewBox="-13 -13 26 26" style="transform:rotate(${Math.round(fix.cog || 0)}deg)"><polygon points="0,-11 8,9 0,5 -8,9"/></svg></div>`,
+    html:`<div class="ship-icon${fresh ? "" : " est"}"><svg viewBox="-13 -13 26 26" style="transform:rotate(${Math.round(fix.cog || 0)}deg)"><polygon points="0,-11 8,9 0,5 -8,9"/></svg></div>`,
     iconSize:[26, 26], iconAnchor:[13, 13]
   }));
-  shipMarker.setTooltipContent(`<b>${SHIP.name}</b><br>${clockIn(now, zone)} Bordzeit · ${sog === null ? "—" : num(sog, 1) + " kn"}<br>${fmtLat(fix.lat)} · ${fmtLon(fix.lon)}<br><span style="color:var(--ink-2)">${fix.live ? SRC_LABEL[fix.src] : "Fahrplan-Schätzung"}</span>`);
+  shipMarker.setTooltipContent(`<b>${SHIP.name}</b><br>${clockIn(now, zone)} Bordzeit · ${sog === null ? "—" : num(sog, 1) + " kn"}<br>${fmtLat(fix.lat)} · ${fmtLon(fix.lon)}<br><span style="color:var(--ink-2)">${fix.stale ? `Letzte AIS-Meldung vor ${fmtCountdown(now - fix.t)}` : fix.live ? SRC_LABEL[fix.src] : "Fahrplan-Schätzung"}</span>`);
+  if(fix.lastSeen){
+    lastSeenMarker.setLatLng([fix.lastSeen.lat, fix.lastSeen.lon]).setStyle({opacity:.9, fillOpacity:.25});
+    lastSeenMarker.setTooltipContent(`<b>Zuletzt per AIS gesehen</b><br>vor ${fmtCountdown(now - fix.lastSeen.t)}<br>${fmtLat(fix.lastSeen.lat)} · ${fmtLon(fix.lastSeen.lon)}`);
+  } else lastSeenMarker.setStyle({opacity:0, fillOpacity:0});
   const sailedPts = !claim ? [] : CALLS.slice(0, Math.max(0, (fix.prevIdx >= 0 ? fix.prevIdx : fix.portIdx) + 1)).map(x => [x.lat, x.lon]);
   if(claim) sailedPts.push([fix.lat, fix.lon]);
   sailedLine.setLatLngs(sailedPts.length > 1 ? splitAtDateline(sailedPts) : []);
@@ -1987,17 +2012,20 @@ function renderShipSheet(){
   const sog = isFinite(fix.sog) ? fix.sog : null;
 
   let status = "";
-  if(fix.phase === "pre") status = claim ? `Vor der Weltreise, derzeit auf anderer Route` : `Vor der Weltreise – Einschiffung ${stampIn(CALLS[0].depUtc, CALLS[0].tz)} in ${short(CALLS[0].n)}`;
+  if(fix.phase === "pre") status = claim ? `Vor der Weltreise, derzeit auf anderer Route${fix.stale ? " – Stand von vor " + fmtCountdown(now - fix.t) : ""}` : `Vor der Weltreise – Einschiffung ${stampIn(CALLS[0].depUtc, CALLS[0].tz)} in ${short(CALLS[0].n)}`;
   else if(fix.phase === "port" && c) status = c.transit ? `Durchfahrt ${short(c.n)}` : `Im Hafen von ${short(c.n)}`;
   else if(fix.phase === "done") status = "Reise vollendet";
   else status = `Auf See zwischen ${short(CALLS[fix.prevIdx >= 0 ? fix.prevIdx : 0].n)} und ${CALLS[nextIdx] ? short(CALLS[nextIdx].n) : "—"}`;
 
-  const sourceLine = fix.live
+  const sourceLine = fix.live && !fix.stale
     ? `${SRC_LABEL[fix.src]}, Meldung vor ${fmtCountdown(now - fix.t)}`
-    : `Fahrplan-Schätzung · ${aisCheckText(now)}`;
+    : fix.stale
+      ? `Letzte AIS-Meldung vor ${fmtCountdown(now - fix.t)} (${stampIn(fix.t, HOME.tz)} ${HOME.label}) · ${aisCheckText(now)}`
+      : `Fahrplan-Schätzung · ${aisCheckText(now)}${fix.lastSeen ? ` · zuletzt per AIS gesehen vor ${fmtCountdown(now - fix.lastSeen.t)} bei ${fmtLat(fix.lastSeen.lat)}, ${fmtLon(fix.lastSeen.lon)}` : ""}`;
 
   let liveHint = "";
-  if(!fix.live){
+  if(fix.stale) liveHint = `Diese Position ist die letzte AIS-Meldung, die der Abgleich empfangen hat. Sie ist ${fmtCountdown(now - fix.t)} alt; das Schiff hat sich seither weiterbewegt. ${aisCheckText(now)}.`;
+  else if(!fix.live){
     liveHint = aisCheck && aisCheck.error
       ? `Der automatische AIS-Abgleich meldet einen Fehler: ${aisCheck.error}. Bitte den Schlüssel im Repository prüfen.`
       : aisCheck
@@ -2032,7 +2060,7 @@ function renderShipSheet(){
     <figure class="hero" id="hero">
       <div class="placeholder">${SHIP.name}</div>
       <figcaption>
-        <div class="region">${fix.live ? "Live-Position" : "Position laut Fahrplan"}</div>
+        <div class="region">${fix.stale ? "Letzte bekannte Position" : fix.live ? "Live-Position" : "Position laut Fahrplan"}</div>
         <h2>${SHIP.name}</h2>
         <div class="country">${status}</div>
       </figcaption>
