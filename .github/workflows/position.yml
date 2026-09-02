@@ -1,0 +1,61 @@
+name: Schiffsposition abholen
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"        # alle 15 Minuten (GitHub kann einige Minuten verzögern)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: position
+  cancel-in-progress: true
+
+jobs:
+  position:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Bisherige Positionsdaten laden
+        run: |
+          mkdir -p out
+          if git fetch --depth 1 origin position-data 2>/dev/null; then
+            git show origin/position-data:position.json > out/position.json 2>/dev/null || true
+          fi
+
+      - name: Position über aisstream abfragen
+        env:
+          AISSTREAM_KEY: ${{ secrets.AISSTREAM_KEY }}
+          OUT_DIR: out
+        run: node scripts/fetch-position.mjs
+
+      - name: Auf Branch position-data veröffentlichen
+        run: |
+          set -e
+          git config user.name "weltreise-position"
+          git config user.email "actions@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin position-data >/dev/null 2>&1; then
+            git worktree add -B position-data pub origin/position-data
+          else
+            git worktree add --detach pub
+            (cd pub && git checkout --orphan position-data && git rm -rfq . && git clean -fdq)
+          fi
+          cp out/status.json pub/status.json
+          [ -f out/position.json ] && cp out/position.json pub/position.json
+          cd pub
+          git add -A
+          if git diff --cached --quiet; then
+            echo "Keine Änderung."
+          else
+            git commit -qm "Position $(date -u +%Y-%m-%dT%H:%MZ)"
+            git push -q origin position-data
+          fi
