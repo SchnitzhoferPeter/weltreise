@@ -8,7 +8,7 @@
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
     "page": "https://commons.wikimedia.org/wiki/File:Colosseo_2020.jpg",
-    "bytes": 334951
+    "bytes": 332790
   },
   "savona": {
     "file": "img/savona.jpg",
@@ -109,6 +109,17 @@
     "page": "https://commons.wikimedia.org/wiki/File:Bf-map_with_Half_Moon_Cay.png",
     "bytes": 24751
   },
+  "panamakanal": {
+    "file": "img/panamakanal.png",
+    "title": "Panama Canal locks",
+    "wiki": "https://en.wikipedia.org/wiki/Panama_Canal_locks",
+    "lang": "en",
+    "author": "Thoroe",
+    "license": "CC BY-SA 2.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by-sa/2.0",
+    "page": "https://commons.wikimedia.org/wiki/File:Panama_Canal_Map_EN.png",
+    "bytes": 1867197
+  },
   "panama-stadt": {
     "file": "img/panama-stadt.jpg",
     "title": "Casco Viejo, Panama",
@@ -118,7 +129,7 @@
     "license": "CC BY-SA 4.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
     "page": "https://commons.wikimedia.org/wiki/File:Casco_Antiguo_(San_Felipe)_-_Pamama.jpg",
-    "bytes": 515395
+    "bytes": 515343
   },
   "puntarenas": {
     "file": "img/puntarenas.jpg",
@@ -217,7 +228,7 @@
     "license": "CC BY-SA 3.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
     "page": "https://commons.wikimedia.org/wiki/File:Sulfur_dioxide_emissions_from_the_Halemaumau_vent_04-08-1_1.jpg",
-    "bytes": 179672
+    "bytes": 178385
   },
   "papeete": {
     "file": "img/papeete.jpg",
@@ -316,7 +327,7 @@
     "license": "CC BY 2.0",
     "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
     "page": "https://commons.wikimedia.org/wiki/File:Sensoji_Temple_(40909716384).jpg",
-    "bytes": 306349
+    "bytes": 307410
   },
   "kobe": {
     "file": "img/kobe.jpg",
@@ -349,7 +360,7 @@
     "license": "CC BY-SA 3.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
     "page": "https://commons.wikimedia.org/wiki/File:%ED%95%B4%EB%8F%99%EC%9A%A9%EA%B6%81%EC%82%AC_%EC%82%AC%EC%B0%B0_%EC%A0%84%EA%B2%BD.jpg",
-    "bytes": 303914
+    "bytes": 305441
   },
   "keelung": {
     "file": "img/keelung.jpg",
@@ -371,7 +382,7 @@
     "license": "CC BY-SA 3.0",
     "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
     "page": "https://commons.wikimedia.org/wiki/File:High_West_and_Victoria_Peak_from_Victoria_Gap_(crop1).jpg",
-    "bytes": 445950
+    "bytes": 445959
   },
   "nha-trang": {
     "file": "img/nha-trang.jpg",
@@ -426,7 +437,7 @@
     "license": "CC BY 2.0",
     "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
     "page": "https://commons.wikimedia.org/wiki/File:The_Twins_SE_Asia_2019_(49171985716)_(4to3-1).jpg",
-    "bytes": 738658
+    "bytes": 735357
   },
   "george-town-penang": {
     "file": "img/george-town-penang.jpg",
