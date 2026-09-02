@@ -509,11 +509,14 @@ dialog.panel .note code{font-size:14px}
     </div>
     <div id="cfgAis">
       <label for="cfgKey">API-Key von aisstream.io</label>
-      <input id="cfgKey" placeholder="kostenloser Key, bleibt nur in diesem Browser">
-      <p class="note">Der Key wird nur lokal gespeichert und direkt an aisstream.io geschickt. AIS über Landstationen erreicht das Schiff nur in Küstennähe.</p>
+      <input id="cfgKey" placeholder="kostenloser Key, bleibt nur in diesem Browser" autocomplete="off">
+      <p class="note">So kommt man zum Key: auf <a href="https://aisstream.io" target="_blank" rel="noopener">aisstream.io</a> mit einem GitHub-Konto anmelden,
+        unter „API Keys“ einen Schlüssel erzeugen, hier einfügen, speichern. Der Key bleibt in diesem Browser und geht nur an aisstream.io.
+        AIS über Landstationen erreicht das Schiff in Häfen und bis etwa 40 sm vor der Küste; auf hoher See bleibt die Fahrplan-Schätzung.</p>
     </div>
     <div class="foot">
       <button class="btn primary" id="cfgSave">Speichern</button>
+      <button class="btn" id="cfgInvite" hidden title="Link mit AIS-Zugang für die Familie">Einladungslink kopieren</button>
       <button class="btn" id="cfgCopy">Position als JSON kopieren</button>
     </div>
     <p class="note" id="cfgStatus"></p>
@@ -1256,23 +1259,35 @@ async function loadFilePosition(){
   }catch(e){ filePos = null; }        /* Datei ist optional */
 }
 
+/* AIS-Verbindung mit Wiederaufnahme; Status für Dialog und Bordkarte */
+let aisStatus = "", aisRetry = null, aisBackoff = 15000, aisLastMsg = 0;
 function connectAis(){
   if(!cfg.key || aisSocket) return;
+  if(!(cfg.mode === "auto" || cfg.mode === "ais")) return;
+  clearTimeout(aisRetry);
+  aisStatus = "verbindet …";
   try{
     aisSocket = new WebSocket("wss://stream.aisstream.io/v0/stream");
-  }catch(e){ aisError = "Verbindung nicht möglich"; return; }
+  }catch(e){ aisSocket = null; aisError = "Verbindung nicht möglich"; aisStatus = aisError; scheduleAisRetry(); return; }
   aisSocket.addEventListener("open", () => {
+    aisBackoff = 15000;
+    aisStatus = "verbunden, wartet auf Meldung aus Reichweite einer Landstation";
     aisSocket.send(JSON.stringify({
       APIKey: cfg.key,
       BoundingBoxes: [[[-90, -180], [90, 180]]],
       FiltersShipMMSI: [String(SHIP.mmsi)],
       FilterMessageTypes: ["PositionReport"]
     }));
+    renderNow();
   });
   aisSocket.addEventListener("message", ev => {
     let m;
     try{ m = JSON.parse(ev.data); }catch(e){ return; }
-    if(m && (m.error || m.Error)){ aisError = String(m.error || m.Error); return; }
+    if(m && (m.error || m.Error)){
+      aisError = String(m.error || m.Error);
+      aisStatus = /key/i.test(aisError) ? "API-Key abgelehnt – bitte prüfen" : "Fehler: " + aisError;
+      renderNow(); return;
+    }
     const pr = m && m.Message && (m.Message.PositionReport || m.Message.positionReport);
     const meta = m && (m.MetaData || m.Metadata) || {};
     const lat = pr ? (pr.Latitude ?? pr.latitude ?? meta.latitude) : meta.latitude;
@@ -1283,11 +1298,40 @@ function connectAis(){
       sog: pr && isFinite(pr.Sog) ? +pr.Sog : null,
       cog: pr && isFinite(pr.Cog) ? +pr.Cog : null,
       t: isFinite(t) ? t : Date.now()};
-    aisError = "";
+    aisLastMsg = Date.now();
+    aisError = ""; aisStatus = "verbunden";
     refreshView();
   });
-  aisSocket.addEventListener("close", () => { aisSocket = null; });
-  aisSocket.addEventListener("error", () => { aisError = "AIS-Stream nicht erreichbar"; });
+  aisSocket.addEventListener("close", () => {
+    aisSocket = null;
+    if(!aisError) aisStatus = "Verbindung getrennt, neuer Versuch folgt";
+    scheduleAisRetry();
+  });
+  aisSocket.addEventListener("error", () => { aisError = "AIS-Stream nicht erreichbar"; aisStatus = aisError; });
+}
+function scheduleAisRetry(){
+  clearTimeout(aisRetry);
+  if(/abgelehnt/.test(aisStatus)) return;          /* falscher Key: nicht endlos versuchen */
+  aisRetry = setTimeout(() => { connectAis(); }, aisBackoff);
+  aisBackoff = Math.min(aisBackoff * 2, 5 * 60000);
+}
+function disconnectAis(){
+  clearTimeout(aisRetry);
+  if(aisSocket){ try{ aisSocket.close(); }catch(e){} aisSocket = null; }
+  aisStatus = "";
+}
+/* Einladungslink: der Key steht nur im Fragment und wird beim Öffnen lokal gespeichert */
+function aisInviteLink(){
+  return location.origin + location.pathname + "#ais=" + encodeURIComponent(cfg.key || "");
+}
+function adoptKeyFromHash(){
+  const m = /^#ais=([^&]+)/.exec(location.hash);
+  if(!m) return false;
+  try{ cfg.key = decodeURIComponent(m[1]).trim(); }catch(e){ cfg.key = m[1].trim(); }
+  if(cfg.mode === "schedule" || cfg.mode === "manual") cfg.mode = "auto";
+  saveCfg();
+  history.replaceState(null, "", location.pathname);
+  return true;
 }
 
 function pickFix(now){
@@ -1587,7 +1631,9 @@ function renderNow(){
   /* Quelle und Status */
   el("srcDot").className = "dot" + (fix.live ? "" : " est");
   el("srcLine").className = "now-eyebrow" + (fix.live ? "" : " est");
-  el("srcLabel").textContent = fix.live ? `${SRC_LABEL[fix.src]} · vor ${fmtCountdown(now - fix.t)}` : SRC_LABEL.schedule;
+  const aisNote = !fix.live && cfg.key && (cfg.mode === "auto" || cfg.mode === "ais") && aisStatus
+    ? ` · AIS ${aisStatus.replace("verbunden, wartet auf Meldung aus Reichweite einer Landstation", "verbunden, Schiff außer Reichweite")}` : "";
+  el("srcLabel").textContent = fix.live ? `${SRC_LABEL[fix.src]} · vor ${fmtCountdown(now - fix.t)}` : SRC_LABEL.schedule + aisNote;
 
   let head = "", sub = "";
   if(fix.phase === "pre"){
@@ -2027,9 +2073,12 @@ function syncCfgForm(){
   el("cfgManual").hidden = !(cfg.mode === "manual" || cfg.mode === "auto");
   el("cfgAis").hidden = !(cfg.mode === "ais" || cfg.mode === "auto");
   const fix = livePos();
-  el("cfgStatus").textContent = fix.live
+  const aisLine = cfg.key && (cfg.mode === "auto" || cfg.mode === "ais")
+    ? ` AIS: ${aisStatus || "nicht verbunden"}${aisLastMsg ? ", letzte Meldung vor " + fmtCountdown(Date.now() - aisLastMsg) : ""}.` : "";
+  el("cfgStatus").textContent = (fix.live
     ? `Aktuell aktiv: ${SRC_LABEL[fix.src]}, gemeldet vor ${fmtCountdown(Date.now() - fix.t)}.`
-    : `Aktuell aktiv: Fahrplan-Schätzung.${aisError ? " AIS: " + aisError : ""}`;
+    : `Aktuell aktiv: Fahrplan-Schätzung.`) + aisLine;
+  el("cfgInvite").hidden = !cfg.key;
 }
 el("cfgBtn").addEventListener("click", () => { syncCfgForm(); dlg.showModal(); });
 el("cfgMode").addEventListener("change", () => { cfg.mode = el("cfgMode").value; syncCfgForm(); });
@@ -2040,8 +2089,13 @@ el("cfgSave").addEventListener("click", () => {
     cfg.manual = {lat, lon, sog:parseFloat(el("cfgSog").value.replace(",", ".")), cog:parseFloat(el("cfgCog").value.replace(",", ".")), t:Date.now()};
   } else if(!el("cfgLat").value && !el("cfgLon").value) cfg.manual = null;
   saveCfg();
+  disconnectAis(); aisPos = null; aisError = "";
   if(cfg.key) connectAis();
   refreshView(); dlg.close();
+});
+el("cfgInvite").addEventListener("click", async () => {
+  try{ await navigator.clipboard.writeText(aisInviteLink()); el("cfgStatus").textContent = "Einladungslink kopiert – wer ihn öffnet, bekommt AIS live ohne weitere Eingabe."; }
+  catch(e){ el("cfgStatus").textContent = aisInviteLink(); }
 });
 el("cfgCopy").addEventListener("click", async () => {
   const fix = livePos();
@@ -2074,7 +2128,9 @@ function openFromHash(){
   if(m) select(+m[1], true);
 }
 applyMapTheme();
+const adopted = adoptKeyFromHash();
 renderList(); markToday(); renderNow(); renderWarnBox();
+if(adopted){ syncCfgForm(); el("cfgStatus").textContent = "AIS-Zugang übernommen und in diesem Browser gespeichert. Die Position erscheint, sobald eine Landstation das Schiff empfängt."; dlg.showModal(); }
 Promise.all([loadFilePosition(), loadSharedExcursions()]).then(() => { refreshView(); refreshWarnings(); });
 if(cfg.key && (cfg.mode === "auto" || cfg.mode === "ais")) connectAis();
 openFromHash();
