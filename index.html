@@ -556,6 +556,7 @@ const TOTAL_DAYS = 141;
 
 const POS_FILE = "data/position.json";                /* optionale, gemeinsam genutzte Position */
 const EXC_FILE = "data/ausfluege.json";               /* optionale, gemeinsam genutzte Landausflüge */
+const SYNC_FILE = "data/sync.json";                   /* Adresse des gemeinsamen Speichers (Firebase Realtime Database) */
 const POS_MAX_AGE_H = 18;                             /* danach gilt eine Meldung als veraltet */
 const WX_TTL_MS = 20 * 60 * 1000;                     /* Wetter-Cache */
 const LS = "weltreise.";
@@ -1419,6 +1420,85 @@ const saveExc = () => { try{ localStorage.setItem(LS + "exc", JSON.stringify(loc
 const excKey = c => `${c.n}|${c.d1}`;
 const esc = s => String(s ?? "").replace(/[&<>"]/g, ch => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[ch]));
 
+/* Notizen: je Hafen ein Eintrag {text, updatedAt, by}; alte Einzelwerte werden übernommen */
+let notes = (() => { try{ return JSON.parse(localStorage.getItem(LS + "notes") || "{}"); }catch(e){ return {}; } })();
+(function migrateNotes(){
+  try{
+    const old = [];
+    for(let k = 0; k < localStorage.length; k++){ const key = localStorage.key(k); if(key.startsWith(LS + "note.")) old.push(key); }
+    old.forEach(key => {
+      const port = key.slice((LS + "note.").length).replace(/\.(\d+)$/, "|$1");
+      if(!notes[port]) notes[port] = {text: localStorage.getItem(key) || "", updatedAt: Date.now(), by: ""};
+      localStorage.removeItem(key);
+    });
+    if(old.length) localStorage.setItem(LS + "notes", JSON.stringify(notes));
+  }catch(e){}
+})();
+const saveNotes = () => { try{ localStorage.setItem(LS + "notes", JSON.stringify(notes)); }catch(e){} };
+const getNote = i => (notes[excKey(CALLS[i])] || {}).text || "";
+let who = (() => { try{ return localStorage.getItem(LS + "who") || ""; }catch(e){ return ""; } })();
+
+/* ---------- Gemeinsamer Speicher: Firebase Realtime Database über REST ----------
+   data/sync.json: {"url":"https://<projekt>-default-rtdb.<region>.firebasedatabase.app/weltreise"}
+   Ablage: <url>/notes/<schluessel>.json und <url>/excursions/<id>.json. Zuletzt geschriebener Stand gewinnt. */
+const sync = {url:null, ok:false, err:"", last:0, pending:0};
+const syncKey = s => encodeURIComponent(String(s).replace(/[.#$\[\]\/]/g, "_"));
+async function loadSyncConfig(){
+  try{
+    const c = await fetchJson(SYNC_FILE + "?_=" + Math.floor(Date.now() / 600000));
+    if(c && typeof c.url === "string" && /^https:\/\//.test(c.url)) sync.url = c.url.replace(/\/+$/, "");
+  }catch(e){ sync.url = null; }
+}
+async function syncGet(path){
+  const r = await fetch(`${sync.url}/${path}.json`, {cache:"no-store"});
+  if(!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+async function syncPut(path, data){
+  if(!sync.url) return;
+  sync.pending++;
+  try{
+    const r = await fetch(`${sync.url}/${path}.json`, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)});
+    if(!r.ok) throw new Error("HTTP " + r.status);
+    sync.ok = true; sync.err = ""; sync.last = Date.now();
+  }catch(e){ sync.ok = false; sync.err = e.message || "Speichern fehlgeschlagen"; }
+  finally{ sync.pending--; }
+}
+/* Fremde Änderungen holen und mit dem lokalen Stand zusammenführen */
+async function pullShared(){
+  if(!sync.url) return false;
+  try{
+    const [rn, rx] = await Promise.all([syncGet("notes"), syncGet("excursions")]);
+    let changed = false;
+    Object.entries(rn || {}).forEach(([k, v]) => {
+      if(!v || typeof v !== "object") return;
+      const key = decodeURIComponent(k), mine = notes[key];
+      if(!mine || (v.updatedAt || 0) > (mine.updatedAt || 0)){ notes[key] = {text:String(v.text || ""), updatedAt:v.updatedAt || 0, by:String(v.by || "")}; changed = true; }
+    });
+    Object.values(rx || {}).forEach(v => {
+      if(!v || typeof v !== "object" || !v.id) return;
+      const idx = localExc.findIndex(e => e.id === v.id);
+      if(idx < 0){ localExc.push(v); changed = true; }
+      else if((v.updatedAt || 0) > (localExc[idx].updatedAt || 0)){ localExc[idx] = v; changed = true; }
+    });
+    if(changed){ saveNotes(); saveExc(); }
+    sync.ok = true; sync.err = ""; sync.last = Date.now();
+    return changed;
+  }catch(e){ sync.ok = false; sync.err = e.message || "nicht erreichbar"; return false; }
+}
+/* Eigene Einträge, die der Speicher noch nicht kennt, nachreichen (z. B. nach Offline-Phase) */
+async function pushAllShared(){
+  if(!sync.url) return;
+  for(const [k, v] of Object.entries(notes)) await syncPut(`notes/${syncKey(k)}`, v);
+  for(const e of localExc) await syncPut(`excursions/${syncKey(e.id)}`, e);
+}
+function syncText(){
+  if(!sync.url) return "nur in diesem Browser gespeichert – gemeinsamer Speicher nicht eingerichtet";
+  if(sync.pending) return "wird geteilt …";
+  if(sync.err) return `geteilt · zuletzt nicht erreichbar (${sync.err})`;
+  return sync.last ? `geteilt mit allen · Stand ${clockIn(sync.last, HOME.tz)}` : "geteilt mit allen";
+}
+
 async function loadSharedExcursions(){
   try{
     const d = await fetchJson(EXC_FILE + "?_=" + Math.floor(Date.now() / 600000));
@@ -1429,17 +1509,27 @@ function excursionsFor(i){
   const k = excKey(CALLS[i]);
   const list = [
     ...sharedExc.filter(e => e.port === k).map(e => Object.assign({shared:true}, e)),
-    ...localExc.filter(e => e.port === k)
+    ...localExc.filter(e => e.port === k && !e.deleted)
   ];
   return list.sort((a, b) => String(a.time || "99").localeCompare(String(b.time || "99")));
 }
 function addExcursion(i, data){
-  localExc.push(Object.assign({id:Date.now().toString(36), port:excKey(CALLS[i])}, data));
-  saveExc();
+  const e = Object.assign({id:Date.now().toString(36) + Math.random().toString(36).slice(2, 6), port:excKey(CALLS[i]), by:who, updatedAt:Date.now()}, data);
+  localExc.push(e); saveExc();
+  syncPut(`excursions/${syncKey(e.id)}`, e);
 }
 function removeExcursion(id){
-  localExc = localExc.filter(e => e.id !== id);
+  const e = localExc.find(x => x.id === id);
+  if(!e) return;
+  e.deleted = true; e.updatedAt = Date.now();
   saveExc();
+  syncPut(`excursions/${syncKey(e.id)}`, e);
+}
+function setNote(i, text){
+  const key = excKey(CALLS[i]);
+  notes[key] = {text, updatedAt:Date.now(), by:who};
+  saveNotes();
+  return syncPut(`notes/${syncKey(key)}`, notes[key]);
 }
 /* Der Hafen, für den ein Ausflug jetzt relevant ist: aktueller oder nächster */
 function excursionFocus(fix, now){
@@ -1451,7 +1541,7 @@ function excCard(e){
     <span class="time">${esc(e.time || "–")}</span>
     <span class="title">${esc(e.title)}</span>
     <button class="del" title="Eintrag löschen" data-del="${esc(e.id || "")}">${icon("trash", "ic")}</button>
-    <span class="meta">${[e.dur, e.meet ? "Treffpunkt " + e.meet : "", e.shared ? "gemeinsame Liste" : "", e.note].filter(Boolean).map(esc).join(" · ")}</span>
+    <span class="meta">${[e.dur, e.meet ? "Treffpunkt " + e.meet : "", e.shared ? "gemeinsame Liste" : (e.by ? "von " + e.by : ""), e.note].filter(Boolean).map(esc).join(" · ")}</span>
   </div>`;
 }
 
@@ -1542,13 +1632,12 @@ function computeStats(now){
     if(c.lat > north.lat) north = c;
     if(c.lat < south.lat) south = c;
   });
-  let notes = 0;
-  try{ for(let k = 0; k < localStorage.length; k++) if(localStorage.key(k).startsWith(LS + "note.")) notes++; }catch(e){}
+  const noteCount = Object.values(notes).filter(n => n && n.text && n.text.trim()).length;
   return {
     fix, portsDone:done.length, countriesDone:new Set(done.map(c => c.c.split(" · ")[0])).size,
     nmDone:fix.phase === "pre" ? 0 : fix.nm, daysDone:fix.phase === "pre" ? 0 : dayNoOf(now),
     zones:offsets.size, changes:CLOCK_CHANGES.length, dateline:CLOCK_CHANGES.filter(c => c.dateline).length,
-    equator, longest, stay, north, south, notes, excursions:sharedExc.length + localExc.length
+    equator, longest, stay, north, south, notes:noteCount, excursions:sharedExc.length + localExc.filter(e => !e.deleted).length
   };
 }
 function renderStatsDialog(){
@@ -1573,7 +1662,7 @@ function renderStatsDialog(){
       <div><span>Südlichster Hafen</span><b>${s.south.n.split(" | ")[0]}, ${fmtLat(s.south.lat)}</b></div>
       <div><span>Seetage insgesamt</span><b>${seaDayCount}</b></div>
       <div><span>Landausflüge eingetragen</span><b>${s.excursions}</b></div>
-      <div><span>Notizen in diesem Browser</span><b>${s.notes}</b></div>
+      <div><span>Notizen</span><b>${s.notes}</b></div>
     </div>
     <p class="note">Seemeilen als Großkreisdistanz von Hafen zu Hafen; die tatsächliche Fahrstrecke liegt etwas darüber.</p>`;
 }
@@ -1814,8 +1903,6 @@ async function wikiImage(title){
   imgCache.set(title, null);
   return null;
 }
-const noteKey = i => `${LS}note.${CALLS[i].n}.${CALLS[i].d1}`;
-const getNote = i => { try{ return localStorage.getItem(noteKey(i)) || ""; }catch(e){ return ""; } };
 
 function wxRow(ic, temp, title, sub){
   return `<div class="wx">${icon(ic, "ic")}<span class="wx-temp num">${temp}</span><div class="wx-text"><b>${title}</b><span>${sub}</span></div></div>`;
@@ -1893,7 +1980,7 @@ function renderSheet(i){
       <h3>Notizen</h3>
       <div class="journal">
         <textarea id="noteBox" placeholder="Was war hier schön? Wen habt ihr getroffen? Was soll Mama nicht vergessen?">${esc(getNote(i))}</textarea>
-        <div class="row"><span>bleibt in diesem Browser</span><span class="saved" id="noteSaved"></span></div>
+        <div class="row"><input id="whoBox" placeholder="Dein Name" value="${esc(who)}" style="max-width:160px;min-height:38px;padding:6px 10px;font-size:14px" aria-label="Dein Name"><span id="syncState">${syncText()}${(notes[excKey(c)] || {}).by ? " · zuletzt von " + esc(notes[excKey(c)].by) : ""}</span><span class="saved" id="noteSaved"></span></div>
       </div>
       <div class="links">
         <a class="chip" href="https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lon}" target="_blank" rel="noopener">Google Maps</a>
@@ -1966,22 +2053,23 @@ function renderSheet(i){
     if(d && d.dataset.del){ removeExcursion(d.dataset.del); renderExcursions(i); renderList(); renderNow(); }
   });
   el("excCopy").addEventListener("click", async e => {
-    const json = JSON.stringify(localExc.map(({id, ...rest}) => rest), null, 2);
+    const json = JSON.stringify(localExc.filter(e => !e.deleted).map(({id, updatedAt, deleted, ...rest}) => rest), null, 2);
     try{ await navigator.clipboard.writeText(json); e.target.textContent = "JSON kopiert"; }
     catch(err){ e.target.textContent = "Kopieren nicht möglich"; }
   });
 
   /* Notizen */
-  const box = el("noteBox"), saved = el("noteSaved");
+  const box = el("noteBox"), saved = el("noteSaved"), whoBox = el("whoBox");
+  whoBox.addEventListener("change", () => { who = whoBox.value.trim(); try{ localStorage.setItem(LS + "who", who); }catch(e){} });
   let timer = null;
   box.addEventListener("input", () => {
     clearTimeout(timer);
-    timer = setTimeout(() => {
-      try{
-        if(box.value.trim()) localStorage.setItem(noteKey(i), box.value); else localStorage.removeItem(noteKey(i));
-        saved.textContent = "gespeichert " + clockIn(Date.now(), HOME.tz);
-      }catch(e){ saved.textContent = "Speichern nicht möglich"; }
-    }, 600);
+    timer = setTimeout(async () => {
+      saved.textContent = "speichert …";
+      await setNote(i, box.value);
+      saved.textContent = (sync.url ? (sync.err ? "lokal gespeichert, Teilen fehlgeschlagen" : "geteilt") : "gespeichert") + " " + clockIn(Date.now(), HOME.tz);
+      const st = el("syncState"); if(st) st.textContent = syncText();
+    }, 700);
   });
   el("shareBtn").addEventListener("click", async e => {
     const url = location.origin + location.pathname + `#hafen-${i}`;
@@ -2255,14 +2343,18 @@ function openFromHash(){
 applyMapTheme();
 if(/^#ais=/.test(location.hash)) history.replaceState(null, "", location.pathname);   /* alte Einladungslinks */
 renderList(); markToday(); renderNow(); renderWarnBox();
-Promise.all([loadFilePosition(), loadSharedExcursions()]).then(() => { refreshView(); refreshWarnings(); });
+Promise.all([loadFilePosition(), loadSharedExcursions(), loadSyncConfig()]).then(async () => {
+  refreshView(); refreshWarnings();
+  if(sync.url){ await pullShared(); await pushAllShared(); refreshView(); }
+});
+setInterval(async () => { if(sync.url && await pullShared()) refreshView(); }, 60000);
 openFromHash();
 addEventListener("hashchange", openFromHash);
 setInterval(() => { renderNow(); if(sheet.classList.contains("is-open") && sheetMode === "ship") renderShipSheet(); }, 20000);
 setInterval(() => { loadFilePosition().then(refreshView); }, 5 * 60000);
 setInterval(refreshWarnings, 30 * 60000);
 setInterval(renderList, 10 * 60000);
-document.addEventListener("visibilitychange", () => { if(!document.hidden){ loadFilePosition().then(refreshView); refreshWarnings(); } });
+document.addEventListener("visibilitychange", () => { if(!document.hidden){ loadFilePosition().then(refreshView); refreshWarnings(); if(sync.url) pullShared().then(ch => { if(ch) refreshView(); }); } });
 if("serviceWorker" in navigator && location.protocol.startsWith("http")){
   navigator.serviceWorker.register("sw.js").catch(() => {});
 }

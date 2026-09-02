@@ -96,6 +96,19 @@ Terrestrisches AIS erreicht das Schiff in Häfen und bis etwa 40 sm vor der Küs
 bleibt es bei der Schätzung; dafür bräuchte es ein bezahltes Satelliten-AIS-Abo, das der Job
 ebenso einlesen könnte.
 
+## Gemeinsame Notizen und Landausflüge
+
+Notizen und selbst eingetragene Landausflüge liegen zuerst im Browser. Ist in `data/sync.json`
+die Adresse einer Firebase Realtime Database hinterlegt (Vorlage: `data/sync.example.json`),
+teilt die Seite sie mit allen: eigene Änderungen werden sofort hochgeladen, fremde jede Minute
+und beim Zurückkehren zur Seite abgeholt; der jüngere Stand gewinnt. Jeder Eintrag trägt den
+Namen aus dem Feld „Dein Name“.
+
+Einrichtung (einmalig, kostenlos): Firebase-Projekt anlegen → Realtime Database erstellen →
+Regeln auf `".read": true, ".write": true` setzen → die Datenbank-URL plus `/weltreise` in
+`data/sync.json` eintragen. Die Adresse ist im Repository öffentlich; wer sie kennt, kann
+mitschreiben. Für eine Familienseite ist das vertretbar, für mehr braucht es Anmeldung.
+
 ## Routenänderungen
 
 - **24. Aug. 2026 (Costa über e-hoi):** Der Anlauf Cristóbal/Colón am 19.12. entfällt. Stattdessen
