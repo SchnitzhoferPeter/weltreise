@@ -47,8 +47,8 @@ function finish(){
     console.log("Keine Meldung in", status.listenedSeconds, "s.", error ? "Fehler: " + error : "Schiff vermutlich außer Reichweite der Landstationen.");
     if(previous) console.log("Letzte bekannte Position bleibt:", previous.timestamp);
   }
+  console.log(`${seen.size} verschiedene Schiffe im Suchfenster empfangen.`);
   if(DIAG){
-    console.log(`Diagnose: ${seen.size} verschiedene Schiffe im Mittelmeer empfangen.`);
     const costa = [...seen.entries()].filter(([, n]) => /COSTA/i.test(n));
     console.log("Davon Costa-Schiffe:", costa.length ? costa.map(([id, n]) => `${n} (${id})`).join(", ") : "keine");
   }
@@ -86,7 +86,7 @@ ws.addEventListener("message", async ev => {
   const meta = (m && m.MetaData) || {};
   if(!pr) return;
   const id = String(meta.MMSI ?? pr.UserID ?? "");
-  if(DIAG && !seen.has(id)) seen.set(id, (meta.ShipName || "").trim());
+  if(!seen.has(id)) seen.set(id, (meta.ShipName || "").trim());
   if(id !== String(MMSI)) return;
   console.log("Zielschiff gesehen:", meta.ShipName, pr.Latitude, pr.Longitude, pr.Sog, "kn");
   const lat = pr.Latitude ?? meta.latitude, lon = pr.Longitude ?? meta.longitude;
