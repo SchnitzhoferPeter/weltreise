@@ -302,6 +302,14 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 .ship-icon polygon{fill:var(--live);stroke:var(--card);stroke-width:2}
 .ship-icon.est polygon{fill:var(--brass)}
 
+/* ---------- Reisetagebuch (FindPenguins) ---------- */
+.diary-intro{padding:18px 22px 6px;display:flex;flex-direction:column;gap:6px}
+.diary-intro h2{margin:0;font-family:'Newsreader',Georgia,serif;font-size:30px;font-weight:700;line-height:1.1}
+.diary-intro p{margin:0;font-size:16px;color:var(--ink-2)}
+.diary-frame{margin:14px 22px 0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card);min-height:70vh}
+.diary-frame iframe{display:block;width:100%;height:78vh;border:0;background:var(--card)}
+@media (max-width:980px){ .diary-frame{margin:12px 16px 0;min-height:60vh} .diary-frame iframe{height:72vh} }
+
 /* ---------- Hinweis ---------- */
 .toast{
   position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:60;
@@ -418,6 +426,7 @@ dialog.panel .note code{font-size:14px}
   </div>
   <div class="stats" id="stats"></div>
   <div class="head-tools">
+    <button class="btn" id="diaryBtn" hidden>Tagebuch</button>
     <button class="btn" id="icsBtn" title="Alle Häfen als Kalenderdatei herunterladen">Kalender</button>
     <button class="btn" id="statsBtn">Reise in Zahlen</button>
     <button class="btn" id="tzBtn">Zeitumstellungen</button>
@@ -557,6 +566,7 @@ const TOTAL_DAYS = 141;
 const POS_FILE = "data/position.json";                /* optionale, gemeinsam genutzte Position */
 const EXC_FILE = "data/ausfluege.json";               /* optionale, gemeinsam genutzte Landausflüge */
 const SYNC_FILE = "data/sync.json";                   /* Adresse des gemeinsamen Speichers (Firebase Realtime Database) */
+const DIARY_FILE = "data/tagebuch.json";              /* Reisetagebuch auf FindPenguins: Link und Einbettung */
 const POS_MAX_AGE_H = 18;                             /* danach gilt eine Meldung als veraltet */
 const WX_TTL_MS = 20 * 60 * 1000;                     /* Wetter-Cache */
 const LS = "weltreise.";
@@ -1662,7 +1672,6 @@ function renderStatsDialog(){
       <div><span>Südlichster Hafen</span><b>${s.south.n.split(" | ")[0]}, ${fmtLat(s.south.lat)}</b></div>
       <div><span>Seetage insgesamt</span><b>${seaDayCount}</b></div>
       <div><span>Landausflüge eingetragen</span><b>${s.excursions}</b></div>
-      <div><span>Notizen</span><b>${s.notes}</b></div>
     </div>
     <p class="note">Seemeilen als Großkreisdistanz von Hafen zu Hafen; die tatsächliche Fahrstrecke liegt etwas darüber.</p>`;
 }
@@ -1977,11 +1986,7 @@ function renderSheet(i){
       <ul class="plain">${c.h.map(x => `<li>${x}</li>`).join("")}</ul>
       ${c.note ? `<p class="hint">${c.note}</p>` : ""}
 
-      <h3>Notizen</h3>
-      <div class="journal">
-        <textarea id="noteBox" placeholder="Was war hier schön? Wen habt ihr getroffen? Was soll Mama nicht vergessen?">${esc(getNote(i))}</textarea>
-        <div class="row"><input id="whoBox" placeholder="Dein Name" value="${esc(who)}" style="max-width:160px;min-height:38px;padding:6px 10px;font-size:14px" aria-label="Dein Name"><span id="syncState">${syncText()}${(notes[excKey(c)] || {}).by ? " · zuletzt von " + esc(notes[excKey(c)].by) : ""}</span><span class="saved" id="noteSaved"></span></div>
-      </div>
+      <div class="hint" id="diaryHint" style="margin-top:22px" hidden></div>
       <div class="links">
         <a class="chip" href="https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lon}" target="_blank" rel="noopener">Google Maps</a>
         <a class="chip" href="https://de.wikipedia.org/wiki/${encodeURIComponent(c.w)}" target="_blank" rel="noopener">Wikipedia</a>
@@ -2058,19 +2063,13 @@ function renderSheet(i){
     catch(err){ e.target.textContent = "Kopieren nicht möglich"; }
   });
 
-  /* Notizen */
-  const box = el("noteBox"), saved = el("noteSaved"), whoBox = el("whoBox");
-  whoBox.addEventListener("change", () => { who = whoBox.value.trim(); try{ localStorage.setItem(LS + "who", who); }catch(e){} });
-  let timer = null;
-  box.addEventListener("input", () => {
-    clearTimeout(timer);
-    timer = setTimeout(async () => {
-      saved.textContent = "speichert …";
-      await setNote(i, box.value);
-      saved.textContent = (sync.url ? (sync.err ? "lokal gespeichert, Teilen fehlgeschlagen" : "geteilt") : "gespeichert") + " " + clockIn(Date.now(), HOME.tz);
-      const st = el("syncState"); if(st) st.textContent = syncText();
-    }, 700);
-  });
+  /* Verweis aufs Tagebuch */
+  if(diary.url){
+    const dh = el("diaryHint");
+    dh.hidden = false;
+    dh.innerHTML = `Was hier erlebt wurde, steht im <a href="#" id="diaryOpen">Reisetagebuch auf FindPenguins</a> – mit Fotos und Text von Bord.`;
+    el("diaryOpen").addEventListener("click", e => { e.preventDefault(); openDiary(); });
+  }
   el("shareBtn").addEventListener("click", async e => {
     const url = location.origin + location.pathname + `#hafen-${i}`;
     try{ await navigator.clipboard.writeText(url); e.target.textContent = "Link kopiert"; }
@@ -2208,6 +2207,40 @@ function showSheet(){
   }
   setTimeout(() => map.invalidateSize(), 50);
 }
+/* ---------- Reisetagebuch: FindPenguins eingebettet ---------- */
+const diary = {title:"", url:"", embed:""};
+async function loadDiaryConfig(){
+  try{
+    const d = await fetchJson(DIARY_FILE + "?_=" + Math.floor(Date.now() / 600000));
+    if(d && typeof d.url === "string" && /^https:\/\//.test(d.url)){
+      diary.url = d.url; diary.embed = typeof d.embed === "string" && /^https:\/\//.test(d.embed) ? d.embed : "";
+      diary.title = d.title || "Reisetagebuch";
+    }
+  }catch(e){}
+  el("diaryBtn").hidden = !diary.url;
+}
+function renderDiarySheet(){
+  sheetBody.innerHTML = `
+    <div class="diary-intro">
+      <span class="label">Reisetagebuch</span>
+      <h2>${esc(diary.title || "Weltreise auf FindPenguins")}</h2>
+      <p>Fotos und Berichte von Bord, geschrieben in FindPenguins. Neue Einträge erscheinen hier von selbst.</p>
+      <div class="links" style="margin-top:8px"><a class="chip" href="${esc(diary.url)}" target="_blank" rel="noopener">In FindPenguins öffnen</a></div>
+    </div>
+    ${diary.embed ? `<div class="diary-frame"><iframe src="${esc(diary.embed)}" title="Reisetagebuch auf FindPenguins" loading="lazy" allow="fullscreen" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
+    <p class="credit">Falls die Einbettung leer bleibt, blockiert FindPenguins die Anzeige in fremden Seiten – dann bitte „In FindPenguins öffnen“ verwenden.</p>` : ""}`;
+  sheetBody.dataset.i = "diary";
+}
+function openDiary(){
+  if(!diary.url) return;
+  activeIdx = -1; sheetMode = "diary";
+  renderList(); markLogDays(-1); halo.setStyle({opacity:0}); applyMapTheme();
+  renderDiarySheet();
+  showSheet();
+  history.replaceState(null, "", "#tagebuch");
+}
+el("diaryBtn").addEventListener("click", openDiary);
+
 function openShip(){
   const fix = livePos(), claim = fix.live || fix.phase !== "pre";
   activeIdx = -1; sheetMode = "ship";
@@ -2332,6 +2365,7 @@ el("refreshBtn").addEventListener("click", async () => { await Promise.all([load
 function refreshView(){
   renderStats(); markToday(); renderNow();
   if(sheet.classList.contains("is-open") && sheetMode === "ship") renderShipSheet();
+  else if(sheet.classList.contains("is-open") && sheetMode === "diary") { /* Einbettung nicht neu laden */ }
   else if(sheet.classList.contains("is-open") && activeIdx >= 0) renderSheet(activeIdx);
   else renderList();
 }
@@ -2339,11 +2373,12 @@ function openFromHash(){
   const m = /^#hafen-(\d+)$/.exec(location.hash);
   if(m) select(+m[1], true);
   else if(location.hash === "#schiff") openShip();
+  else if(location.hash === "#tagebuch") loadDiaryConfig().then(openDiary);
 }
 applyMapTheme();
 if(/^#ais=/.test(location.hash)) history.replaceState(null, "", location.pathname);   /* alte Einladungslinks */
 renderList(); markToday(); renderNow(); renderWarnBox();
-Promise.all([loadFilePosition(), loadSharedExcursions(), loadSyncConfig()]).then(async () => {
+Promise.all([loadFilePosition(), loadSharedExcursions(), loadSyncConfig(), loadDiaryConfig()]).then(async () => {
   refreshView(); refreshWarnings();
   if(sync.url){ await pullShared(); await pushAllShared(); refreshView(); }
 });

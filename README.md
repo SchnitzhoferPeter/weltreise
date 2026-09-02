@@ -39,7 +39,7 @@ Der Entwurf liegt als Design-Canvas vor: https://claude.ai/code/artifact/2898c28
   für den Anlauftag, sobald er in der 16-Tage-Vorhersage liegt; Wassertemperatur am Anlauftag,
   sobald er in der 7-Tage-Marinevorhersage liegt
 - Ankunftsprognose, wenn es der nächste Hafen ist
-- Notizfeld je Hafen (bleibt im jeweiligen Browser)
+- Verweis auf das Reisetagebuch in FindPenguins
 - Links zu Google Maps, Wikipedia, Windy und ein kopierbarer Direktlink
 
 **Landausflüge**
@@ -96,18 +96,21 @@ Terrestrisches AIS erreicht das Schiff in Häfen und bis etwa 40 sm vor der Küs
 bleibt es bei der Schätzung; dafür bräuchte es ein bezahltes Satelliten-AIS-Abo, das der Job
 ebenso einlesen könnte.
 
-## Gemeinsame Notizen und Landausflüge
+## Reisetagebuch (FindPenguins)
 
-Notizen und selbst eingetragene Landausflüge liegen zuerst im Browser. Ist in `data/sync.json`
-die Adresse einer Firebase Realtime Database hinterlegt (Vorlage: `data/sync.example.json`),
-teilt die Seite sie mit allen: eigene Änderungen werden sofort hochgeladen, fremde jede Minute
-und beim Zurückkehren zur Seite abgeholt; der jüngere Stand gewinnt. Jeder Eintrag trägt den
-Namen aus dem Feld „Dein Name“.
+Erlebtes wird nicht in der App notiert, sondern in FindPenguins gepostet. `data/tagebuch.json`
+enthält den Freigabelink des Trips und die Einbettungsadresse
+(`https://findpenguins.com/embed/<nutzer>/trip/<trip>?v=1&s=<token>`); der Knopf **Tagebuch** zeigt den
+Trip eingebettet, jedes Hafendetail verweist darauf. Blockiert FindPenguins die Einbettung, bleibt
+der Link „In FindPenguins öffnen“.
 
-Einrichtung (einmalig, kostenlos): Firebase-Projekt anlegen → Realtime Database erstellen →
-Regeln auf `".read": true, ".write": true` setzen → die Datenbank-URL plus `/weltreise` in
-`data/sync.json` eintragen. Die Adresse ist im Repository öffentlich; wer sie kennt, kann
-mitschreiben. Für eine Familienseite ist das vertretbar, für mehr braucht es Anmeldung.
+## Gemeinsame Landausflüge
+
+Selbst eingetragene Landausflüge liegen zuerst im Browser. Ist in `data/sync.json` die Adresse
+einer Firebase Realtime Database hinterlegt (Vorlage: `data/sync.example.json`), teilt die Seite
+sie mit allen: eigene Änderungen werden sofort hochgeladen, fremde jede Minute und beim Zurückkehren
+zur Seite abgeholt; der jüngere Stand gewinnt. Die Adresse ist im Repository öffentlich; wer sie
+kennt, kann mitschreiben.
 
 ## Routenänderungen
 
