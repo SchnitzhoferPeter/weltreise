@@ -88,6 +88,13 @@ Der Entwurf liegt als Design-Canvas vor: https://claude.ai/code/artifact/2898c28
 Ein echtes VesselFinder- oder MarineTraffic-API-Abo lässt sich ergänzen, indem ein
 Server-Job `data/position.json` schreibt – die Seite selbst muss dafür nicht geändert werden.
 
+## Routenänderungen
+
+- **24. Aug. 2026 (Costa über e-hoi):** Der Anlauf Cristóbal/Colón am 19.12. entfällt. Stattdessen
+  Durchfahrt Panamakanal 08:00–19:00, anschließend Panama-Stadt mit Ankunft 21:00, Übernachtung
+  und Abfahrt am 20.12. um 19:00. Der 21.12. bleibt Seetag, Puntarenas am 22.12. unverändert.
+  Die Durchfahrt ist in den Daten mit `transit:true` markiert und zählt nicht als Anlauf.
+
 ## Daten pflegen
 
 Fahrplan und Hafeninhalte stehen in `index.html` im Array `CALLS`:

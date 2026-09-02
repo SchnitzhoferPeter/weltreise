@@ -605,9 +605,14 @@ const CALLS = [
  {n:"Half Moon Cay",tz:"America/Nassau",c:"Bahamas",r:"Karibik",lat:24.577,lon:-75.940,d1:22,d2:22,arr:"09:00",dep:"17:00",
   w:"Half Moon Cay",t:"Privatinsel der Bahamas: Korallenriff, Puderzuckerstrand, reiner Badetag.",
   h:["Schnorcheln am Riff","Reitausflug am Strand","Exotische Früchte"]},
- {n:"Cristobal | Colón",tz:"America/Panama",c:"Panama",r:"Mittelamerika",lat:9.360,lon:-79.900,d1:26,d2:26,arr:"08:00",dep:"20:00",
-  w:"Colón (Panama)",t:"Karibisches Tor zum Panamakanal an der Atlantikseite der Landenge.",
-  h:["Agua-Clara-Schleusen","Historisches Colón","Regenwald am Chagres"]},
+ {n:"Panamakanal | Durchfahrt",tz:"America/Panama",c:"Panama",r:"Mittelamerika",lat:9.150,lon:-79.760,d1:26,d2:26,arr:"08:00",dep:"19:00",transit:true,
+  w:"Panamakanal",t:"Ganztägige Passage vom Atlantik zum Pazifik: Gatún-Schleusen, Gatún-See, Culebra Cut, Pedro-Miguel- und Miraflores-Schleusen. Kein Landgang – der Tag gehört dem Deck.",
+  h:["Gatún-Schleusen am Vormittag","Gatún-See und Culebra Cut","Miraflores-Schleusen am Nachmittag"],
+  note:"Geändert laut Costa (Mitteilung vom 24. Aug. 2026): Die Durchfahrt ersetzt den Anlauf Cristóbal/Colón am 19.12."},
+ {n:"Panama-Stadt",tz:"America/Panama",c:"Panama",r:"Mittelamerika",lat:8.918,lon:-79.526,d1:26,d2:27,arr:"21:00",dep:"19:00",
+  w:"Panama-Stadt",t:"Hauptstadt am Pazifikausgang des Kanals mit Übernachtung im Hafen: Altstadt Casco Viejo, moderne Skyline und die Miraflores-Schleusen aus Landsicht.",
+  h:["Casco Viejo, die Altstadt","Miraflores-Schleusen mit Besucherzentrum","Amador Causeway und Biomuseo"],
+  note:"Neu laut Costa (Mitteilung vom 24. Aug. 2026): Ankunft 19.12. um 21:00 Uhr, Übernachtung, Abfahrt 20.12. um 19:00 Uhr. Am 21.12. Seetag, Puntarenas am 22.12. unverändert."},
  {n:"Puntarenas",tz:"America/Costa_Rica",c:"Costa Rica",r:"Mittelamerika",lat:9.977,lon:-84.838,d1:29,d2:29,arr:"08:00",dep:"20:00",
   w:"Puntarenas",t:"Costa Ricas Pazifikhafen, Ausgangspunkt für Nebelwald und Nationalparks.",
   h:["Nationalpark Manuel Antonio","Nebelwald Monteverde","Hängebrücken-Touren"]},
@@ -941,6 +946,7 @@ const dayNoOf = now => Math.min(TOTAL_DAYS,
    ===================================================================== */
 const portDays = new Set();
 CALLS.forEach(c => { for(let d = c.d1; d <= c.d2; d++) portDays.add(d); });
+const PORTS = CALLS.filter(c => !c.transit);            /* Anläufe ohne Kanaldurchfahrt */
 const countries = new Set(CALLS.map(c => c.c.split(" · ")[0]));
 const seaDayCount = TOTAL_DAYS - portDays.size;
 
@@ -1098,11 +1104,12 @@ function renderList(){
               : c.type === "end"   ? `Ankunft ${c.arr}`
               : `${c.arr} – ${c.dep}`;
     const exc = excursionsFor(i).length;
-    const sub = [c.c, exc ? `<span class="tag">${exc} ${exc === 1 ? "Landausflug" : "Landausflüge"}</span>` : `dort jetzt ${clockIn(now, c.tz)}`].join(" · ");
+    const sub = [c.c, c.transit ? `<span class="tag">Kanalpassage, kein Landgang</span>`
+      : exc ? `<span class="tag">${exc} ${exc === 1 ? "Landausflug" : "Landausflüge"}</span>` : `dort jetzt ${clockIn(now, c.tz)}`].join(" · ");
     html += `<li><button class="stop${i === activeIdx ? " is-active" : ""}${past ? " is-past" : ""}" data-i="${i}">
         <span class="day-no num">Tag ${c.d1}${c.d2 > c.d1 ? "–" + c.d2 : ""}<small>${fmtShort(c.d1)}</small></span>
         <span style="min-width:0"><span class="name">${c.n.replace(" | ", ", ")}</span><span class="sub">${sub}</span></span>
-        <span class="dur num">${times}<em>${h === null ? (c.type === "start" ? "Start" : "Ziel") : fmtDur(h)}</em></span>
+        <span class="dur num">${times}<em>${h === null ? (c.type === "start" ? "Start" : "Ziel") : c.transit ? "Durchfahrt" : fmtDur(h)}</em></span>
       </button></li>`;
   });
   stopsEl.innerHTML = shown ? html : `<li class="empty">Kein Hafen gefunden. Suchbegriff anpassen oder Filter lösen.</li>`;
@@ -1530,7 +1537,7 @@ function renderWarnBox(){
    ===================================================================== */
 function computeStats(now){
   const fix = livePos();
-  const done = CALLS.filter(c => (c.depUtc || c.arrUtc) < now);
+  const done = PORTS.filter(c => (c.depUtc || c.arrUtc) < now);
   const offsets = new Set(CALLS.map(c => tzOffsetMin(c.arrUtc || c.depUtc, c.tz)));
   let equator = 0, longest = LEGS[0], stay = CALLS[0], north = CALLS[0], south = CALLS[0];
   LEGS.forEach(l => {
@@ -1538,7 +1545,7 @@ function computeStats(now){
     if((a.lat >= 0) !== (b.lat >= 0)) equator++;
     if(l.nm > longest.nm) longest = l;
   });
-  CALLS.forEach(c => {
+  PORTS.forEach(c => {
     if((hoursInPort(c) || 0) > (hoursInPort(stay) || 0)) stay = c;
     if(c.lat > north.lat) north = c;
     if(c.lat < south.lat) south = c;
@@ -1560,7 +1567,7 @@ function renderStatsDialog(){
     <p>${finished ? "Die Reise ist vollendet – hier die Bilanz." : `Stand heute, Tag ${s.daysDone} von ${TOTAL_DAYS}. Die Zahlen wachsen mit der Reise.`}</p>
     <div class="statgrid">
       <div><b class="num">${n(s.nmDone)}</b><span>von ${n(TOTAL_NM)} Seemeilen</span></div>
-      <div><b class="num">${s.portsDone}</b><span>von ${CALLS.length} Anläufen</span></div>
+      <div><b class="num">${s.portsDone}</b><span>von ${PORTS.length} Anläufen</span></div>
       <div><b class="num">${s.countriesDone}</b><span>von ${countries.size} Ländern</span></div>
       <div><b class="num">${s.daysDone}</b><span>von ${TOTAL_DAYS} Reisetagen</span></div>
       <div><b class="num">${s.zones}</b><span>Zeitzonen unterwegs</span></div>
@@ -1620,6 +1627,9 @@ function renderNow(){
     const toDep = CALLS[0].depUtc - now;
     head = toDep > 86400000 ? `Reise beginnt in ${fmtCountdown(toDep)}` : `Noch in ${short(CALLS[0].n)}`;
     sub = `Einschiffung ${stampIn(CALLS[0].depUtc, CALLS[0].tz)} Ortszeit in ${short(CALLS[0].n)}`;
+  } else if(fix.phase === "port" && c && c.transit){
+    head = `Durchfahrt ${short(c.n)}`;
+    sub = `Passage bis ${clockIn(c.depUtc, c.tz)} Ortszeit, noch ${fmtCountdown(c.depUtc - now)} · Tag ${day} von ${TOTAL_DAYS}`;
   } else if(fix.phase === "port" && c){
     head = `Im Hafen von ${short(c.n)}`;
     sub = `Auslaufen ${stampIn(c.depUtc, c.tz)} Ortszeit, in ${fmtCountdown(c.depUtc - now)} · Tag ${day} von ${TOTAL_DAYS}`;
@@ -1663,7 +1673,7 @@ function renderNow(){
     el("nowNext").innerHTML = `
       <div class="top">
         <div class="port">
-          <span class="lbl">Nächster Hafen</span>
+          <span class="lbl">${b.transit ? "Nächste Station" : "Nächster Hafen"}</span>
           <span class="name">${short(b.n)}, ${b.c.split(" · ")[0]}</span>
           <em>Tag ${b.d1}${b.d2 > b.d1 ? "–" + b.d2 : ""} · noch ${Math.round(e.nm).toLocaleString("de-DE")} sm · dort jetzt ${clockIn(now, b.tz)}</em>
         </div>
@@ -1683,7 +1693,7 @@ function renderNow(){
   /* Landausflug und Zeitumstellung */
   const extra = [];
   const fIdx = fix.phase === "done" ? -1 : excursionFocus(fix, now);
-  if(fIdx >= 0){
+  if(fIdx >= 0 && !CALLS[fIdx].transit){
     const list = excursionsFor(fIdx), p = CALLS[fIdx];
     const when = fix.phase === "port" && fix.portIdx === fIdx ? "Heute" : `Tag ${p.d1}`;
     extra.push(list.length
@@ -1708,7 +1718,7 @@ function renderNow(){
   el("progRight").textContent = fix.phase === "pre" ? "" : `${pct.toFixed(0)} % der Strecke`;
   el("nowFoot").innerHTML = claim
     ? `${Math.round(doneNm).toLocaleString("de-DE")} von ${Math.round(TOTAL_NM).toLocaleString("de-DE")} sm gefahren · <em id="shipWind" style="font-style:normal">Wind …</em> · <em id="shipSea" style="font-style:normal">Seegang …</em>`
-    : `Gesamtstrecke ${Math.round(TOTAL_NM).toLocaleString("de-DE")} sm über ${CALLS.length} Anläufe in ${countries.size} Ländern`;
+    : `Gesamtstrecke ${Math.round(TOTAL_NM).toLocaleString("de-DE")} sm über ${PORTS.length} Anläufe in ${countries.size} Ländern`;
 
   /* Anruf-Fenster */
   const hint = el("callHint");
@@ -1804,7 +1814,9 @@ function renderExcursions(i){
   const box = el("excList");
   if(!box) return;
   box.innerHTML = list.length ? list.map(excCard).join("")
-    : `<div class="exc-empty">Noch kein Landausflug für ${short(CALLS[i].n)} eingetragen. Ausflug, Uhrzeit, Treffpunkt und Hinweise unten erfassen – so weiß jeder, wo Mama gerade ist.</div>`;
+    : CALLS[i].transit
+      ? `<div class="exc-empty">Kein Landgang – hier lassen sich Programmpunkte an Bord notieren, etwa der Platz an Deck für die Schleusen.</div>`
+      : `<div class="exc-empty">Noch kein Landausflug für ${short(CALLS[i].n)} eingetragen. Ausflug, Uhrzeit, Treffpunkt und Hinweise unten erfassen – so weiß jeder, wo Mama gerade ist.</div>`;
 }
 
 function renderSheet(i){
@@ -1812,6 +1824,7 @@ function renderSheet(i){
   const fix = livePos();
   const dateLine = c.d2 > c.d1 ? `${fmtFull(c.d1)} – ${fmtFull(c.d2)}` : fmtFull(c.d1);
   const timeLine = c.type === "start" ? `Ablegen ${c.dep}` : c.type === "end" ? `Ankunft ${c.arr}` : `${c.arr} – ${c.dep}${h ? " · " + fmtDur(h) : ""}`;
+  const stayLabel = c.transit ? "Durchfahrt" : "Liegezeit";
   const isNext = i === (fix.nextIdx >= 0 ? fix.nextIdx : nextCallIdx(now));
   const isPast = (c.depUtc || c.arrUtc) < now;
   const nmFromShip = distNm(fix.lat, fix.lon, c.lat, c.lon);
@@ -1840,7 +1853,7 @@ function renderSheet(i){
     </figure>
     <div class="facts">
       <div class="fact"><span>Datum</span><b>${dateLine}</b></div>
-      <div class="fact"><span>Liegezeit</span><b class="num">${timeLine}</b></div>
+      <div class="fact"><span>${stayLabel}</span><b class="num">${timeLine}</b></div>
       <div class="fact"><span>Dort jetzt</span><b class="num">${clockIn(now, c.tz)} <i>${zoneTag(now, c.tz)} · ${vsHome(now, c.tz)}</i></b></div>
       <div class="fact"><span>Vom Schiff</span><b class="num">${Math.round(nmFromShip).toLocaleString("de-DE")} sm</b></div>
     </div>
@@ -1851,7 +1864,7 @@ function renderSheet(i){
       <div class="wx-box" id="wxDay" hidden></div>
       <p>${c.t}</p>
 
-      <h3>Landausflüge <button class="more" id="excAdd">+ Ausflug eintragen</button></h3>
+      <h3>${c.transit ? "An Bord während der Passage" : "Landausflüge"} <button class="more" id="excAdd">+ ${c.transit ? "Programmpunkt" : "Ausflug"} eintragen</button></h3>
       <div id="excList"></div>
       <form class="exc-form" id="excForm" hidden>
         <label class="wide">Was<input name="title" required placeholder="z. B. Stadtrundfahrt mit Costa"></label>
