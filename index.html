@@ -745,6 +745,15 @@ const dateOf = d => new Date(START + (d - 1) * 86400000);
 const fmtShort = d => { const x = dateOf(d); return `${x.getUTCDate()}. ${MO[x.getUTCMonth()]}`; };
 const fmtFull  = d => { const x = dateOf(d); return `${WD[x.getUTCDay()]}, ${x.getUTCDate()}. ${MO[x.getUTCMonth()]} ${x.getUTCFullYear()}`; };
 const toMin = t => t ? (+t.slice(0,2)) * 60 + (+t.slice(3)) : null;
+/* „Sa 19.12.“ für einen Reisetag */
+const fmtDM = d => { const x = dateOf(d); return `${WD[x.getUTCDay()]} ${x.getUTCDate()}.${x.getUTCMonth() + 1}.`; };
+/* Zeitspanne eines Anlaufs: eintägig „08:00 – 18:00“, mit Übernachtung „Sa 19.12. 21:00“ / „bis So 20.12. 19:00“ */
+function stayLines(c){
+  if(c.type === "start") return [`Ablegen ${fmtDM(c.d1)} ${c.dep}`];
+  if(c.type === "end") return [`Ankunft ${fmtDM(c.d1)} ${c.arr}`];
+  if(c.d2 > c.d1) return [`${fmtDM(c.d1)} ${c.arr}`, `bis ${fmtDM(c.d2)} ${c.dep}`];
+  return [`${c.arr} – ${c.dep}`];
+}
 const pad = n => String(n).padStart(2, "0");
 
 /* Verschiebung einer IANA-Zone zu einem Zeitpunkt, in Minuten */
@@ -1062,14 +1071,12 @@ function renderList(){
     shown++;
 
     const h = hoursInPort(c);
-    const times = c.type === "start" ? `Ablegen ${c.dep}`
-              : c.type === "end"   ? `Ankunft ${c.arr}`
-              : `${c.arr} – ${c.dep}`;
+    const times = stayLines(c).join("<br>");
     const exc = excursionsFor(i).length;
     const sub = [c.c, c.transit ? `<span class="tag">Kanalpassage, kein Landgang</span>`
       : exc ? `<span class="tag">${exc} ${exc === 1 ? "Landausflug" : "Landausflüge"}</span>` : `dort jetzt ${clockIn(now, c.tz)}`].join(" · ");
     html += `<li><button class="stop${i === activeIdx ? " is-active" : ""}${past ? " is-past" : ""}" data-i="${i}">
-        <span class="day-no num">Tag ${c.d1}${c.d2 > c.d1 ? "–" + c.d2 : ""}<small>${fmtShort(c.d1)}</small></span>
+        <span class="day-no num">Tag ${c.d1}${c.d2 > c.d1 ? "–" + c.d2 : ""}<small>${c.d2 > c.d1 ? `${dateOf(c.d1).getUTCDate()}.–${fmtShort(c.d2)}` : fmtShort(c.d1)}</small></span>
         <span style="min-width:0"><span class="name">${c.n.replace(" | ", ", ")}</span><span class="sub">${sub}</span></span>
         <span class="dur num">${times}<em>${h === null ? (c.type === "start" ? "Start" : "Ziel") : c.transit ? "Durchfahrt" : fmtDur(h)}</em></span>
       </button></li>`;
@@ -1851,7 +1858,7 @@ function renderSheet(i){
   const c = CALLS[i], h = hoursInPort(c), now = Date.now();
   const fix = livePos();
   const dateLine = c.d2 > c.d1 ? `${fmtFull(c.d1)} – ${fmtFull(c.d2)}` : fmtFull(c.d1);
-  const timeLine = c.type === "start" ? `Ablegen ${c.dep}` : c.type === "end" ? `Ankunft ${c.arr}` : `${c.arr} – ${c.dep}${h ? " · " + fmtDur(h) : ""}`;
+  const timeLine = stayLines(c).join("<br>") + (h && c.type !== "start" && c.type !== "end" ? `<br><i>${fmtDur(h)}${c.d2 > c.d1 ? " mit Übernachtung" : ""}</i>` : "");
   const stayLabel = c.transit ? "Durchfahrt" : "Liegezeit";
   const isNext = i === (fix.nextIdx >= 0 ? fix.nextIdx : nextCallIdx(now));
   const isPast = (c.depUtc || c.arrUtc) < now;
