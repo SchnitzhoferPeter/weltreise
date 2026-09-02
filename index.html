@@ -97,7 +97,7 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 }
 .chart{grid-column:1;grid-row:1;display:flex;flex-direction:column;min-width:0;border-right:1px solid var(--line)}
 .side{grid-column:2;grid-row:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;background:var(--paper)}
-.chart-wrap{position:relative;flex:1;min-height:0;display:flex}
+.chart-wrap{position:relative;flex:1;min-height:0;display:flex;isolation:isolate}
 #map{flex:1;min-height:0;background:var(--map-bg)}
 .leaflet-container{font-family:inherit;background:var(--map-bg);font-size:14px}
 .leaflet-control-attribution{background:var(--card)!important;color:var(--ink-2)!important;font-size:11px!important}
@@ -353,8 +353,11 @@ dialog.panel .note code{font-size:14px}
   .now{order:2}
   .ledger{order:3;min-height:60dvh}
   .ledger-head{position:static}
-  .sheet{position:fixed;inset:0;z-index:40;transform:translateY(100%)}
-  .sheet.is-open{transform:translateY(0)}
+  /* Detailblatt im Seitenfluss unter der Karte; Bordkarte und Liste weichen ihm */
+  .sheet{position:static;order:2;display:none;transform:none;visibility:visible;transition:none}
+  .sheet.is-open{display:flex}
+  .sheet-scroll{overflow:visible;flex:none}
+  .stage.sheet-open .now,.stage.sheet-open .ledger{display:none}
   .stops{overflow:visible}
   .now-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .stop{grid-template-columns:64px minmax(0,1fr) auto;padding:13px 18px}
@@ -2064,12 +2067,24 @@ function renderShipSheet(){
   const fly = el("shipFly");
   if(fly) fly.addEventListener("click", () => map.flyTo([fix.lat, fix.lon], Math.max(map.getZoom(), 6), {duration:.9}));
 }
+/* Blatt öffnen: am Handy unter der Karte, dorthin scrollen, sodass Karte und Blattanfang sichtbar sind */
+function showSheet(){
+  sheet.classList.add("is-open");
+  el("stage").classList.add("sheet-open");
+  if(matchMedia("(max-width: 980px)").matches){
+    const top = document.querySelector(".chart").getBoundingClientRect().top + window.scrollY - 6;
+    window.scrollTo({top: Math.max(0, top), behavior:"smooth"});
+  } else {
+    sheetBody.scrollTop = 0;
+  }
+  setTimeout(() => map.invalidateSize(), 50);
+}
 function openShip(){
   const fix = livePos(), claim = fix.live || fix.phase !== "pre";
   activeIdx = -1; sheetMode = "ship";
   renderList(); markLogDays(-1); halo.setStyle({opacity:0}); applyMapTheme();
   renderShipSheet();
-  sheet.classList.add("is-open");
+  showSheet();
   history.replaceState(null, "", "#schiff");
   if(claim) map.flyTo([fix.lat, fix.lon], Math.max(map.getZoom(), 5), {duration:.9});
   else toast(`Noch keine Live-Position – ${aisCheckText(Date.now())}.`);
@@ -2080,7 +2095,7 @@ function select(i, fly){
   if(i < 0 || i >= CALLS.length) return;
   activeIdx = i; sheetMode = "port";
   renderList(); markLogDays(i); renderSheet(i);
-  sheet.classList.add("is-open");
+  showSheet();
   history.replaceState(null, "", `#hafen-${i}`);
   const c = CALLS[i];
   halo.setLatLng([c.lat, c.lon]).setStyle({opacity:.9});
@@ -2091,6 +2106,8 @@ function select(i, fly){
 }
 function closeSheet(){
   sheet.classList.remove("is-open");
+  el("stage").classList.remove("sheet-open");
+  setTimeout(() => map.invalidateSize(), 50);
   activeIdx = -1;
   halo.setStyle({opacity:0});
   applyMapTheme(); markLogDays(-1); renderList();
