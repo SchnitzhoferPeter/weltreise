@@ -2228,7 +2228,7 @@ function renderDiarySheet(){
       <div class="links" style="margin-top:8px"><a class="chip" href="${esc(diary.url)}" target="_blank" rel="noopener">In FindPenguins öffnen</a></div>
     </div>
     ${diary.embed ? `<div class="diary-frame"><iframe src="${esc(diary.embed)}" title="Reisetagebuch auf FindPenguins" loading="lazy" allow="fullscreen" referrerpolicy="no-referrer-when-downgrade"></iframe></div>
-    <p class="credit">Falls die Einbettung leer bleibt, blockiert FindPenguins die Anzeige in fremden Seiten – dann bitte „In FindPenguins öffnen“ verwenden.</p>` : ""}`;
+    <p class="credit">Zeigt das Fenster einen Fehler, ist der Trip in FindPenguins noch privat – eingebettet werden nur öffentliche Trips. Der Link „In FindPenguins öffnen“ funktioniert in jedem Fall.</p>` : ""}`;
   sheetBody.dataset.i = "diary";
 }
 function openDiary(){
