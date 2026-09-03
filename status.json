@@ -1,7 +1,7 @@
 {
-  "checked": "2026-09-03T01:08:09.387Z",
-  "received": false,
-  "listenedSeconds": 240,
+  "checked": "2026-09-03T01:24:17.880Z",
+  "received": true,
+  "listenedSeconds": 31,
   "error": null,
   "mmsi": "247282900"
 }
