@@ -1,7 +1,7 @@
 {
-  "checked": "2026-09-04T03:08:28.607Z",
+  "checked": "2026-09-04T03:19:57.917Z",
   "received": false,
-  "listenedSeconds": 240,
-  "error": null,
+  "listenedSeconds": 5,
+  "error": "Verbindung geschlossen (Code 1006)",
   "mmsi": "247282900"
 }
