@@ -1,0 +1,42 @@
+name: Gemeinsamen Speicher prüfen
+
+# Prüft von GitHub aus, ob die Firebase-Datenbank aus data/sync.json lesbar und beschreibbar ist.
+# Manuell starten: Actions → „Gemeinsamen Speicher prüfen“ → Run workflow.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Lesen und Schreiben testen
+        run: |
+          URL="$(node -e 'console.log(JSON.parse(require("fs").readFileSync("data/sync.json","utf8")).url.replace(/\/+$/,""))')"
+          echo "Datenbank: $URL"
+          echo
+          echo "== GET $URL/excursions.json (flach) =="
+          curl -sS -w "\nHTTP %{http_code}\n" "$URL/excursions.json?shallow=true" | head -c 3000
+          echo
+          echo "== GET $URL/.json (gesamt, gekürzt) =="
+          curl -sS -w "\nHTTP %{http_code}\n" "$URL/.json" | head -c 3000
+          echo
+          echo "== PUT $URL/_probe.json =="
+          curl -sS -w "\nHTTP %{http_code}\n" -X PUT -H "Content-Type: application/json" \
+            -d "{\"at\":\"$(date -u +%FT%TZ)\",\"from\":\"github-action\"}" "$URL/_probe.json" | head -c 1000
+          echo
+          echo "== DELETE $URL/_probe.json =="
+          curl -sS -w "\nHTTP %{http_code}\n" -X DELETE "$URL/_probe.json" | head -c 500
+          echo
+          echo "== CORS-Preflight (wie der Browser) =="
+          curl -sS -o /dev/null -D - -X OPTIONS -H "Origin: https://schnitzhoferpeter.github.io" \
+            -H "Access-Control-Request-Method: PUT" -H "Access-Control-Request-Headers: content-type" \
+            "$URL/_probe.json" | head -20
