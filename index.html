@@ -304,6 +304,13 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 .exc .del:hover{color:var(--warn)}
 .exc.shared .del{visibility:hidden}
 .exc-empty{border:1px dashed var(--line);border-radius:10px;padding:12px 15px;font-size:15px;color:var(--ink-2)}
+.exc-twice{display:flex;gap:10px;align-items:flex-start;margin:0 0 12px;padding:12px 14px;border-radius:10px;background:#FBF3E3;border:1px solid #E6CFA0;font-size:15px;line-height:1.45;color:var(--ink)}
+.exc-twice .ic{flex:none;width:22px;height:22px;margin-top:2px;color:var(--brass)}
+.exc-twice button.link{background:none;border:0;padding:0;font:inherit;font-weight:700;color:var(--brass);text-decoration:underline;cursor:pointer}
+.sync-line{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:10px;font-size:14px;color:var(--live)}
+.sync-line:empty{display:none}
+.sync-line.is-err{color:var(--warn)}
+.sync-line .chip{min-height:36px;padding:6px 12px}
 .exc-form{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px;padding:14px 15px;border:1px solid var(--line-soft);border-radius:10px;background:var(--card)}
 .exc-form label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--ink-2)}
 .exc-form label.wide{grid-column:1 / -1}
@@ -1544,7 +1551,17 @@ let who = (() => { try{ return localStorage.getItem(LS + "who") || ""; }catch(e)
 /* ---------- Gemeinsamer Speicher: Firebase Realtime Database über REST ----------
    data/sync.json: {"url":"https://<projekt>-default-rtdb.<region>.firebasedatabase.app/weltreise"}
    Ablage: <url>/notes/<schluessel>.json und <url>/excursions/<id>.json. Zuletzt geschriebener Stand gewinnt. */
-const sync = {url:null, ok:false, err:"", last:0, pending:0};
+const sync = {url:null, ok:false, err:"", code:0, last:0, pending:0, pulled:0};
+/* Fehler in verständliche Worte fassen */
+function syncFail(e){
+  const m = /HTTP (\d+)/.exec(e && e.message || "");
+  sync.ok = false; sync.code = m ? +m[1] : 0;
+  sync.err = sync.code === 401 || sync.code === 403 ? "die Datenbank verweigert den Zugriff – Regeln prüfen"
+    : sync.code === 404 ? "Adresse der Datenbank nicht gefunden"
+    : sync.code ? `Datenbank meldet Fehler ${sync.code}`
+    : "keine Verbindung zur Datenbank";
+  console.warn("Sync:", e);
+}
 const syncKey = s => encodeURIComponent(String(s).replace(/[.#$\[\]\/]/g, "_"));
 async function loadSyncConfig(){
   try{
@@ -1563,9 +1580,9 @@ async function syncPut(path, data){
   try{
     const r = await fetch(`${sync.url}/${path}.json`, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)});
     if(!r.ok) throw new Error("HTTP " + r.status);
-    sync.ok = true; sync.err = ""; sync.last = Date.now();
-  }catch(e){ sync.ok = false; sync.err = e.message || "Speichern fehlgeschlagen"; }
-  finally{ sync.pending--; }
+    sync.ok = true; sync.err = ""; sync.code = 0; sync.last = Date.now();
+  }catch(e){ syncFail(e); }
+  finally{ sync.pending--; renderSyncLine(); }
 }
 /* Fremde Änderungen holen und mit dem lokalen Stand zusammenführen */
 async function pullShared(){
@@ -1585,9 +1602,10 @@ async function pullShared(){
       else if((v.updatedAt || 0) > (localExc[idx].updatedAt || 0)){ localExc[idx] = v; changed = true; }
     });
     if(changed){ saveNotes(); saveExc(); }
-    sync.ok = true; sync.err = ""; sync.last = Date.now();
+    sync.ok = true; sync.err = ""; sync.code = 0; sync.last = Date.now(); sync.pulled = Date.now();
+    renderSyncLine();
     return changed;
-  }catch(e){ sync.ok = false; sync.err = e.message || "nicht erreichbar"; return false; }
+  }catch(e){ syncFail(e); renderSyncLine(); return false; }
 }
 /* Eigene Einträge, die der Speicher noch nicht kennt, nachreichen (z. B. nach Offline-Phase) */
 async function pushAllShared(){
@@ -1596,10 +1614,30 @@ async function pushAllShared(){
   for(const e of localExc) await syncPut(`excursions/${syncKey(e.id)}`, e);
 }
 function syncText(){
-  if(!sync.url) return "nur in diesem Browser gespeichert – gemeinsamer Speicher nicht eingerichtet";
-  if(sync.pending) return "wird geteilt …";
-  if(sync.err) return `geteilt · zuletzt nicht erreichbar (${sync.err})`;
-  return sync.last ? `geteilt mit allen · Stand ${clockIn(sync.last, HOME.tz)}` : "geteilt mit allen";
+  if(!sync.url) return "Nur in diesem Browser gespeichert – gemeinsamer Speicher nicht eingerichtet.";
+  if(sync.pending) return "Wird mit allen geteilt …";
+  if(sync.err) return `Nicht geteilt: ${sync.err}. Einträge bleiben hier gespeichert und werden nachgereicht.`;
+  const n = localExc.filter(e => !e.deleted).length;
+  return sync.pulled ? `Geteilt mit allen · ${n} ${n === 1 ? "Eintrag" : "Einträge"} · abgeglichen ${clockIn(sync.pulled, HOME.tz)}` : "Geteilt mit allen · Abgleich läuft …";
+}
+/* Statuszeile unter der Ausflugsliste, wenn ein Hafen geöffnet ist */
+function renderSyncLine(){
+  const box = el("syncLine");
+  if(!box) return;
+  box.className = "sync-line" + (sync.err ? " is-err" : "");
+  box.innerHTML = `<span>${esc(syncText())}</span>${sync.url ? `<button class="chip" id="syncNow" type="button"${sync.pending ? " disabled" : ""}>Jetzt abgleichen</button>` : ""}`;
+}
+/* Nach fremden Änderungen nur das Nötige neu zeichnen – ein offenes Formular bleibt erhalten */
+function refreshShared(){
+  renderList(); renderNow(); renderStats();
+  if(sheet.classList.contains("is-open") && sheetMode === "port" && activeIdx >= 0) renderExcursions(activeIdx);
+}
+async function syncNow(){
+  if(!sync.url || sync.pending) return;
+  sync.pending++; renderSyncLine(); sync.pending--;
+  await pushAllShared();
+  if(await pullShared()) refreshShared();
+  renderSyncLine();
 }
 
 async function loadSharedExcursions(){
@@ -2126,6 +2164,7 @@ function renderExcursions(i){
     : CALLS[i].transit
       ? `<div class="exc-empty">Kein Landgang – hier lassen sich Programmpunkte an Bord notieren, etwa der Platz an Deck für die Schleusen.</div>`
       : `<div class="exc-empty">Noch kein Landausflug für ${short(CALLS[i].n)} eingetragen. Ausflug, Uhrzeit, Treffpunkt und Hinweise unten erfassen – so weiß jeder, wo Mama gerade ist.</div>`;
+  renderSyncLine();
 }
 
 function renderSheet(i){
@@ -2184,14 +2223,20 @@ function renderSheet(i){
       <p>${c.t}</p>
 
       <h3>${c.transit ? "An Bord während der Passage" : "Landausflüge"} <button class="more" id="excAdd">+ ${c.transit ? "Programmpunkt" : "Ausflug"} eintragen</button></h3>
+      ${(() => { const others = CALLS.map((x, j) => [x, j]).filter(([x, j]) => j !== i && x.n === c.n && !x.transit);
+        if(!others.length) return "";
+        return `<div class="exc-twice">${icon("warn", "ic")}<div><b>${esc(short(c.n))} wird ${others.length + 1}-mal angelaufen.</b> Diese Seite gilt für <b>Tag ${c.d1}, ${fmtFull(c.d1)}</b>.
+          ${others.map(([x, j]) => { const n = excursionsFor(j).length; return `Für <b>Tag ${x.d1}, ${fmtFull(x.d1)}</b> bitte <button class="link" type="button" data-go="${j}">dort eintragen</button>${n ? ` (${n} ${n === 1 ? "Eintrag" : "Einträge"} vorhanden)` : ""}.`; }).join(" ")}</div></div>`; })()}
       <div id="excList"></div>
+      <div class="sync-line" id="syncLine"></div>
       <form class="exc-form" id="excForm" hidden>
         <label class="wide">Was<input name="title" required placeholder="z. B. Stadtrundfahrt mit Costa"></label>
         <label>Uhrzeit<input name="time" type="time" placeholder="09:15"></label>
         <label>Dauer<input name="dur" placeholder="4 Std."></label>
         <label class="wide">Treffpunkt<input name="meet" placeholder="Theater Deck 3"></label>
         <label class="wide">Hinweise<textarea name="note" placeholder="Gebucht über Costa, festes Schuhwerk, Rückkehr spätestens 17:00"></textarea></label>
-        <div class="row"><button class="btn primary" type="submit">Speichern</button><button class="btn" type="button" id="excCancel">Abbrechen</button><span class="loading">bleibt in diesem Browser · zum Teilen als JSON kopieren</span></div>
+        <label class="wide">Eingetragen von<input name="by" value="${esc(who)}" placeholder="Ihr Vorname – damit alle wissen, wer es eingetragen hat"></label>
+        <div class="row"><button class="btn primary" type="submit">Speichern</button><button class="btn" type="button" id="excCancel">Abbrechen</button><span class="loading">${sync.url ? "wird für alle sichtbar" : "bleibt in diesem Browser"}</span></div>
       </form>
 
       <h3>Nicht versäumen</h3>
@@ -2278,6 +2323,8 @@ function renderSheet(i){
   form.addEventListener("submit", e => {
     e.preventDefault();
     const f = new FormData(form);
+    who = String(f.get("by") || "").trim();
+    try{ localStorage.setItem(LS + "who", who); }catch(e){}
     addExcursion(i, {title:f.get("title").trim(), time:f.get("time"), dur:f.get("dur").trim(), meet:f.get("meet").trim(), note:f.get("note").trim()});
     form.reset(); form.hidden = true;
     renderExcursions(i); renderList(); renderNow();
@@ -2286,6 +2333,8 @@ function renderSheet(i){
     const d = e.target.closest("button[data-del]");
     if(d && d.dataset.del){ removeExcursion(d.dataset.del); renderExcursions(i); renderList(); renderNow(); }
   });
+  el("syncLine").addEventListener("click", e => { if(e.target.closest("#syncNow")) syncNow(); });
+  sheetBody.querySelectorAll(".exc-twice button[data-go]").forEach(b => b.addEventListener("click", () => select(+b.dataset.go, true)));
   el("excCopy").addEventListener("click", async e => {
     const json = JSON.stringify(localExc.filter(e => !e.deleted).map(({id, updatedAt, deleted, ...rest}) => rest), null, 2);
     try{ await navigator.clipboard.writeText(json); e.target.textContent = "JSON kopiert"; }
@@ -2625,7 +2674,7 @@ function setFold(folded){
 foldBtn.addEventListener("click", () => setFold(!nowEl.classList.contains("is-folded")));
 try{ if(localStorage.getItem(LS + "fold") === "1") setFold(true); }catch(e){}
 el("vfLink").href = SHIP.vf; el("mtLink").href = SHIP.mt;
-el("refreshBtn").addEventListener("click", async () => { await Promise.all([loadFilePosition(), loadSharedExcursions()]); refreshView(); refreshWarnings(); });
+el("refreshBtn").addEventListener("click", async () => { await Promise.all([loadFilePosition(), loadSharedExcursions(), sync.url ? pullShared() : null]); refreshView(); refreshWarnings(); });
 
 /* =======================================================================
    18 · Start und Takt
@@ -2648,16 +2697,16 @@ if(/^#ais=/.test(location.hash)) history.replaceState(null, "", location.pathnam
 renderList(); markToday(); renderNow(); renderWarnBox();
 Promise.all([loadFilePosition(), loadSharedExcursions(), loadSyncConfig(), loadDiaryConfig(), loadImages(), loadRates()]).then(async () => {
   refreshView(); refreshWarnings();
-  if(sync.url){ await pullShared(); await pushAllShared(); refreshView(); }
+  if(sync.url){ await pullShared(); await pushAllShared(); refreshShared(); }
 });
-setInterval(async () => { if(sync.url && await pullShared()) refreshView(); }, 60000);
+setInterval(async () => { if(sync.url && await pullShared()) refreshShared(); }, 60000);
 openFromHash();
 addEventListener("hashchange", openFromHash);
 setInterval(() => { renderNow(); if(sheet.classList.contains("is-open") && sheetMode === "ship") renderShipSheet(); }, 20000);
 setInterval(() => { loadFilePosition().then(refreshView); }, 5 * 60000);
 setInterval(refreshWarnings, 30 * 60000);
 setInterval(renderList, 10 * 60000);
-document.addEventListener("visibilitychange", () => { if(!document.hidden){ loadFilePosition().then(refreshView); refreshWarnings(); if(sync.url) pullShared().then(ch => { if(ch) refreshView(); }); } });
+document.addEventListener("visibilitychange", () => { if(!document.hidden){ loadFilePosition().then(refreshView); refreshWarnings(); if(sync.url) pullShared().then(ch => { if(ch) refreshShared(); }); } });
 if("serviceWorker" in navigator && location.protocol.startsWith("http")){
   navigator.serviceWorker.register("sw.js").catch(() => {});
 }

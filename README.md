@@ -112,6 +112,18 @@ sie mit allen: eigene Änderungen werden sofort hochgeladen, fremde jede Minute 
 zur Seite abgeholt; der jüngere Stand gewinnt. Die Adresse ist im Repository öffentlich; wer sie
 kennt, kann mitschreiben.
 
+Unter der Ausflugsliste steht der Stand des Abgleichs („Geteilt mit allen · 3 Einträge · abgeglichen
+16:40“) samt Knopf **Jetzt abgleichen**; scheitert das Speichern, nennt die Zeile den Grund in
+Worten (z. B. verweigerter Zugriff, wenn die Datenbank-Regeln Schreiben verbieten). Das Feld
+„Eingetragen von“ merkt sich den Vornamen im Browser, damit alle sehen, wer einen Ausflug eingetragen
+hat. Häfen, die mehrfach angelaufen werden (Civitavecchia, Savona, Marseille …), haben je Anlauf eine
+eigene Seite mit eigener Ausflugsliste; ein Hinweis auf der Seite nennt Tag und Datum und verlinkt die
+anderen Anläufe.
+
+Ob die Datenbank von außen erreichbar ist, prüft die Action **Gemeinsamen Speicher prüfen**
+(Actions → Run workflow): sie liest, schreibt und löscht einen Probeeintrag und zeigt die
+HTTP-Antworten im Protokoll.
+
 ## Routenänderungen
 
 - **24. Aug. 2026 (Costa über e-hoi):** Der Anlauf Cristóbal/Colón am 19.12. entfällt. Stattdessen
