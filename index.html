@@ -144,8 +144,9 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 /* ---------- Bordkarte ---------- */
 .now{border-bottom:1px solid var(--line);background:var(--card);padding:16px 22px 16px}
 .now-head{display:flex;align-items:flex-start;gap:14px}
-.now-eyebrow{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--live)}
-.now-eyebrow .dot{width:10px;height:10px;border-radius:50%;background:var(--live);flex:0 0 auto;box-shadow:0 0 0 0 rgba(14,122,108,.5);animation:pulse 2.4s infinite}
+.now-eyebrow{display:flex;align-items:flex-start;gap:4px 8px;line-height:1.3;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--live)}
+.now-eyebrow > span{flex:1 1 0;min-width:0}
+.now-eyebrow .dot{margin-top:4px;width:10px;height:10px;border-radius:50%;background:var(--live);flex:0 0 auto;box-shadow:0 0 0 0 rgba(14,122,108,.5);animation:pulse 2.4s infinite}
 .now-eyebrow .dot.est{background:var(--brass);animation:none}
 .now-eyebrow.est{color:var(--brass)}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(14,122,108,.45)}70%{box-shadow:0 0 0 10px rgba(14,122,108,0)}100%{box-shadow:0 0 0 0 rgba(14,122,108,0)}}
@@ -165,7 +166,7 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 .metric b i{font-style:normal;font-size:14px;font-weight:600;color:var(--ink-2)}
 .metric b.pos{font-size:15px;line-height:1.3;display:block;white-space:normal}
 .metric b em{font-style:normal}
-.metric b em.loading{font-size:14px;font-weight:400;color:var(--ink-3)}
+.metric b em.loading{font-size:14px;font-weight:400;color:var(--ink-3);white-space:normal;line-height:1.3}
 
 .now-next{margin-top:12px;border:1px solid var(--line-soft);border-radius:10px;background:var(--paper);padding:13px 15px;display:flex;flex-direction:column;gap:9px}
 .now-next .top{display:flex;align-items:baseline;gap:12px}
@@ -232,7 +233,7 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 .stop .day-no i{display:flex;align-items:center;gap:5px;font-style:normal}
 .stop .day-no svg{width:15px;height:15px;stroke:var(--brass);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .stop .day-no small{display:block;font-weight:400;color:var(--ink-2);font-size:14px}
-.stop .name{font-size:19px;font-weight:600;line-height:1.25}
+.stop .name{font-size:19px;font-weight:600;line-height:1.25;overflow-wrap:anywhere}
 .stop .sub{font-size:15px;color:var(--ink-2);margin-top:2px;display:block}
 .stop .sub .tag{color:var(--brass);font-weight:600}
 .stop .dur{font-size:16px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -275,7 +276,7 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 .fact b i{font-style:normal;color:var(--ink-2);font-size:14px}
 .body{padding:18px 22px 10px}
 .body p{margin:0 0 16px;font-size:17px;color:var(--ink)}
-.body h3{margin:22px 0 10px;font-family:'Newsreader',Georgia,serif;font-size:24px;font-weight:700;line-height:1.15;display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.body h3{margin:22px 0 10px;font-family:'Newsreader',Georgia,serif;font-size:24px;font-weight:700;line-height:1.15;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 12px}
 .body h3 .more{font-family:'Source Sans 3',system-ui,sans-serif;font-size:15px;font-weight:600;color:var(--brass);white-space:nowrap}
 .body ul.plain{margin:0;padding:0;list-style:none}
 .body ul.plain li{padding:9px 0;border-bottom:1px solid var(--line-soft);font-size:17px}
@@ -298,8 +299,9 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 /* Landausflüge */
 .exc{border:1px solid var(--line-soft);border-radius:10px;background:var(--card);padding:12px 15px;display:grid;grid-template-columns:70px minmax(0,1fr);grid-template-areas:"time title" "time meta" "actions actions";gap:2px 14px;margin-bottom:8px;align-items:start}
 .exc .time{grid-area:time;font-size:20px;font-weight:700;color:var(--live);font-variant-numeric:tabular-nums}
-.exc .title{grid-area:title;font-size:17px;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+.exc .title{grid-area:title;font-size:17px;font-weight:600;line-height:1.3;overflow-wrap:anywhere;white-space:pre-line}
 .exc .meta{grid-area:meta;font-size:15px;color:var(--ink-2);line-height:1.4;overflow-wrap:anywhere}
+.exc .meta .nt{display:block;white-space:pre-line;margin-top:2px}
 .exc .actions{grid-area:actions;display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .exc .actions:empty{display:none}
 .exc .act{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:5px 11px;border:1px solid var(--line);border-radius:6px;background:var(--paper);font-size:14px;font-weight:600;color:var(--ink-2)}
@@ -321,10 +323,13 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 .exc-form label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--ink-2)}
 .exc-form label.wide{grid-column:1 / -1}
 .exc-form input,.exc-form textarea,dialog.panel input,dialog.panel select,.journal textarea{
-  width:100%;background:var(--paper);border:1px solid var(--line);border-radius:6px;color:var(--ink);
-  padding:10px 12px;font:inherit;font-size:16px;min-height:44px;
+  width:100%;min-width:0;box-sizing:border-box;-webkit-appearance:none;appearance:none;display:block;
+  background:var(--paper);border:1px solid var(--line);border-radius:6px;color:var(--ink);
+  padding:10px 12px;font:inherit;font-size:16px;min-height:44px;line-height:1.35;
 }
-.exc-form textarea,.journal textarea{min-height:76px;resize:vertical}
+.journal textarea{min-height:76px;resize:vertical}
+.exc-form textarea{resize:none;overflow:hidden;min-height:44px}
+.exc-form textarea[name="note"]{min-height:76px}
 .exc-form input:focus,.exc-form textarea:focus,dialog.panel input:focus,dialog.panel select:focus,.journal textarea:focus{outline:none;border-color:var(--brass)}
 .exc-form .row{grid-column:1 / -1;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .journal .row{display:flex;align-items:center;gap:10px;margin-top:8px;font-size:14px;color:var(--ink-2)}
@@ -443,10 +448,36 @@ dialog.panel .note code{font-size:14px}
   .head-tools::-webkit-scrollbar{display:none}
   .head-tools .btn{padding:7px 12px;font-size:14px;min-height:38px;flex:0 0 auto;white-space:nowrap}
   .now-eyebrow{font-size:12px;letter-spacing:.06em}
-  .eta-rows{grid-template-columns:86px minmax(0,1fr) auto;font-size:15px}
+  .eta-rows{grid-template-columns:78px minmax(0,1fr) auto;font-size:15px}
+  .eta-rows .delta{grid-column:2 / -1;justify-self:start}
   .now{padding:14px 16px}
-  .now-status{font-size:26px}
+  /* Bordkarte: Uhr und Klappknopf in der ersten Zeile, Quelle und Status darunter über die volle Breite */
+  .now-head{flex-wrap:wrap;gap:8px 12px}
+  .now-head > div:first-child{flex:1 1 100%;order:2}
+  .now-clock{order:1;margin-left:0;text-align:left;flex:1 1 auto}
+  .fold{order:1;margin-left:auto}
+  .now-status{font-size:26px;margin-top:0}
   .now-clock b{font-size:38px}
+  /* Nächster Hafen: Countdown als eigene Zeile unter dem Namen statt daneben */
+  .now-next .top{flex-wrap:wrap;gap:6px 10px}
+  .now-next .port{flex:1 1 100%}
+  .now-next .port .name{font-size:23px}
+  .now-next .cd{flex:1 1 100%;text-align:left;display:flex;align-items:baseline;gap:8px}
+  .now-next .cd b{font-size:23px}
+  .now-next .cd em{margin-top:0}
+  /* Routenliste: Uhrzeit und Liegezeit unter dem Hafennamen statt in einer dritten Spalte */
+  .ledger-head{flex-wrap:wrap;padding:10px 16px}
+  .search{flex:1 1 180px}
+  .stop{grid-template-columns:64px minmax(0,1fr);gap:3px 14px;padding:13px 16px;align-items:start}
+  .stop .day-no{grid-row:1 / span 2}
+  .stop .day-no i{flex-wrap:wrap}
+  .stop.is-next .day-no i::after{flex:1 1 100%;margin-left:0;line-height:1.2}
+  .stop .dur{grid-column:2;text-align:left;white-space:normal;font-size:15px;line-height:1.4;margin-top:1px}
+  .stop .dur em{display:inline;margin-top:0;font-size:15px}
+  .stop .dur em::before{content:"\00a0· "}
+  .sea{grid-template-columns:64px minmax(0,1fr);padding:12px 16px}
+  .clockrow{padding-left:94px;padding-right:16px}
+  .rows div b{white-space:normal}
   .now-extra{grid-template-columns:1fr}
   .statgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .exc-form{grid-template-columns:1fr}
@@ -947,7 +978,7 @@ function fmtCountdown(ms){
   const h = Math.floor(min / 60), m = min % 60;
   if(h < 24) return m ? `${h} Std. ${m} Min.` : `${h} Std.`;
   const d = Math.floor(h / 24), rh = h % 24;
-  return rh ? `${d} Tg. ${rh} Std.` : `${d} Tage`;
+  return rh ? `${d} Tg. ${rh} Std.` : d === 1 ? "1 Tag" : `${d} Tage`;
 }
 const num = (v, dec = 1) => v === null || v === undefined || !isFinite(v)
   ? "—" : v.toFixed(dec).replace(".", ",");
@@ -1694,13 +1725,24 @@ function excursionFocus(fix, now){
   const idx = fix.portIdx >= 0 ? fix.portIdx : (fix.nextIdx >= 0 ? fix.nextIdx : nextCallIdx(now));
   return idx;
 }
+/* Mehrzeilige Eingaben für einzeilige Stellen (Kachel, Kalender, Rückfrage) zusammenziehen */
+const oneLine = s => String(s || "").replace(/\s+/g, " ").trim();
+/* Uhrzeit-Eingabe vereinheitlichen: „9“, „9:15“, „9.15“, „9 Uhr“ → „09:00“ bzw. „09:15“; sonst Text unverändert */
+function normTime(s){
+  s = String(s || "").trim();
+  const m = /^(\d{1,2})(?:\s*[:.hH]\s*|\s+)?(\d{2})?\s*(?:Uhr)?$/i.exec(s);
+  if(!m) return s;
+  const h = +m[1], mi = m[2] ? +m[2] : 0;
+  if(h > 23 || mi > 59) return s;
+  return `${pad(h)}:${pad(mi)}`;
+}
 function excCard(e, editingId){
   const byTxt = e.shared ? "gemeinsame Liste" : [e.by ? "von " + e.by : "", e.editedBy ? "geändert von " + e.editedBy : ""].filter(Boolean).join(", ");
   const actions = e.shared ? "" : `<button class="act" type="button" data-edit="${esc(e.id || "")}">${icon("edit", "ic")}Bearbeiten</button><button class="act del" type="button" data-del="${esc(e.id || "")}">${icon("trash", "ic")}Löschen</button>`;
   return `<div class="exc${e.shared ? " shared" : ""}${editingId && e.id === editingId ? " editing" : ""}" data-id="${esc(e.id || "")}">
     <span class="time">${esc(e.time || "–")}</span>
     <span class="title">${esc(e.title)}</span>
-    <span class="meta">${[e.dur, e.meet ? "Treffpunkt " + e.meet : "", byTxt, e.note].filter(Boolean).map(esc).join(" · ")}</span>
+    <span class="meta">${[e.dur, e.meet ? "Treffpunkt " + e.meet : "", byTxt].filter(Boolean).map(esc).join(" · ")}${e.note ? `<span class="nt">${esc(e.note)}</span>` : ""}</span>
     <div class="actions">${actions}</div>
   </div>`;
 }
@@ -2038,7 +2080,7 @@ function renderNow(){
     const list = excursionsFor(fIdx), p = CALLS[fIdx];
     const when = fix.phase === "port" && fix.portIdx === fIdx ? "Heute" : `Tag ${p.d1}`;
     extra.push(list.length
-      ? `<button class="tile" data-open="${fIdx}">${icon("flag")}<div><span>${when} in ${short(p.n)} · ${list.length} ${list.length === 1 ? "Landausflug" : "Landausflüge"}</span><b>${esc(list[0].title)}${list[0].time ? ", " + esc(list[0].time) : ""}${list[0].meet ? ", Treffpunkt " + esc(list[0].meet) : ""}</b></div></button>`
+      ? `<button class="tile" data-open="${fIdx}">${icon("flag")}<div><span>${when} in ${short(p.n)} · ${list.length} ${list.length === 1 ? "Landausflug" : "Landausflüge"}</span><b>${esc(oneLine(list[0].title))}${list[0].time ? ", " + esc(list[0].time) : ""}${list[0].meet ? ", Treffpunkt " + esc(list[0].meet) : ""}</b></div></button>`
       : `<button class="tile" data-open="${fIdx}">${icon("flag")}<div><span>${when} in ${short(p.n)}</span><b>Noch kein Landausflug eingetragen</b></div></button>`);
   }
   const ch = nextClockChange(now);
@@ -2096,7 +2138,7 @@ function renderNow(){
   weatherAt(fix.lat, fix.lon, claim ? "ship" : "port").then(wx => {
     const t = el("shipWx");
     if(!t) return;
-    if(!wx || !wx.current){ t.textContent = "nicht verfügbar"; t.className = ""; return; }
+    if(!wx || !wx.current){ t.innerHTML = `<em class="loading">nicht verfügbar</em>`; t.className = ""; return; }
     const [txt, ic] = wmo(wx.current.weather_code);
     t.className = "";
     t.innerHTML = `${icon(ic)} ${Math.round(wx.current.temperature_2m)} <i style="font-style:normal;font-size:14px;color:var(--ink-2)">°C</i>`;
@@ -2252,11 +2294,11 @@ function renderSheet(i){
       <form class="exc-form" id="excForm" hidden>
         <input type="hidden" name="id" value="">
         <div class="form-head" id="excFormHead"></div>
-        <label class="wide">Was<input name="title" required placeholder="z. B. Stadtrundfahrt mit Costa"></label>
-        <label>Uhrzeit<input name="time" type="time" placeholder="09:15"></label>
+        <label class="wide">Was<textarea name="title" required rows="1" placeholder="z. B. Stadtrundfahrt mit Costa – mehrere Zeilen sind möglich"></textarea></label>
+        <label>Uhrzeit<input name="time" inputmode="numeric" autocomplete="off" placeholder="z. B. 09:15"></label>
         <label>Dauer<input name="dur" placeholder="4 Std."></label>
         <label class="wide">Treffpunkt<input name="meet" placeholder="Theater Deck 3"></label>
-        <label class="wide">Hinweise<textarea name="note" placeholder="Gebucht über Costa, festes Schuhwerk, Rückkehr spätestens 17:00"></textarea></label>
+        <label class="wide">Hinweise<textarea name="note" rows="2" placeholder="Gebucht über Costa, festes Schuhwerk, Rückkehr spätestens 17:00 – mehrere Zeilen sind möglich"></textarea></label>
         <label class="wide">Eingetragen von<input name="by" value="${esc(who)}" placeholder="Ihr Vorname – damit alle wissen, wer es eingetragen hat"></label>
         <div class="row"><button class="btn primary" type="submit" id="excSubmit">Speichern</button><button class="btn" type="button" id="excCancel">Abbrechen</button><span class="loading">${sync.url ? "wird für alle sichtbar" : "bleibt in diesem Browser"}</span></div>
       </form>
@@ -2341,6 +2383,9 @@ function renderSheet(i){
   /* Landausflüge: neu eintragen, einzelne Angaben nachträglich ändern, löschen */
   const form = el("excForm");
   const thing = c.transit ? "Programmpunkt" : "Ausflug";
+  const grow = t => { t.style.height = "auto"; t.style.height = Math.max(t.scrollHeight, 44) + "px"; };
+  const growAll = () => form.querySelectorAll("textarea").forEach(grow);
+  form.querySelectorAll("textarea").forEach(t => t.addEventListener("input", () => grow(t)));
   const openForm = (entry) => {
     form.reset();
     form.id.value = entry ? entry.id : "";
@@ -2350,10 +2395,11 @@ function renderSheet(i){
     }
     form.by.value = who;
     el("excFormHead").innerHTML = entry
-      ? `${esc(thing)} bearbeiten: ${esc(entry.title)}<small>Nur ändern, was sich geändert hat – etwa Treffpunkt oder Uhrzeit. Alles andere bleibt.</small>`
+      ? `${esc(thing)} bearbeiten: ${esc(oneLine(entry.title))}<small>Nur ändern, was sich geändert hat – etwa Treffpunkt oder Uhrzeit. Alles andere bleibt.</small>`
       : `Neuen ${esc(thing)} eintragen`;
     el("excSubmit").textContent = entry ? "Änderungen speichern" : "Speichern";
     form.hidden = false;
+    growAll();
     renderExcursions(i);
     form.scrollIntoView({behavior:"smooth", block:"nearest"});
     (entry ? form.meet : form.title).focus();
@@ -2366,7 +2412,9 @@ function renderSheet(i){
     const f = new FormData(form);
     who = String(f.get("by") || "").trim();
     try{ localStorage.setItem(LS + "who", who); }catch(e){}
-    const data = {title:f.get("title").trim(), time:f.get("time"), dur:f.get("dur").trim(), meet:f.get("meet").trim(), note:f.get("note").trim()};
+    const tidy = v => String(v || "").replace(/\r/g, "").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+    const data = {title:tidy(f.get("title")), time:normTime(f.get("time")), dur:f.get("dur").trim(), meet:f.get("meet").trim(), note:tidy(f.get("note"))};
+    if(!data.title){ form.title.focus(); return; }
     const id = String(f.get("id") || "");
     if(!id || !updateExcursion(id, data)) addExcursion(i, data);
     form.reset(); form.id.value = ""; form.hidden = true;
@@ -2382,7 +2430,7 @@ function renderSheet(i){
     const d = e.target.closest("button[data-del]");
     if(d && d.dataset.del){
       const entry = localExc.find(x => x.id === d.dataset.del);
-      if(!confirm(`„${entry ? entry.title : "Eintrag"}“ wirklich löschen?\nZum Ändern einzelner Angaben stattdessen „Bearbeiten“ wählen.`)) return;
+      if(!confirm(`„${entry ? oneLine(entry.title) : "Eintrag"}“ wirklich löschen?\nZum Ändern einzelner Angaben stattdessen „Bearbeiten“ wählen.`)) return;
       if(form.id.value === d.dataset.del) closeForm();
       removeExcursion(d.dataset.del); renderExcursions(i); renderList(); renderNow();
     }
@@ -2661,7 +2709,7 @@ function buildIcs(){
     const start = c.arrUtc || c.depUtc, end = c.depUtc || c.arrUtc;
     if(!start) return;
     const h = hoursInPort(c);
-    const exc = excursionsFor(i).map(e => `${e.time || ""} ${e.title}${e.meet ? " (Treffpunkt " + e.meet + ")" : ""}`.trim());
+    const exc = excursionsFor(i).map(e => `${e.time || ""} ${oneLine(e.title)}${e.meet ? " (Treffpunkt " + e.meet + ")" : ""}`.trim());
     lines.push("BEGIN:VEVENT", `UID:weltreise-${i}@costa-deliziosa`, `DTSTAMP:${icsTime(Date.now())}`,
       `DTSTART:${icsTime(start)}`, `DTEND:${icsTime(end === start ? start + 3600000 : end)}`,
       `SUMMARY:Tag ${c.d1} · ${icsEsc(c.n)}`, `LOCATION:${icsEsc(c.n + ", " + c.c)}`,
