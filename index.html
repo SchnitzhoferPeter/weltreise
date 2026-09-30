@@ -295,6 +295,11 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 .wx-text span{color:var(--ink-2)}
 .loading{font-size:14px;color:var(--ink-3)}
 .eta-box .eta-rows{border-top:0;padding-top:0}
+.pier-box b{display:block;font-size:17px;font-weight:600;line-height:1.3}
+.pier-addr{font-size:16px;margin-top:3px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.pier-note{font-size:15px;color:var(--ink-2);line-height:1.45;margin-top:6px}
+.pier-links{margin-top:10px}
+.pier-fine{font-size:13px;color:var(--ink-3);line-height:1.4;margin-top:8px}
 
 /* Landausflüge */
 .exc{border:1px solid var(--line-soft);border-radius:10px;background:var(--card);padding:12px 15px;display:grid;grid-template-columns:70px minmax(0,1fr);grid-template-areas:"time title" "time meta" "actions actions";gap:2px 14px;margin-bottom:8px;align-items:start}
@@ -1523,6 +1528,63 @@ function computeClockChanges(){
   return out;
 }
 const CLOCK_CHANGES = computeClockChanges();
+/* ---------- Anleger je Hafen ----------
+   Üblicher Liegeplatz für Schiffe der Größe der Costa Deliziosa (294 m), mit Adresse für Taxi und Karte.
+   Costa veröffentlicht keine Liegeplätze; der genaue Kai wird vom Hafen kurzfristig zugewiesen – das Bordprogramm
+   hat das letzte Wort. tender:true = das Schiff ankert, Boote bringen an Land. Schlüssel = Hafenname wie in CALLS. */
+const PIERS = {
+ "Civitavecchia | Rom":{name:"Roma Cruise Terminal – Terminal Amerigo Vespucci",addr:"Molo Vespucci, 00053 Civitavecchia",note:"Costa-Terminal. Fußgängerausgang Varco Vespucci, Shuttlebusse ab Largo della Pace; Bahnhof Civitavecchia 20 Min. zu Fuß."},
+ "Savona":{name:"Palacrociere (Costa-Terminal)",addr:"Calata delle Vele, Darsena Nuova, 17100 Savona",note:"Costas eigenes Terminal, Altstadt in 10 Min. zu Fuß."},
+ "Marseille":{name:"Marseille Provence Cruise Terminal (MPCT), Môle Léon Gourret",addr:"Chemin du Littoral, Porte 4, 13015 Marseille",note:"Industriehafen, kein Fußweg in die Stadt: Shuttle oder Taxi zum Vieux-Port (ca. 8 km)."},
+ "Barcelona":{name:"Moll Adossat, Terminal D „Palacruceros“ (Costa/MSC)",addr:"Moll Adossat 1, 08039 Barcelona",note:"Blauer Hafenbus (T3 Portbus) zum Kolumbus-Denkmal an der Rambla, ca. 2,5 km."},
+ "Lissabon":{name:"Lisbon Cruise Terminal (Jardim do Tabaco)",addr:"Doca Jardim do Tabaco, 1100-651 Lisboa",note:"Alfama direkt vor der Tür. Bei Belegung Ausweich Santa Apolónia oder Rocha Conde de Óbidos."},
+ "Ponta Delgada | Azoren":{name:"Portas do Mar, Kreuzfahrtkai",addr:"Avenida Infante Dom Henrique, 9500-150 Ponta Delgada",note:"Zentrum 200 m zu Fuß."},
+ "Praia da Vitória | Azoren":{name:"Cais de Cruzeiros, Porto da Praia da Vitória",addr:"Porto da Praia da Vitória, 9760-500 Praia da Vitória",note:"Handelshafen, Ort ca. 3 km – Shuttle."},
+ "New York":{name:"Manhattan Cruise Terminal (Piers 88–90)",addr:"711 12th Avenue (West 48th–52nd Street), New York, NY 10019",note:"Times Square 20 Min. zu Fuß. Ausweich: Brooklyn Cruise Terminal, 72 Bowne Street, Pier 12 – Bordprogramm beachten."},
+ "Fort Lauderdale":{name:"Port Everglades",addr:"1850 Eller Drive, Fort Lauderdale, FL 33316",note:"Die Terminalnummer wird vom Hafen kurzfristig zugewiesen; Taxis warten am Terminal."},
+ "Half Moon Cay":{tender:true,name:"Privatinsel Little San Salvador – Tenderhafen",addr:"Little San Salvador Island, Bahamas",note:"Schiff ankert in der Bucht, Boote zum Steg an der Südseite. Ein Pier an der Nordseite ist im Bau."},
+ "Panama-Stadt":{name:"Amador Cruise Terminal (Fuerte Amador)",addr:"Avenida Amador, Calzada de Amador, Isla Perico, Panamá",note:"Auf dem Amador-Damm, Altstadt Casco Viejo ca. 30 Min. mit Taxi."},
+ "Puntarenas":{name:"Muelle de Cruceros Puntarenas",addr:"Paseo de los Turistas, Puntarenas 60101",note:"Pier direkt an der Strandpromenade. Große Schiffe liegen manchmal in Puerto Caldera (15 km) – Bordprogramm beachten."},
+ "Puerto Quetzal":{name:"Terminal de Cruceros Puerto Quetzal (Marina Pez Vela)",addr:"Puerto Quetzal, San José, Escuintla",note:"Nur Ausflugsziel, kein Ort zum Bummeln; Antigua ca. 2 Std. Fahrt."},
+ "Puerto Vallarta":{name:"Puerto Mágico – Terminal Marítima",addr:"Blvd. Francisco Medina Ascencio Km 4.5, Zona Hotelera Norte, 48333 Puerto Vallarta",note:"Ca. 5 km nördlich des Malecón, Taxi 15 Min."},
+ "Cabo San Lucas":{tender:true,name:"Tenderhafen – Boote zur Marina Cabo San Lucas",addr:"Marina Cabo San Lucas, Blvd. Paseo de la Marina, 23450 Cabo San Lucas",note:"Schiff ankert vor dem Felsbogen El Arco, Bootsfahrt ca. 10 Min. Anlandung mitten im Ort."},
+ "San Diego":{name:"B Street Cruise Ship Terminal",addr:"1140 North Harbor Drive, San Diego, CA 92101",note:"Direkt an der Innenstadt, USS Midway 5 Min. zu Fuß."},
+ "Los Angeles":{name:"World Cruise Center, San Pedro (Berths 91–93)",addr:"100 Swinford Street, San Pedro, CA 90731",note:"Ca. 40 km bis Hollywood, Fahrt 45–60 Min."},
+ "San Francisco":{name:"James R. Herman Cruise Terminal, Pier 27",addr:"Pier 27, The Embarcadero, San Francisco, CA 94111",note:"Fisherman's Wharf 15 Min. zu Fuß. Ausweich Pier 35 nebenan."},
+ "Honolulu":{name:"Pier 2 Cruise Terminal",addr:"521 Ala Moana Boulevard, Honolulu, HI 96813",note:"Ausweich: Aloha Tower, Pier 11, 23 Aloha Tower Drive. Waikiki ca. 5 km."},
+ "Hilo":{name:"Hilo Harbor, Pier 1",addr:"80 Kuhio Street, Hilo, HI 96720",note:"Industriehafen, Shuttle in die Stadt."},
+ "Papeete | Tahiti":{name:"Quai d'Honneur",addr:"Boulevard Pomare, 98713 Papeete",note:"Mitten im Zentrum, Markt 5 Min. zu Fuß."},
+ "Suva":{name:"Kings Wharf",addr:"Kings Wharf, Walu Bay, Suva",note:"Zentrum und Markt ca. 1 km."},
+ "Lifou | Loyalitätsinseln":{tender:true,name:"Tenderhafen – Boote zum Steg von Easo",addr:"Easo, Lifou 98820",note:"Schiff ankert in der Baie du Santal, Boote ca. 10 Min. Strand und Markt direkt am Steg."},
+ "Nouméa":{name:"Gare Maritime, Quai des Longs Courriers",addr:"Rue Jules Ferry, 98800 Nouméa",note:"Zentrum 5 Min. zu Fuß."},
+ "Sydney":{name:"Overseas Passenger Terminal, Circular Quay",addr:"Circular Quay West, The Rocks NSW 2000",note:"Die Costa Deliziosa passt nicht unter die Harbour Bridge und liegt daher am Circular Quay, nicht in White Bay. Opera House gegenüber."},
+ "Newcastle | New South Wales":{name:"Newcastle Cruise Terminal, Channel Berth",addr:"Channel Berth, Carrington NSW 2294",note:"Stadtzentrum und Strände unter 10 Min. Fahrt."},
+ "Cairns":{name:"Cairns Cruise Liner Terminal",addr:"1 Wharf Street, Cairns City QLD 4870",note:"Zentrum direkt am Terminal."},
+ "Rabaul":{name:"Rabaul Wharf, Simpson Harbour",addr:"Rabaul, East New Britain",note:"Kai in der alten Stadt, Markt in Gehweite."},
+ "Tokio":{name:"Tokyo International Cruise Terminal",addr:"2 Aomi, Koto-ku, Tokyo 135-0063",note:"Yurikamome-Station „Tokyo International Cruise Terminal“ direkt am Terminal; Zentrum ca. 30 Min."},
+ "Kobe":{name:"Kobe Port Terminal (Shinko Pier 4)",addr:"4 Shinko-cho, Chuo-ku, Kobe 650-0041",note:"Port-Liner-Station „Port Terminal“ am Kai, Sannomiya 2 Stationen."},
+ "Nagasaki":{name:"Matsugae International Terminal",addr:"7-16 Matsugae-machi, Nagasaki 850-0921",note:"Glover Garden und Oura-Kirche 10 Min. zu Fuß."},
+ "Busan":{name:"Busan Port International Passenger Terminal",addr:"206 Chungjang-daero, Dong-gu, Busan 48725",note:"Hinter dem Bahnhof Busan. Große Schiffe teils am Yeongdo Cruise Terminal – Bordprogramm beachten."},
+ "Keelung | Taipeh":{name:"Keelung Port, West Passenger Terminal",addr:"West Passenger Terminal, Ren'ai District, Keelung 200",note:"Neben dem Bahnhof Keelung, Zug nach Taipeh ca. 45 Min."},
+ "Hongkong":{name:"Kai Tak Cruise Terminal",addr:"33 Shing Fung Road, Kai Tak, Kowloon",note:"Ausweich: Ocean Terminal, Harbour City, Canton Road, Tsim Sha Tsui. Bordprogramm beachten."},
+ "Nha Trang":{tender:true,name:"Tenderhafen – Boote zum Cầu-Đá-Pier (Cảng Nha Trang)",addr:"Cảng Nha Trang, Đường Trần Phú, Vĩnh Nguyên, Nha Trang",note:"Schiff ankert in der Bucht. Bei ungünstigem Wetter Ausweich Cam Ranh (ca. 60 km)."},
+ "Phu My | Ho-Chi-Minh-Stadt":{name:"Cảng Phú Mỹ (Containerhafen)",addr:"Phú Mỹ, Bà Rịa – Vũng Tàu",note:"Keine Passagieranlagen, Hafen nur mit Shuttle oder Ausflug verlassen. Ho-Chi-Minh-Stadt ca. 80 km, 2 Std."},
+ "Koh Samui":{tender:true,name:"Tenderhafen – Boote zum Nathon Pier",addr:"Nathon Pier, Ko Samui, Surat Thani 84140",note:"Anlandung mitten in Nathon; Strände und Tempel nur mit Taxi oder Ausflug."},
+ "Singapur":{name:"Marina Bay Cruise Centre",addr:"61 Marina Coastal Drive, Singapore 018947",note:"MRT Marina South Pier 10 Min. zu Fuß."},
+ "Port Kelang (Kuala Lumpur)":{name:"Boustead Cruise Centre",addr:"Pulau Indah, 42920 Port Klang, Selangor",note:"Kuala Lumpur ca. 60 km, 1–1,5 Std. Fahrt."},
+ "Penang":{name:"Swettenham Pier Cruise Terminal",addr:"1A King Edward Place, 10300 George Town, Penang",note:"Altstadt (UNESCO) direkt am Pier."},
+ "Colombo":{name:"Port of Colombo, Bandaranaike Quay (Passagierterminal)",addr:"Port of Colombo, Colombo 01",note:"Hafengelände nur mit Shuttle verlassen; Fort und Pettah-Markt nahe."},
+ "Malé":{tender:true,name:"Tenderhafen – Boote zur Jetty No. 1 am Republic Square",addr:"Boduthakurufaanu Magu, Malé",note:"Schiff ankert vor der Insel. Bei Bauarbeiten Anlandung am Fishermen's Park."},
+ "Port Louis":{name:"Christian Decotter Cruise Terminal, Les Salines",addr:"Les Salines, Port Louis",note:"Zentrum und Caudan Waterfront ca. 3 km, Shuttle."},
+ "Durban":{name:"Nelson Mandela Cruise Terminal",addr:"Point Waterfront, Mahatma Gandhi Road, Durban 4001",note:"uShaka Marine World 10 Min. zu Fuß."},
+ "Port Elizabeth":{name:"Port of Port Elizabeth, Kreuzfahrtkai",addr:"Port of Port Elizabeth, Humewood, Gqeberha 6001",note:"Handelshafen; Shuttle zur Boardwalk und zum Strand."},
+ "Cape Town":{name:"Cape Town Cruise Terminal, E Berth, Duncan Dock",addr:"Duncan Road, V&A Waterfront, Cape Town 8001",note:"V&A Waterfront 10 Min. zu Fuß."},
+ "Walvis Bay":{name:"Port of Walvis Bay, Berth 9 (Passagierterminal)",addr:"Namport, Walvis Bay",note:"Ausgang Südtor, Busse zu den Ausflügen."},
+ "Mindelo | São Vicente":{name:"Mindelo Cruise Terminal, Porto Grande",addr:"Porto Grande, Mindelo, São Vicente",note:"Neues Terminal (2025), Zentrum 10 Min. zu Fuß."},
+ "Las Palmas | Gran Canaria":{name:"Muelle de Santa Catalina, Kreuzfahrtterminal",addr:"Muelle de Santa Catalina, 35008 Las Palmas de Gran Canaria",note:"Parque Santa Catalina 10 Min. zu Fuß."}
+};
+const pierFor = c => c.transit ? null : PIERS[c.n] || null;
+
 function fmtDiff(min){
   const a = Math.abs(min), h = Math.floor(a / 60), m = a % 60;
   const t = h && m ? `${h} Std. ${m} Min.` : h ? `${h} Std.` : `${m} Min.`;
@@ -2283,6 +2345,14 @@ function renderSheet(i){
       <div class="wx-box" id="wxNow"><div class="lbl">Wetter vor Ort</div><div class="loading">wird geladen …</div></div>
       <div class="wx-box" id="wxDay" hidden></div>
       <p>${c.t}</p>
+      ${(() => { const P = pierFor(c); if(!P) return ""; const q = encodeURIComponent(P.tender ? P.addr : P.name + ", " + P.addr); return `<div class="wx-box pier-box">
+        <div class="lbl">${P.tender ? "Anlandung" : "Anleger"} · voraussichtlich</div>
+        <b>${esc(P.name)}</b>
+        <div class="pier-addr">${esc(P.addr)}</div>
+        ${P.note ? `<div class="pier-note">${esc(P.note)}</div>` : ""}
+        <div class="pier-links"><a class="chip" href="https://www.google.com/maps/search/?api=1&query=${q}" target="_blank" rel="noopener">${P.tender ? "Anlandung" : "Anleger"} in Google Maps</a></div>
+        <div class="pier-fine">${P.tender ? "Ankerplatz und Steg können sich nach Wetter und Seegang ändern" : "Üblicher Liegeplatz für Schiffe dieser Größe. Den genauen Kai weist der Hafen kurzfristig zu"} – das Bordprogramm hat das letzte Wort.</div>
+      </div>`; })()}
 
       <h3>${c.transit ? "An Bord während der Passage" : "Landausflüge"} <button class="more" id="excAdd">+ ${c.transit ? "Programmpunkt" : "Ausflug"} eintragen</button></h3>
       ${(() => { const others = CALLS.map((x, j) => [x, j]).filter(([x, j]) => j !== i && x.n === c.n && !x.transit);
@@ -2708,12 +2778,12 @@ function buildIcs(){
   CALLS.forEach((c, i) => {
     const start = c.arrUtc || c.depUtc, end = c.depUtc || c.arrUtc;
     if(!start) return;
-    const h = hoursInPort(c);
+    const h = hoursInPort(c), P = pierFor(c);
     const exc = excursionsFor(i).map(e => `${e.time || ""} ${oneLine(e.title)}${e.meet ? " (Treffpunkt " + e.meet + ")" : ""}`.trim());
     lines.push("BEGIN:VEVENT", `UID:weltreise-${i}@costa-deliziosa`, `DTSTAMP:${icsTime(Date.now())}`,
       `DTSTART:${icsTime(start)}`, `DTEND:${icsTime(end === start ? start + 3600000 : end)}`,
-      `SUMMARY:Tag ${c.d1} · ${icsEsc(c.n)}`, `LOCATION:${icsEsc(c.n + ", " + c.c)}`,
-      `DESCRIPTION:${icsEsc(c.t + (h ? ` (${fmtDur(h)} an Land, Ortszeit ${c.arr}–${c.dep})` : "") + (exc.length ? "\nLandausflüge: " + exc.join("; ") : ""))}`,
+      `SUMMARY:Tag ${c.d1} · ${icsEsc(c.n)}`, `LOCATION:${icsEsc((P ? P.name + ", " + P.addr + " – " : "") + c.n + ", " + c.c)}`,
+      `DESCRIPTION:${icsEsc(c.t + (h ? ` (${fmtDur(h)} an Land, Ortszeit ${c.arr}–${c.dep})` : "") + (P ? `\n${P.tender ? "Anlandung" : "Anleger"} (voraussichtlich): ${P.name}, ${P.addr}` : "") + (exc.length ? "\nLandausflüge: " + exc.join("; ") : ""))}`,
       `GEO:${c.lat};${c.lon}`, "END:VEVENT");
   });
   CLOCK_CHANGES.forEach((ch, k) => {

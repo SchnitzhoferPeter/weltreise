@@ -39,6 +39,7 @@ Der Entwurf liegt als Design-Canvas vor: https://claude.ai/code/artifact/2898c28
   für den Anlauftag, sobald er in der 16-Tage-Vorhersage liegt; Wassertemperatur am Anlauftag,
   sobald er in der 7-Tage-Marinevorhersage liegt
 - Ankunftsprognose, wenn es der nächste Hafen ist
+- Anleger: üblicher Liegeplatz bzw. Tender-Anlandung mit Adresse, Hinweis zum Weg in die Stadt und Google-Maps-Link
 - Verweis auf das Reisetagebuch in FindPenguins
 - Links zu Google Maps, Wikipedia, Windy und ein kopierbarer Direktlink
 
@@ -132,6 +133,15 @@ anderen Anläufe.
 Ob die Datenbank von außen erreichbar ist, prüft die Action **Gemeinsamen Speicher prüfen**
 (Actions → Run workflow): sie liest, schreibt und löscht einen Probeeintrag und zeigt die
 HTTP-Antworten im Protokoll.
+
+## Anleger
+
+Costa veröffentlicht keine Liegeplätze. Die Tabelle `PIERS` in `index.html` nennt je Hafen den üblichen
+Kreuzfahrtkai für Schiffe dieser Größe (294 m, passt z. B. nicht unter die Sydney Harbour Bridge) mit Adresse,
+einem Hinweis zum Weg in die Stadt und – bei Tenderhäfen (`tender:true`) – dem Steg, an dem die Boote anlegen.
+Das Detailblatt zeigt den Kasten „Anleger · voraussichtlich“ mit Google-Maps-Link, der Kalenderexport trägt den
+Anleger als Ort ein. Den genauen Kai weist der Hafen kurzfristig zu; Ausweichplätze stehen im Hinweis, das
+Bordprogramm hat das letzte Wort. Stand der Recherche: September 2026.
 
 ## Routenänderungen
 
