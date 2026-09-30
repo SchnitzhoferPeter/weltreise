@@ -299,8 +299,9 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 /* Landausflüge */
 .exc{border:1px solid var(--line-soft);border-radius:10px;background:var(--card);padding:12px 15px;display:grid;grid-template-columns:70px minmax(0,1fr);grid-template-areas:"time title" "time meta" "actions actions";gap:2px 14px;margin-bottom:8px;align-items:start}
 .exc .time{grid-area:time;font-size:20px;font-weight:700;color:var(--live);font-variant-numeric:tabular-nums}
-.exc .title{grid-area:title;font-size:17px;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+.exc .title{grid-area:title;font-size:17px;font-weight:600;line-height:1.3;overflow-wrap:anywhere;white-space:pre-line}
 .exc .meta{grid-area:meta;font-size:15px;color:var(--ink-2);line-height:1.4;overflow-wrap:anywhere}
+.exc .meta .nt{display:block;white-space:pre-line;margin-top:2px}
 .exc .actions{grid-area:actions;display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
 .exc .actions:empty{display:none}
 .exc .act{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:5px 11px;border:1px solid var(--line);border-radius:6px;background:var(--paper);font-size:14px;font-weight:600;color:var(--ink-2)}
@@ -322,10 +323,13 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 .exc-form label{display:flex;flex-direction:column;gap:4px;font-size:13px;color:var(--ink-2)}
 .exc-form label.wide{grid-column:1 / -1}
 .exc-form input,.exc-form textarea,dialog.panel input,dialog.panel select,.journal textarea{
-  width:100%;background:var(--paper);border:1px solid var(--line);border-radius:6px;color:var(--ink);
-  padding:10px 12px;font:inherit;font-size:16px;min-height:44px;
+  width:100%;min-width:0;box-sizing:border-box;-webkit-appearance:none;appearance:none;display:block;
+  background:var(--paper);border:1px solid var(--line);border-radius:6px;color:var(--ink);
+  padding:10px 12px;font:inherit;font-size:16px;min-height:44px;line-height:1.35;
 }
-.exc-form textarea,.journal textarea{min-height:76px;resize:vertical}
+.journal textarea{min-height:76px;resize:vertical}
+.exc-form textarea{resize:none;overflow:hidden;min-height:44px}
+.exc-form textarea[name="note"]{min-height:76px}
 .exc-form input:focus,.exc-form textarea:focus,dialog.panel input:focus,dialog.panel select:focus,.journal textarea:focus{outline:none;border-color:var(--brass)}
 .exc-form .row{grid-column:1 / -1;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
 .journal .row{display:flex;align-items:center;gap:10px;margin-top:8px;font-size:14px;color:var(--ink-2)}
@@ -1721,13 +1725,24 @@ function excursionFocus(fix, now){
   const idx = fix.portIdx >= 0 ? fix.portIdx : (fix.nextIdx >= 0 ? fix.nextIdx : nextCallIdx(now));
   return idx;
 }
+/* Mehrzeilige Eingaben für einzeilige Stellen (Kachel, Kalender, Rückfrage) zusammenziehen */
+const oneLine = s => String(s || "").replace(/\s+/g, " ").trim();
+/* Uhrzeit-Eingabe vereinheitlichen: „9“, „9:15“, „9.15“, „9 Uhr“ → „09:00“ bzw. „09:15“; sonst Text unverändert */
+function normTime(s){
+  s = String(s || "").trim();
+  const m = /^(\d{1,2})(?:\s*[:.hH]\s*|\s+)?(\d{2})?\s*(?:Uhr)?$/i.exec(s);
+  if(!m) return s;
+  const h = +m[1], mi = m[2] ? +m[2] : 0;
+  if(h > 23 || mi > 59) return s;
+  return `${pad(h)}:${pad(mi)}`;
+}
 function excCard(e, editingId){
   const byTxt = e.shared ? "gemeinsame Liste" : [e.by ? "von " + e.by : "", e.editedBy ? "geändert von " + e.editedBy : ""].filter(Boolean).join(", ");
   const actions = e.shared ? "" : `<button class="act" type="button" data-edit="${esc(e.id || "")}">${icon("edit", "ic")}Bearbeiten</button><button class="act del" type="button" data-del="${esc(e.id || "")}">${icon("trash", "ic")}Löschen</button>`;
   return `<div class="exc${e.shared ? " shared" : ""}${editingId && e.id === editingId ? " editing" : ""}" data-id="${esc(e.id || "")}">
     <span class="time">${esc(e.time || "–")}</span>
     <span class="title">${esc(e.title)}</span>
-    <span class="meta">${[e.dur, e.meet ? "Treffpunkt " + e.meet : "", byTxt, e.note].filter(Boolean).map(esc).join(" · ")}</span>
+    <span class="meta">${[e.dur, e.meet ? "Treffpunkt " + e.meet : "", byTxt].filter(Boolean).map(esc).join(" · ")}${e.note ? `<span class="nt">${esc(e.note)}</span>` : ""}</span>
     <div class="actions">${actions}</div>
   </div>`;
 }
@@ -2065,7 +2080,7 @@ function renderNow(){
     const list = excursionsFor(fIdx), p = CALLS[fIdx];
     const when = fix.phase === "port" && fix.portIdx === fIdx ? "Heute" : `Tag ${p.d1}`;
     extra.push(list.length
-      ? `<button class="tile" data-open="${fIdx}">${icon("flag")}<div><span>${when} in ${short(p.n)} · ${list.length} ${list.length === 1 ? "Landausflug" : "Landausflüge"}</span><b>${esc(list[0].title)}${list[0].time ? ", " + esc(list[0].time) : ""}${list[0].meet ? ", Treffpunkt " + esc(list[0].meet) : ""}</b></div></button>`
+      ? `<button class="tile" data-open="${fIdx}">${icon("flag")}<div><span>${when} in ${short(p.n)} · ${list.length} ${list.length === 1 ? "Landausflug" : "Landausflüge"}</span><b>${esc(oneLine(list[0].title))}${list[0].time ? ", " + esc(list[0].time) : ""}${list[0].meet ? ", Treffpunkt " + esc(list[0].meet) : ""}</b></div></button>`
       : `<button class="tile" data-open="${fIdx}">${icon("flag")}<div><span>${when} in ${short(p.n)}</span><b>Noch kein Landausflug eingetragen</b></div></button>`);
   }
   const ch = nextClockChange(now);
@@ -2279,11 +2294,11 @@ function renderSheet(i){
       <form class="exc-form" id="excForm" hidden>
         <input type="hidden" name="id" value="">
         <div class="form-head" id="excFormHead"></div>
-        <label class="wide">Was<input name="title" required placeholder="z. B. Stadtrundfahrt mit Costa"></label>
-        <label>Uhrzeit<input name="time" type="time" placeholder="09:15"></label>
+        <label class="wide">Was<textarea name="title" required rows="1" placeholder="z. B. Stadtrundfahrt mit Costa – mehrere Zeilen sind möglich"></textarea></label>
+        <label>Uhrzeit<input name="time" inputmode="numeric" autocomplete="off" placeholder="z. B. 09:15"></label>
         <label>Dauer<input name="dur" placeholder="4 Std."></label>
         <label class="wide">Treffpunkt<input name="meet" placeholder="Theater Deck 3"></label>
-        <label class="wide">Hinweise<textarea name="note" placeholder="Gebucht über Costa, festes Schuhwerk, Rückkehr spätestens 17:00"></textarea></label>
+        <label class="wide">Hinweise<textarea name="note" rows="2" placeholder="Gebucht über Costa, festes Schuhwerk, Rückkehr spätestens 17:00 – mehrere Zeilen sind möglich"></textarea></label>
         <label class="wide">Eingetragen von<input name="by" value="${esc(who)}" placeholder="Ihr Vorname – damit alle wissen, wer es eingetragen hat"></label>
         <div class="row"><button class="btn primary" type="submit" id="excSubmit">Speichern</button><button class="btn" type="button" id="excCancel">Abbrechen</button><span class="loading">${sync.url ? "wird für alle sichtbar" : "bleibt in diesem Browser"}</span></div>
       </form>
@@ -2368,6 +2383,9 @@ function renderSheet(i){
   /* Landausflüge: neu eintragen, einzelne Angaben nachträglich ändern, löschen */
   const form = el("excForm");
   const thing = c.transit ? "Programmpunkt" : "Ausflug";
+  const grow = t => { t.style.height = "auto"; t.style.height = Math.max(t.scrollHeight, 44) + "px"; };
+  const growAll = () => form.querySelectorAll("textarea").forEach(grow);
+  form.querySelectorAll("textarea").forEach(t => t.addEventListener("input", () => grow(t)));
   const openForm = (entry) => {
     form.reset();
     form.id.value = entry ? entry.id : "";
@@ -2377,10 +2395,11 @@ function renderSheet(i){
     }
     form.by.value = who;
     el("excFormHead").innerHTML = entry
-      ? `${esc(thing)} bearbeiten: ${esc(entry.title)}<small>Nur ändern, was sich geändert hat – etwa Treffpunkt oder Uhrzeit. Alles andere bleibt.</small>`
+      ? `${esc(thing)} bearbeiten: ${esc(oneLine(entry.title))}<small>Nur ändern, was sich geändert hat – etwa Treffpunkt oder Uhrzeit. Alles andere bleibt.</small>`
       : `Neuen ${esc(thing)} eintragen`;
     el("excSubmit").textContent = entry ? "Änderungen speichern" : "Speichern";
     form.hidden = false;
+    growAll();
     renderExcursions(i);
     form.scrollIntoView({behavior:"smooth", block:"nearest"});
     (entry ? form.meet : form.title).focus();
@@ -2393,7 +2412,9 @@ function renderSheet(i){
     const f = new FormData(form);
     who = String(f.get("by") || "").trim();
     try{ localStorage.setItem(LS + "who", who); }catch(e){}
-    const data = {title:f.get("title").trim(), time:f.get("time"), dur:f.get("dur").trim(), meet:f.get("meet").trim(), note:f.get("note").trim()};
+    const tidy = v => String(v || "").replace(/\r/g, "").replace(/[ \t]+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+    const data = {title:tidy(f.get("title")), time:normTime(f.get("time")), dur:f.get("dur").trim(), meet:f.get("meet").trim(), note:tidy(f.get("note"))};
+    if(!data.title){ form.title.focus(); return; }
     const id = String(f.get("id") || "");
     if(!id || !updateExcursion(id, data)) addExcursion(i, data);
     form.reset(); form.id.value = ""; form.hidden = true;
@@ -2409,7 +2430,7 @@ function renderSheet(i){
     const d = e.target.closest("button[data-del]");
     if(d && d.dataset.del){
       const entry = localExc.find(x => x.id === d.dataset.del);
-      if(!confirm(`„${entry ? entry.title : "Eintrag"}“ wirklich löschen?\nZum Ändern einzelner Angaben stattdessen „Bearbeiten“ wählen.`)) return;
+      if(!confirm(`„${entry ? oneLine(entry.title) : "Eintrag"}“ wirklich löschen?\nZum Ändern einzelner Angaben stattdessen „Bearbeiten“ wählen.`)) return;
       if(form.id.value === d.dataset.del) closeForm();
       removeExcursion(d.dataset.del); renderExcursions(i); renderList(); renderNow();
     }
@@ -2688,7 +2709,7 @@ function buildIcs(){
     const start = c.arrUtc || c.depUtc, end = c.depUtc || c.arrUtc;
     if(!start) return;
     const h = hoursInPort(c);
-    const exc = excursionsFor(i).map(e => `${e.time || ""} ${e.title}${e.meet ? " (Treffpunkt " + e.meet + ")" : ""}`.trim());
+    const exc = excursionsFor(i).map(e => `${e.time || ""} ${oneLine(e.title)}${e.meet ? " (Treffpunkt " + e.meet + ")" : ""}`.trim());
     lines.push("BEGIN:VEVENT", `UID:weltreise-${i}@costa-deliziosa`, `DTSTAMP:${icsTime(Date.now())}`,
       `DTSTART:${icsTime(start)}`, `DTEND:${icsTime(end === start ? start + 3600000 : end)}`,
       `SUMMARY:Tag ${c.d1} · ${icsEsc(c.n)}`, `LOCATION:${icsEsc(c.n + ", " + c.c)}`,

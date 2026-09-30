@@ -114,7 +114,9 @@ kennt, kann mitschreiben.
 
 Jeder Eintrag hat die Knöpfe **Bearbeiten** und **Löschen**. Bearbeiten öffnet das Formular mit den
 vorhandenen Angaben; es lässt sich gezielt eine Angabe ändern oder ergänzen (etwa „Treffpunkt Deck 3“ oder die
-Uhrzeit, sobald sie an Bord bekannt ist), alles andere bleibt. Hat jemand anderes geändert, steht „geändert von“
+Uhrzeit, sobald sie an Bord bekannt ist), alles andere bleibt. „Was“ und „Hinweise“ dürfen mehrere Zeilen
+haben, die Felder wachsen beim Tippen mit. Die Uhrzeit wird frei eingetippt („9“, „9.15“, „9 Uhr“) und zu
+„09:00“ bzw. „09:15“ vereinheitlicht. Hat jemand anderes geändert, steht „geändert von“
 beim Eintrag. Löschen fragt vorher nach. Einträge aus `data/ausfluege.json` sind nur über die Datei änderbar.
 Bewusst gibt es keine Code-Sperre fürs Eintragen: Hinweise der Familie (etwa „Unbedingt die Altstadt
 besichtigen“) sind erwünscht, Unpassendes wird einfach gelöscht.
