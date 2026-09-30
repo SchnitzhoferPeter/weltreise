@@ -144,8 +144,9 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 /* ---------- Bordkarte ---------- */
 .now{border-bottom:1px solid var(--line);background:var(--card);padding:16px 22px 16px}
 .now-head{display:flex;align-items:flex-start;gap:14px}
-.now-eyebrow{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--live)}
-.now-eyebrow .dot{width:10px;height:10px;border-radius:50%;background:var(--live);flex:0 0 auto;box-shadow:0 0 0 0 rgba(14,122,108,.5);animation:pulse 2.4s infinite}
+.now-eyebrow{display:flex;align-items:flex-start;gap:4px 8px;line-height:1.3;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--live)}
+.now-eyebrow > span{flex:1 1 0;min-width:0}
+.now-eyebrow .dot{margin-top:4px;width:10px;height:10px;border-radius:50%;background:var(--live);flex:0 0 auto;box-shadow:0 0 0 0 rgba(14,122,108,.5);animation:pulse 2.4s infinite}
 .now-eyebrow .dot.est{background:var(--brass);animation:none}
 .now-eyebrow.est{color:var(--brass)}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(14,122,108,.45)}70%{box-shadow:0 0 0 10px rgba(14,122,108,0)}100%{box-shadow:0 0 0 0 rgba(14,122,108,0)}}
@@ -165,7 +166,7 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 .metric b i{font-style:normal;font-size:14px;font-weight:600;color:var(--ink-2)}
 .metric b.pos{font-size:15px;line-height:1.3;display:block;white-space:normal}
 .metric b em{font-style:normal}
-.metric b em.loading{font-size:14px;font-weight:400;color:var(--ink-3)}
+.metric b em.loading{font-size:14px;font-weight:400;color:var(--ink-3);white-space:normal;line-height:1.3}
 
 .now-next{margin-top:12px;border:1px solid var(--line-soft);border-radius:10px;background:var(--paper);padding:13px 15px;display:flex;flex-direction:column;gap:9px}
 .now-next .top{display:flex;align-items:baseline;gap:12px}
@@ -232,7 +233,7 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 .stop .day-no i{display:flex;align-items:center;gap:5px;font-style:normal}
 .stop .day-no svg{width:15px;height:15px;stroke:var(--brass);fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .stop .day-no small{display:block;font-weight:400;color:var(--ink-2);font-size:14px}
-.stop .name{font-size:19px;font-weight:600;line-height:1.25}
+.stop .name{font-size:19px;font-weight:600;line-height:1.25;overflow-wrap:anywhere}
 .stop .sub{font-size:15px;color:var(--ink-2);margin-top:2px;display:block}
 .stop .sub .tag{color:var(--brass);font-weight:600}
 .stop .dur{font-size:16px;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -275,7 +276,7 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 .fact b i{font-style:normal;color:var(--ink-2);font-size:14px}
 .body{padding:18px 22px 10px}
 .body p{margin:0 0 16px;font-size:17px;color:var(--ink)}
-.body h3{margin:22px 0 10px;font-family:'Newsreader',Georgia,serif;font-size:24px;font-weight:700;line-height:1.15;display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.body h3{margin:22px 0 10px;font-family:'Newsreader',Georgia,serif;font-size:24px;font-weight:700;line-height:1.15;display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:6px 12px}
 .body h3 .more{font-family:'Source Sans 3',system-ui,sans-serif;font-size:15px;font-weight:600;color:var(--brass);white-space:nowrap}
 .body ul.plain{margin:0;padding:0;list-style:none}
 .body ul.plain li{padding:9px 0;border-bottom:1px solid var(--line-soft);font-size:17px}
@@ -443,10 +444,36 @@ dialog.panel .note code{font-size:14px}
   .head-tools::-webkit-scrollbar{display:none}
   .head-tools .btn{padding:7px 12px;font-size:14px;min-height:38px;flex:0 0 auto;white-space:nowrap}
   .now-eyebrow{font-size:12px;letter-spacing:.06em}
-  .eta-rows{grid-template-columns:86px minmax(0,1fr) auto;font-size:15px}
+  .eta-rows{grid-template-columns:78px minmax(0,1fr) auto;font-size:15px}
+  .eta-rows .delta{grid-column:2 / -1;justify-self:start}
   .now{padding:14px 16px}
-  .now-status{font-size:26px}
+  /* Bordkarte: Uhr und Klappknopf in der ersten Zeile, Quelle und Status darunter über die volle Breite */
+  .now-head{flex-wrap:wrap;gap:8px 12px}
+  .now-head > div:first-child{flex:1 1 100%;order:2}
+  .now-clock{order:1;margin-left:0;text-align:left;flex:1 1 auto}
+  .fold{order:1;margin-left:auto}
+  .now-status{font-size:26px;margin-top:0}
   .now-clock b{font-size:38px}
+  /* Nächster Hafen: Countdown als eigene Zeile unter dem Namen statt daneben */
+  .now-next .top{flex-wrap:wrap;gap:6px 10px}
+  .now-next .port{flex:1 1 100%}
+  .now-next .port .name{font-size:23px}
+  .now-next .cd{flex:1 1 100%;text-align:left;display:flex;align-items:baseline;gap:8px}
+  .now-next .cd b{font-size:23px}
+  .now-next .cd em{margin-top:0}
+  /* Routenliste: Uhrzeit und Liegezeit unter dem Hafennamen statt in einer dritten Spalte */
+  .ledger-head{flex-wrap:wrap;padding:10px 16px}
+  .search{flex:1 1 180px}
+  .stop{grid-template-columns:64px minmax(0,1fr);gap:3px 14px;padding:13px 16px;align-items:start}
+  .stop .day-no{grid-row:1 / span 2}
+  .stop .day-no i{flex-wrap:wrap}
+  .stop.is-next .day-no i::after{flex:1 1 100%;margin-left:0;line-height:1.2}
+  .stop .dur{grid-column:2;text-align:left;white-space:normal;font-size:15px;line-height:1.4;margin-top:1px}
+  .stop .dur em{display:inline;margin-top:0;font-size:15px}
+  .stop .dur em::before{content:"\00a0· "}
+  .sea{grid-template-columns:64px minmax(0,1fr);padding:12px 16px}
+  .clockrow{padding-left:94px;padding-right:16px}
+  .rows div b{white-space:normal}
   .now-extra{grid-template-columns:1fr}
   .statgrid{grid-template-columns:repeat(2,minmax(0,1fr))}
   .exc-form{grid-template-columns:1fr}
@@ -947,7 +974,7 @@ function fmtCountdown(ms){
   const h = Math.floor(min / 60), m = min % 60;
   if(h < 24) return m ? `${h} Std. ${m} Min.` : `${h} Std.`;
   const d = Math.floor(h / 24), rh = h % 24;
-  return rh ? `${d} Tg. ${rh} Std.` : `${d} Tage`;
+  return rh ? `${d} Tg. ${rh} Std.` : d === 1 ? "1 Tag" : `${d} Tage`;
 }
 const num = (v, dec = 1) => v === null || v === undefined || !isFinite(v)
   ? "—" : v.toFixed(dec).replace(".", ",");
@@ -2096,7 +2123,7 @@ function renderNow(){
   weatherAt(fix.lat, fix.lon, claim ? "ship" : "port").then(wx => {
     const t = el("shipWx");
     if(!t) return;
-    if(!wx || !wx.current){ t.textContent = "nicht verfügbar"; t.className = ""; return; }
+    if(!wx || !wx.current){ t.innerHTML = `<em class="loading">nicht verfügbar</em>`; t.className = ""; return; }
     const [txt, ic] = wmo(wx.current.weather_code);
     t.className = "";
     t.innerHTML = `${icon(ic)} ${Math.round(wx.current.temperature_2m)} <i style="font-style:normal;font-size:14px;color:var(--ink-2)">°C</i>`;
