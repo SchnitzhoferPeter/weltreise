@@ -135,6 +135,10 @@ HTTP-Antworten im Protokoll.
 
 ## Routenänderungen
 
+- **30. Sep. 2026 (MyCosta, Buchungsdetails):** Liegezeiten laut Costa-Reiseroute übernommen – New York
+  Ankunft 07:00 (statt 08:00), Puntarenas 06:00 (statt 08:00), Rabaul 07:00–15:00 (statt 08:00–16:00),
+  Nha Trang 09:30–20:30 (statt 10:00–20:00), Singapur Ankunft 07:00 (statt 08:00), Colombo 09:00–20:00
+  (statt 10:00–19:00), Durban Ankunft 07:30 (statt 08:00). Alle übrigen 46 Anläufe stimmen mit MyCosta überein.
 - **24. Aug. 2026 (Costa über e-hoi):** Der Anlauf Cristóbal/Colón am 19.12. entfällt. Stattdessen
   Durchfahrt Panamakanal 08:00–19:00, anschließend Panama-Stadt mit Ankunft 21:00, Übernachtung
   und Abfahrt am 20.12. um 19:00. Der 21.12. bleibt Seetag, Puntarenas am 22.12. unverändert.
