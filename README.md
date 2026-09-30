@@ -43,7 +43,7 @@ Der Entwurf liegt als Design-Canvas vor: https://claude.ai/code/artifact/2898c28
 - Links zu Google Maps, Wikipedia, Windy und ein kopierbarer Direktlink
 
 **Landausflüge**
-- Je Hafen Ausflüge mit Uhrzeit, Dauer, Treffpunkt und Hinweisen erfassen
+- Je Hafen Ausflüge mit Uhrzeit, Dauer, Treffpunkt und Hinweisen erfassen, später einzeln ändern oder löschen
 - Erscheinen in der Routenliste, in der Bordkarte (heute bzw. nächster Hafen) und im Kalenderexport
 - Gemeinsame Liste über `data/ausfluege.json` (Vorlage: `data/ausfluege.example.json`),
   eigene Einträge bleiben im Browser; „Ausflüge als JSON“ kopiert sie zum Teilen
@@ -111,6 +111,13 @@ einer Firebase Realtime Database hinterlegt (Vorlage: `data/sync.example.json`),
 sie mit allen: eigene Änderungen werden sofort hochgeladen, fremde jede Minute und beim Zurückkehren
 zur Seite abgeholt; der jüngere Stand gewinnt. Die Adresse ist im Repository öffentlich; wer sie
 kennt, kann mitschreiben.
+
+Jeder Eintrag hat die Knöpfe **Bearbeiten** und **Löschen**. Bearbeiten öffnet das Formular mit den
+vorhandenen Angaben; es lässt sich gezielt eine Angabe ändern oder ergänzen (etwa „Treffpunkt Deck 3“ oder die
+Uhrzeit, sobald sie an Bord bekannt ist), alles andere bleibt. Hat jemand anderes geändert, steht „geändert von“
+beim Eintrag. Löschen fragt vorher nach. Einträge aus `data/ausfluege.json` sind nur über die Datei änderbar.
+Bewusst gibt es keine Code-Sperre fürs Eintragen: Hinweise der Familie (etwa „Unbedingt die Altstadt
+besichtigen“) sind erwünscht, Unpassendes wird einfach gelöscht.
 
 Unter der Ausflugsliste steht der Stand des Abgleichs („Geteilt mit allen · 3 Einträge · abgeglichen
 16:40“) samt Knopf **Jetzt abgleichen**; scheitert das Speichern, nennt die Zeile den Grund in

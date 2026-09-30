@@ -296,13 +296,19 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 .eta-box .eta-rows{border-top:0;padding-top:0}
 
 /* Landausflüge */
-.exc{border:1px solid var(--line-soft);border-radius:10px;background:var(--card);padding:12px 15px;display:grid;grid-template-columns:70px minmax(0,1fr) auto;gap:2px 14px;margin-bottom:8px;align-items:start}
-.exc .time{font-size:20px;font-weight:700;color:var(--live);font-variant-numeric:tabular-nums;grid-row:1 / span 2}
-.exc .title{font-size:17px;font-weight:600;line-height:1.3}
-.exc .meta{font-size:15px;color:var(--ink-2);line-height:1.4}
-.exc .del{grid-row:1 / span 2;color:var(--ink-3);padding:4px;border-radius:6px;min-height:0}
-.exc .del:hover{color:var(--warn)}
-.exc.shared .del{visibility:hidden}
+.exc{border:1px solid var(--line-soft);border-radius:10px;background:var(--card);padding:12px 15px;display:grid;grid-template-columns:70px minmax(0,1fr);grid-template-areas:"time title" "time meta" "actions actions";gap:2px 14px;margin-bottom:8px;align-items:start}
+.exc .time{grid-area:time;font-size:20px;font-weight:700;color:var(--live);font-variant-numeric:tabular-nums}
+.exc .title{grid-area:title;font-size:17px;font-weight:600;line-height:1.3;overflow-wrap:anywhere}
+.exc .meta{grid-area:meta;font-size:15px;color:var(--ink-2);line-height:1.4;overflow-wrap:anywhere}
+.exc .actions{grid-area:actions;display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.exc .actions:empty{display:none}
+.exc .act{display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:5px 11px;border:1px solid var(--line);border-radius:6px;background:var(--paper);font-size:14px;font-weight:600;color:var(--ink-2)}
+.exc .act svg{width:17px;height:17px}
+.exc .act:hover{border-color:var(--brass);color:var(--brass)}
+.exc .act.del:hover{border-color:var(--warn);color:var(--warn)}
+.exc.editing{border-color:var(--brass);box-shadow:0 0 0 2px var(--brass-soft)}
+.exc-form .form-head{grid-column:1 / -1;font-size:15px;font-weight:700;color:var(--ink)}
+.exc-form .form-head small{display:block;font-weight:400;color:var(--ink-2)}
 .exc-empty{border:1px dashed var(--line);border-radius:10px;padding:12px 15px;font-size:15px;color:var(--ink-2)}
 .exc-twice{display:flex;gap:10px;align-items:flex-start;margin:0 0 12px;padding:12px 14px;border-radius:10px;background:#FBF3E3;border:1px solid #E6CFA0;font-size:15px;line-height:1.45;color:var(--ink)}
 .exc-twice .ic{flex:none;width:22px;height:22px;margin-top:2px;color:var(--brass)}
@@ -473,6 +479,7 @@ dialog.panel .note code{font-size:14px}
     <symbol id="i-anchor" viewBox="0 0 24 24"><circle cx="12" cy="5" r="2.5"/><path d="M12 7.5V21M5 12H2a10 10 0 0 0 20 0h-3M8 12h8"/></symbol>
     <symbol id="i-left" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></symbol>
     <symbol id="i-right" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4l10.5-10.5a2.1 2.1 0 0 0-4-4L4 16z"/><path d="M13 7l4 4"/></symbol>
     <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></symbol>
   </defs>
 </svg>
@@ -1659,6 +1666,16 @@ function addExcursion(i, data){
   localExc.push(e); saveExc();
   syncPut(`excursions/${syncKey(e.id)}`, e);
 }
+/* Einzelne Felder eines bestehenden Eintrags ändern – der Eintrag bleibt, nur die Angaben werden ersetzt */
+function updateExcursion(id, data){
+  const e = localExc.find(x => x.id === id && !x.deleted);
+  if(!e) return false;
+  Object.assign(e, data, {updatedAt:Date.now()});
+  if(who && who !== e.by) e.editedBy = who; else if(who === e.by) delete e.editedBy;
+  saveExc();
+  syncPut(`excursions/${syncKey(e.id)}`, e);
+  return true;
+}
 function removeExcursion(id){
   const e = localExc.find(x => x.id === id);
   if(!e) return;
@@ -1677,12 +1694,14 @@ function excursionFocus(fix, now){
   const idx = fix.portIdx >= 0 ? fix.portIdx : (fix.nextIdx >= 0 ? fix.nextIdx : nextCallIdx(now));
   return idx;
 }
-function excCard(e){
-  return `<div class="exc${e.shared ? " shared" : ""}" data-id="${esc(e.id || "")}">
+function excCard(e, editingId){
+  const byTxt = e.shared ? "gemeinsame Liste" : [e.by ? "von " + e.by : "", e.editedBy ? "geändert von " + e.editedBy : ""].filter(Boolean).join(", ");
+  const actions = e.shared ? "" : `<button class="act" type="button" data-edit="${esc(e.id || "")}">${icon("edit", "ic")}Bearbeiten</button><button class="act del" type="button" data-del="${esc(e.id || "")}">${icon("trash", "ic")}Löschen</button>`;
+  return `<div class="exc${e.shared ? " shared" : ""}${editingId && e.id === editingId ? " editing" : ""}" data-id="${esc(e.id || "")}">
     <span class="time">${esc(e.time || "–")}</span>
     <span class="title">${esc(e.title)}</span>
-    <button class="del" title="Eintrag löschen" data-del="${esc(e.id || "")}">${icon("trash", "ic")}</button>
-    <span class="meta">${[e.dur, e.meet ? "Treffpunkt " + e.meet : "", e.shared ? "gemeinsame Liste" : (e.by ? "von " + e.by : ""), e.note].filter(Boolean).map(esc).join(" · ")}</span>
+    <span class="meta">${[e.dur, e.meet ? "Treffpunkt " + e.meet : "", byTxt, e.note].filter(Boolean).map(esc).join(" · ")}</span>
+    <div class="actions">${actions}</div>
   </div>`;
 }
 
@@ -2160,7 +2179,8 @@ function renderExcursions(i){
   const list = excursionsFor(i);
   const box = el("excList");
   if(!box) return;
-  box.innerHTML = list.length ? list.map(excCard).join("")
+  const form = el("excForm"), editingId = form && !form.hidden ? String(form.id.value || "") : "";
+  box.innerHTML = list.length ? list.map(e => excCard(e, editingId)).join("")
     : CALLS[i].transit
       ? `<div class="exc-empty">Kein Landgang – hier lassen sich Programmpunkte an Bord notieren, etwa der Platz an Deck für die Schleusen.</div>`
       : `<div class="exc-empty">Noch kein Landausflug für ${short(CALLS[i].n)} eingetragen. Ausflug, Uhrzeit, Treffpunkt und Hinweise unten erfassen – so weiß jeder, wo Mama gerade ist.</div>`;
@@ -2230,13 +2250,15 @@ function renderSheet(i){
       <div id="excList"></div>
       <div class="sync-line" id="syncLine"></div>
       <form class="exc-form" id="excForm" hidden>
+        <input type="hidden" name="id" value="">
+        <div class="form-head" id="excFormHead"></div>
         <label class="wide">Was<input name="title" required placeholder="z. B. Stadtrundfahrt mit Costa"></label>
         <label>Uhrzeit<input name="time" type="time" placeholder="09:15"></label>
         <label>Dauer<input name="dur" placeholder="4 Std."></label>
         <label class="wide">Treffpunkt<input name="meet" placeholder="Theater Deck 3"></label>
         <label class="wide">Hinweise<textarea name="note" placeholder="Gebucht über Costa, festes Schuhwerk, Rückkehr spätestens 17:00"></textarea></label>
         <label class="wide">Eingetragen von<input name="by" value="${esc(who)}" placeholder="Ihr Vorname – damit alle wissen, wer es eingetragen hat"></label>
-        <div class="row"><button class="btn primary" type="submit">Speichern</button><button class="btn" type="button" id="excCancel">Abbrechen</button><span class="loading">${sync.url ? "wird für alle sichtbar" : "bleibt in diesem Browser"}</span></div>
+        <div class="row"><button class="btn primary" type="submit" id="excSubmit">Speichern</button><button class="btn" type="button" id="excCancel">Abbrechen</button><span class="loading">${sync.url ? "wird für alle sichtbar" : "bleibt in diesem Browser"}</span></div>
       </form>
 
       <h3>Nicht versäumen</h3>
@@ -2316,22 +2338,54 @@ function renderSheet(i){
     } else dayBox.hidden = true;
   });
 
-  /* Landausflüge */
+  /* Landausflüge: neu eintragen, einzelne Angaben nachträglich ändern, löschen */
   const form = el("excForm");
-  el("excAdd").addEventListener("click", () => { form.hidden = false; form.title.focus(); });
-  el("excCancel").addEventListener("click", () => { form.hidden = true; form.reset(); });
+  const thing = c.transit ? "Programmpunkt" : "Ausflug";
+  const openForm = (entry) => {
+    form.reset();
+    form.id.value = entry ? entry.id : "";
+    if(entry){
+      form.title.value = entry.title || ""; form.time.value = entry.time || ""; form.dur.value = entry.dur || "";
+      form.meet.value = entry.meet || ""; form.note.value = entry.note || "";
+    }
+    form.by.value = who;
+    el("excFormHead").innerHTML = entry
+      ? `${esc(thing)} bearbeiten: ${esc(entry.title)}<small>Nur ändern, was sich geändert hat – etwa Treffpunkt oder Uhrzeit. Alles andere bleibt.</small>`
+      : `Neuen ${esc(thing)} eintragen`;
+    el("excSubmit").textContent = entry ? "Änderungen speichern" : "Speichern";
+    form.hidden = false;
+    renderExcursions(i);
+    form.scrollIntoView({behavior:"smooth", block:"nearest"});
+    (entry ? form.meet : form.title).focus();
+  };
+  const closeForm = () => { form.hidden = true; form.reset(); form.id.value = ""; renderExcursions(i); };
+  el("excAdd").addEventListener("click", () => openForm(null));
+  el("excCancel").addEventListener("click", closeForm);
   form.addEventListener("submit", e => {
     e.preventDefault();
     const f = new FormData(form);
     who = String(f.get("by") || "").trim();
     try{ localStorage.setItem(LS + "who", who); }catch(e){}
-    addExcursion(i, {title:f.get("title").trim(), time:f.get("time"), dur:f.get("dur").trim(), meet:f.get("meet").trim(), note:f.get("note").trim()});
-    form.reset(); form.hidden = true;
+    const data = {title:f.get("title").trim(), time:f.get("time"), dur:f.get("dur").trim(), meet:f.get("meet").trim(), note:f.get("note").trim()};
+    const id = String(f.get("id") || "");
+    if(!id || !updateExcursion(id, data)) addExcursion(i, data);
+    form.reset(); form.id.value = ""; form.hidden = true;
     renderExcursions(i); renderList(); renderNow();
   });
   el("excList").addEventListener("click", e => {
+    const ed = e.target.closest("button[data-edit]");
+    if(ed && ed.dataset.edit){
+      const entry = localExc.find(x => x.id === ed.dataset.edit && !x.deleted);
+      if(entry) openForm(entry);
+      return;
+    }
     const d = e.target.closest("button[data-del]");
-    if(d && d.dataset.del){ removeExcursion(d.dataset.del); renderExcursions(i); renderList(); renderNow(); }
+    if(d && d.dataset.del){
+      const entry = localExc.find(x => x.id === d.dataset.del);
+      if(!confirm(`„${entry ? entry.title : "Eintrag"}“ wirklich löschen?\nZum Ändern einzelner Angaben stattdessen „Bearbeiten“ wählen.`)) return;
+      if(form.id.value === d.dataset.del) closeForm();
+      removeExcursion(d.dataset.del); renderExcursions(i); renderList(); renderNow();
+    }
   });
   el("syncLine").addEventListener("click", e => { if(e.target.closest("#syncNow")) syncNow(); });
   sheetBody.querySelectorAll(".exc-twice button[data-go]").forEach(b => b.addEventListener("click", () => select(+b.dataset.go, true)));
