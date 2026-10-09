@@ -408,6 +408,19 @@ dialog.panel .note code{font-size:14px}
 .tzlist li span{font-size:15px;color:var(--ink-2);line-height:1.4}
 .tzlist li.past{opacity:.6}
 .tzlist li.next b{color:var(--live)}
+.visa-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 16px}
+.visa-summary div{background:var(--card);border:1px solid var(--line-soft);border-radius:9px;padding:10px 8px;text-align:center}
+.visa-summary b{display:block;font-family:'Newsreader',Georgia,serif;font-size:27px;line-height:1}
+.visa-summary span{display:block;font-size:12px;color:var(--ink-2);margin-top:4px;line-height:1.2}
+.visa-group{margin-top:18px}
+.visa-group h3{font-family:'Newsreader',Georgia,serif;font-size:22px;margin:0 0 6px}
+.visa-item{padding:10px 0;border-bottom:1px solid var(--line-soft)}
+.visa-item-head a{font-weight:600;color:var(--ink);text-decoration:underline;text-decoration-color:var(--brass);text-underline-offset:3px}
+.visa-field{display:grid;grid-template-columns:166px minmax(0,1fr);gap:8px;margin-top:4px;font-size:14px;line-height:1.35}
+.visa-field span{color:var(--ink-2)}
+.visa-field b{font-weight:600}
+.visa-item p{font-size:14px;color:var(--ink-2);line-height:1.4;margin:3px 0 0}
+@media (max-width:560px){.visa-field{grid-template-columns:1fr;gap:0;margin-top:7px}}
 
 /* ---------- Mobil ---------- */
 @media (max-width:1180px){
@@ -444,9 +457,8 @@ dialog.panel .note code{font-size:14px}
   .mark h1{font-size:25px}
   .eyebrow{font-size:12px;letter-spacing:.08em}
   .stats{display:none}
-  .head-tools{flex:1 1 100%;gap:6px;flex-wrap:nowrap;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
-  .head-tools::-webkit-scrollbar{display:none}
-  .head-tools .btn{padding:7px 12px;font-size:14px;min-height:38px;flex:0 0 auto;white-space:nowrap}
+  .head-tools{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));flex:1 1 100%;gap:6px;min-width:0}
+  .head-tools .btn{min-width:0;padding:9px 8px;font-size:14px;min-height:40px;white-space:normal}
   .now-eyebrow{font-size:12px;letter-spacing:.06em}
   .eta-rows{grid-template-columns:78px minmax(0,1fr) auto;font-size:15px}
   .eta-rows .delta{grid-column:2 / -1;justify-self:start}
@@ -483,7 +495,6 @@ dialog.panel .note code{font-size:14px}
   .exc-form{grid-template-columns:1fr}
   .facts{grid-template-columns:1fr}
   .fact{border-right:0}
-  .head-tools .btn{padding:9px 12px;font-size:14px}
 }
 @media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation-duration:.01ms!important}}
 </style>
@@ -527,6 +538,7 @@ dialog.panel .note code{font-size:14px}
     <button class="btn" id="icsBtn" title="Alle Häfen als Kalenderdatei herunterladen">Kalender</button>
     <button class="btn" id="statsBtn">Reise in Zahlen</button>
     <button class="btn" id="tzBtn">Zeitumstellungen</button>
+    <button class="btn" id="visaBtn">Visa Status</button>
   </div>
 </header>
 
@@ -643,6 +655,11 @@ dialog.panel .note code{font-size:14px}
 <dialog class="panel" id="tzDlg">
   <h2>Zeitumstellungen an Bord <button data-close aria-label="Schließen"><svg class="ic" style="width:20px;height:20px"><use href="#i-close"/></svg></button></h2>
   <div class="inner" id="tzBody"></div>
+</dialog>
+
+<dialog class="panel" id="visaDlg">
+  <h2>Visa Status <button data-close aria-label="Schließen"><svg class="ic" style="width:20px;height:20px"><use href="#i-close"/></svg></button></h2>
+  <div class="inner" id="visaBody"></div>
 </dialog>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -1964,6 +1981,58 @@ function renderStatsDialog(){
     <p class="note">Seemeilen als Großkreisdistanz von Hafen zu Hafen; die tatsächliche Fahrstrecke liegt etwas darüber. Höhepunkte nach Fahrplan gerechnet.</p>`;
 }
 
+/* Visa und Einreiseformalitäten für österreichische Reisepässe, Stand 8. Oktober 2026.
+   Status „erledigt“ stammt von der Reisenden; Nachweise sind nicht in der App gespeichert. */
+const VISA_INFO = {
+  "Italien":{slug:"italien",visa:"Nein",status:"none"},
+  "Frankreich":{slug:"frankreich",visa:"Nein",status:"none"},
+  "Spanien":{slug:"spanien",visa:"Nein",status:"none"},
+  "Portugal":{slug:"portugal",visa:"Nein",status:"none"},
+  "USA":{slug:"vereinigte-staaten",visa:"Normalerweise nein",status:"done",advance:"Erledigt – ESTA",task:"Gilt auch für Hawaii; bei bestimmten früheren Reisen oder weiteren Staatsangehörigkeiten kann ein Visum nötig sein."},
+  "Bahamas":{slug:"bahamas",visa:"Nein",status:"none"},
+  "Panama":{slug:"panama",visa:"Nein",status:"none"},
+  "Costa Rica":{slug:"costa-rica",visa:"Nein",status:"none"},
+  "Guatemala":{slug:"guatemala",visa:"Nein",status:"open",advance:"Ja – Boleta de Migración",task:"Elektronisches Formular für Ein- und Ausreise ausfüllen; ab 14 Tage davor möglich."},
+  "Mexiko":{slug:"mexiko",visa:"Nein",status:"none"},
+  "Französisch-Polynesien":{slug:"franzoesische-ueberseegebiete",visa:"Nein",status:"none"},
+  "Fidschi":{slug:"fidschi",visa:"Nein",status:"none"},
+  "Neukaledonien":{slug:"franzoesische-ueberseegebiete",visa:"Nein",status:"none"},
+  "Australien":{slug:"australien",visa:"Ja",status:"done",advance:"Erledigt – eVisitor-Visum"},
+  "Papua-Neuguinea":{slug:"papua-neuguinea",visa:"Ja",status:"open",advance:"Ja – Visum und Digital Arrival Card",task:"Visum organisieren; Digital Arrival Card bis 72 Stunden vor Einreise ausfüllen."},
+  "Japan":{slug:"japan",visa:"Nein",status:"none"},
+  "Südkorea":{slug:"korea-rep",visa:"Nein",status:"open",advance:"Für 2027 offen – K-ETA prüfen",task:"Die derzeitige Befreiung endet laut BMEIA am 31.12.2026; Anlauf im Februar 2027."},
+  "Taiwan":{slug:"taiwan-chinesisches-taipei",visa:"Nein",status:"open",advance:"Ja – Online-Einreisekarte"},
+  "China":{slug:"hongkong",visa:"Nein",status:"none",label:"Hongkong (China)"},
+  "Vietnam":{slug:"vietnam",visa:"Ja",status:"done",advance:"Erledigt – Visum",task:"Ausgedruckte Genehmigung mitnehmen."},
+  "Thailand":{slug:"thailand",visa:"Nein",status:"open",advance:"Ja – TDAC",task:"Digitale Einreisekarte innerhalb von drei Tagen vor Einreise ausfüllen."},
+  "Singapur":{slug:"singapur",visa:"Nein",status:"open",advance:"Ja – SGAC",task:"Elektronische Ankunftskarte innerhalb von drei Tagen vor Einreise ausfüllen."},
+  "Malaysia":{slug:"malaysia",visa:"Nein",status:"open",advance:"Ja – MDAC",task:"Online-Registrierung ab drei Tagen vor Abreise nach Malaysia erledigen."},
+  "Sri Lanka":{slug:"sri-lanka",visa:"Ja",status:"open",advance:"Ja – ETA",task:"Vor Reiseantritt beantragen."},
+  "Malediven":{slug:"malediven",visa:"Ja, bei Ankunft",status:"open",advance:"Ja – Traveller Declaration",task:"Online innerhalb von 96 Stunden vor Einreise ausfüllen; Touristenvisum bei Ankunft."},
+  "Mauritius":{slug:"mauritius",visa:"Nein",status:"open",advance:"Offen – Reiseregistrierung",task:"Vorsichtshalber vorab erledigen; online bis vier Tage vor Abreise oder bei Einreise möglich."},
+  "Südafrika":{slug:"suedafrika",visa:"Nein",status:"open",advance:"Ja – elektronische Zollerklärung",task:"Vor Ein- und Ausreise abgeben."},
+  "Namibia":{slug:"namibia",visa:"Ja",status:"open",advance:"Vorab klären – Online-Visum verfügbar",task:"Visum vorab organisieren und Einreise am Seehafen Walvis Bay mit Reederei oder Behörde klären."},
+  "Kap Verde":{slug:"cabo-verde",visa:"Nein",status:"open",advance:"Ja – EASE-Registrierung laut BMEIA",task:"Bis fünf Tage vor Reiseantritt; Anwendbarkeit auf den Kreuzfahrthafen prüfen."}
+};
+function renderVisaDialog(){
+  const routeCountries = [...new Set(PORTS.map(c => c.c.split(" · ")[0]))];
+  const groups = [["none","Nichts zu organisieren"],["done","Erledigt"],["open","Offen"]];
+  const byStatus = status => routeCountries.filter(c => VISA_INFO[c]?.status === status);
+  el("visaBody").innerHTML = `
+    <p>Touristische Einreise mit österreichischem Reisepass. „Erledigt“ beruht auf Angaben der Reisenden.</p>
+    <div class="visa-summary">${groups.map(([status,title]) => `<div><b>${byStatus(status).length}</b><span>${title}</span></div>`).join("")}</div>
+    ${groups.map(([status,title]) => `<section class="visa-group"><h3>${title}</h3>
+      ${byStatus(status).map(country => {
+        const info = VISA_INFO[country];
+        const url = `https://www.bmeia.gv.at/reise-services/reiseinformation/land/${info.slug}`;
+        return `<div class="visa-item"><div class="visa-item-head"><a href="${url}" target="_blank" rel="noopener noreferrer">${esc(info.label || country)}</a></div>
+          <div class="visa-field"><span>Visum nötig?</span><b>${esc(info.visa)}</b></div>
+          <div class="visa-field"><span>Online/vorab etwas nötig?</span><b>${esc(info.advance || "Nein")}</b></div>
+          ${info.task ? `<p>${esc(info.task)}</p>` : ""}</div>`;
+      }).join("")}</section>`).join("")}
+    <p class="note">BMEIA-Reiseinformationen: Stand 8. Oktober 2026. Regeln können sich bis zu den Anläufen ändern; Links öffnen die aktuelle Länderseite.</p>`;
+}
+
 /* =======================================================================
    15 · Bordkarte
    ===================================================================== */
@@ -2735,6 +2804,7 @@ document.querySelectorAll("dialog.panel [data-close]").forEach(b => b.addEventLi
 document.querySelectorAll("dialog.panel").forEach(d => d.addEventListener("click", e => { if(e.target === d) d.close(); }));
 el("statsBtn").addEventListener("click", () => { renderStatsDialog(); el("statsDlg").showModal(); });
 el("tzBtn").addEventListener("click", () => { renderTzDialog(); el("tzDlg").showModal(); });
+el("visaBtn").addEventListener("click", () => { renderVisaDialog(); el("visaDlg").showModal(); });
 
 const dlg = el("cfgDlg");
 function syncCfgForm(){
