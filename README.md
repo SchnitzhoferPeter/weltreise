@@ -64,6 +64,11 @@ Der Entwurf liegt als Design-Canvas vor: https://claude.ai/code/artifact/2898c28
   Äquatorüberquerungen, längste Etappe, längste Liegezeit, nördlichster und südlichster Hafen
 - Zum Reiseende die Abschlussstatistik
 
+**Visa Status**
+- Alle Reiseländer in den Gruppen „Nichts zu organisieren“, „Erledigt“ und „Offen“
+- Visumpflicht, noch nötige Formulare und Direktlinks zu den BMEIA-Länderseiten
+- Angaben zu Einreiseformalitäten vom 8. Oktober 2026; erledigte Schritte nach Auskunft der Reisenden
+
 **Sonstiges**
 - `Kalender .ics`: alle Anläufe als Kalenderdatei für Outlook, iOS oder Android
 - Als App installierbar (Web-Manifest + Service Worker), startet auch bei schwachem
