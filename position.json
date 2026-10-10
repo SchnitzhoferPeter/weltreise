@@ -1,11 +1,11 @@
 {
-  "lat": 45.08126,
-  "lon": 13.29773,
-  "sog": 15.9,
-  "cog": 337,
-  "heading": 336,
-  "navStatus": 0,
+  "lat": 45.65095,
+  "lon": 13.76153,
+  "sog": 0.1,
+  "cog": 0,
+  "heading": 319,
+  "navStatus": 5,
   "shipName": "COSTA DELIZIOSA",
-  "timestamp": "2026-10-10T02:17:21.965Z",
+  "timestamp": "2026-10-10T14:42:36.100Z",
   "source": "aisstream.io, terrestrisches AIS, über GitHub Action"
 }
