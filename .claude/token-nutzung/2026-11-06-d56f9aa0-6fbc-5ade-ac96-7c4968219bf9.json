@@ -1,0 +1,24 @@
+{
+  "format": 1,
+  "sitzung": "d56f9aa0-6fbc-5ade-ac96-7c4968219bf9",
+  "von": "2026-11-06T19:27:59.460Z",
+  "bis": "2026-11-06T19:30:10.025Z",
+  "commits": 1,
+  "modelle": {
+    "claude-opus-5-5": {
+      "anfragen": 8,
+      "eingabe": 16,
+      "cache_schreiben": 40515,
+      "cache_lesen": 628632,
+      "ausgabe": 15369
+    }
+  },
+  "summe": {
+    "anfragen": 8,
+    "eingabe": 16,
+    "cache_schreiben": 40515,
+    "cache_lesen": 628632,
+    "ausgabe": 15369,
+    "gesamt": 684532
+  }
+}

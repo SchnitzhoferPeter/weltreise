@@ -1,0 +1,5 @@
+<strings>
+    <string id="AppName">Läufer-Cockpit</string>
+    <string id="TargetPaceTitle">Zielpace (m:ss pro km/mi, 0:00 = aus)</string>
+    <string id="ToleranceTitle">Toleranz Zielpace (Sekunden)</string>
+</strings>

@@ -1,0 +1,8 @@
+<settings>
+    <setting propertyKey="@Properties.targetPace" title="@Strings.TargetPaceTitle">
+        <settingConfig type="alphaNumeric"/>
+    </setting>
+    <setting propertyKey="@Properties.paceTolerance" title="@Strings.ToleranceTitle">
+        <settingConfig type="numeric" min="0" max="60"/>
+    </setting>
+</settings>

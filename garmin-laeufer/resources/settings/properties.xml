@@ -1,0 +1,4 @@
+<properties>
+    <property id="targetPace" type="string">0:00</property>
+    <property id="paceTolerance" type="number">10</property>
+</properties>
