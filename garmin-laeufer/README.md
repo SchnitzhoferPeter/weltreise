@@ -10,16 +10,36 @@ Ein Vollbild-Datenfeld für die Lauf-App der Uhr. Alles Wichtige auf einer Seite
 |---|---|
 | Bogen oben | Herzfrequenzzone 1–5, Zonen kommen aus dem Garmin-Benutzerprofil (Laufen) |
 | Oben | Aktuelle Herzfrequenz in Zonenfarbe |
-| Mitte, groß | Aktuelle Pace, über 10 s geglättet. Grün = im Ziel, Rot = zu langsam, Blau = zu schnell |
-| Unten | Distanz, Zeit, Ø-Pace, Kadenz (Schritte/min) |
+| Mitte, groß | Aktuelle Pace, über 10 s geglättet, farbig nach Zielpace oder HF-Zielzone (siehe unten) |
+| Unten | Distanz, Zeit, Ø-Pace **oder** Zielzeit-Prognose, Kadenz (Schritte/min) |
 
 Ist das Feld auf einer Seite mit mehreren Feldern, zeigt es nur die Pace.
 km/mi richten sich nach den Einheiten der Uhr.
 
+## Zwei Zielmodi
+
+| Modus | Wofür | Grün | Rot | Blau |
+|---|---|---|---|---|
+| **Nach Zielpace** | Tempoläufe, Wettkampf | Pace im Toleranzband | zu langsam | zu schnell |
+| **Nach HF-Zielzone** | Lockere Läufe, Long Run | HF in der Zielzone | Zone zu hoch | Zone zu niedrig |
+
+Im HF-Modus ist die Zielzone im Bogen oben dünn in ihrer Farbe markiert.
+
+## Zielzeit-Prognose
+
+Rechnet die bisherige Durchschnittsgeschwindigkeit (ohne Pausen) auf die Wettkampfdistanz hoch, z. B. `3h29`.
+Erscheint ab 500 m. Ist eine Zielpace gesetzt, steht sie grün, wenn die Zielzeit (Zielpace × Distanz) erreicht wird, sonst rot.
+
 ## Einstellungen (Connect-IQ-App am Handy)
 
+- **Farbsteuerung der Pace**: Nach Zielpace / Nach HF-Zielzone.
 - **Zielpace**: `m:ss`, z. B. `5:00`. `0:00` schaltet die Farbsteuerung aus.
 - **Toleranz**: Sekunden um die Zielpace, die noch als „im Ziel“ gelten (Standard 10).
+- **HF-Zielzone**: Zone 1–5 (Standard Zone 2).
+- **Feld unten links**: Ø-Pace oder Zielzeit-Prognose.
+- **Wettkampfdistanz**: Marathon, Halbmarathon, 10 km, 5 km.
+
+**Tipp fürs Marathontraining:** Für lockere Läufe den HF-Modus mit Zone 2 einstellen. Für Tempoläufe und den Renntag den Pace-Modus mit Marathon-Zielpace wählen und unten links die Prognose anzeigen.
 
 ## Bauen und aufs Gerät bringen
 

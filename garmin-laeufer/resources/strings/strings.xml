@@ -1,5 +1,22 @@
 <strings>
     <string id="AppName">Läufer-Cockpit</string>
+    <string id="TargetModeTitle">Farbsteuerung der Pace</string>
+    <string id="ModePace">Nach Zielpace</string>
+    <string id="ModeHr">Nach HF-Zielzone</string>
     <string id="TargetPaceTitle">Zielpace (m:ss pro km/mi, 0:00 = aus)</string>
     <string id="ToleranceTitle">Toleranz Zielpace (Sekunden)</string>
+    <string id="TargetZoneTitle">HF-Zielzone</string>
+    <string id="Zone1">Zone 1</string>
+    <string id="Zone2">Zone 2 (Grundlage)</string>
+    <string id="Zone3">Zone 3</string>
+    <string id="Zone4">Zone 4</string>
+    <string id="Zone5">Zone 5</string>
+    <string id="BottomLeftTitle">Feld unten links</string>
+    <string id="ShowAvgPace">Ø-Pace</string>
+    <string id="ShowForecast">Zielzeit-Prognose</string>
+    <string id="RaceDistanceTitle">Wettkampfdistanz für Prognose</string>
+    <string id="DistMarathon">Marathon (42,195 km)</string>
+    <string id="DistHalf">Halbmarathon (21,1 km)</string>
+    <string id="Dist10k">10 km</string>
+    <string id="Dist5k">5 km</string>
 </strings>

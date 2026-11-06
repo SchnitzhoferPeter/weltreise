@@ -1,4 +1,8 @@
 <properties>
+    <property id="targetMode" type="number">0</property>
     <property id="targetPace" type="string">0:00</property>
     <property id="paceTolerance" type="number">10</property>
+    <property id="targetZone" type="number">2</property>
+    <property id="bottomLeft" type="number">0</property>
+    <property id="raceDistance" type="number">42195</property>
 </properties>

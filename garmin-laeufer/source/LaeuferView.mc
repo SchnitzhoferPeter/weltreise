@@ -8,8 +8,8 @@ import Toybox.WatchUi;
 
 //! Vollbild-Datenfeld für Läufer:
 //!  - Herzfrequenz mit Zonen-Bogen (Zonen aus dem Garmin-Benutzerprofil)
-//!  - geglättete aktuelle Pace (10 s), farbig gegen eine Zielpace
-//!  - Distanz, Zeit, Ø-Pace, Kadenz
+//!  - geglättete aktuelle Pace (10 s), farbig gegen Zielpace ODER Ziel-HF-Zone
+//!  - Distanz, Zeit, Ø-Pace bzw. Zielzeit-Prognose, Kadenz
 class LaeuferView extends WatchUi.DataField {
 
     const BUF_SIZE = 10;
@@ -35,6 +35,11 @@ class LaeuferView extends WatchUi.DataField {
     hidden var _zones as Array<Number>?;
     hidden var _targetPace as Number = 0;   // Sekunden pro Einheit, 0 = aus
     hidden var _tolerance as Number = 10;
+    hidden var _targetMode as Number = 0;   // 0 = Zielpace, 1 = Ziel-HF-Zone
+    hidden var _targetZone as Number = 2;
+    hidden var _raceDist as Number = 42195; // Meter
+    hidden var _bottomLeft as Number = 0;   // 0 = Ø-Pace, 1 = Prognose
+    hidden var _forecast as Number? = null; // Millisekunden
 
     function initialize() {
         DataField.initialize();
@@ -48,8 +53,22 @@ class LaeuferView extends WatchUi.DataField {
 
     function loadSettings() as Void {
         _targetPace = parsePace(Application.Properties.getValue("targetPace"));
-        var tol = Application.Properties.getValue("paceTolerance");
-        _tolerance = (tol instanceof Number) ? tol : 10;
+        _tolerance = numProp("paceTolerance", 10);
+        _targetMode = numProp("targetMode", 0);
+        _targetZone = numProp("targetZone", 2);
+        _raceDist = numProp("raceDistance", 42195);
+        _bottomLeft = numProp("bottomLeft", 0);
+        if (_targetZone < 1 || _targetZone > 5) {
+            _targetZone = 2;
+        }
+        if (_raceDist <= 0) {
+            _raceDist = 42195;
+        }
+    }
+
+    hidden function numProp(key as String, dflt as Number) as Number {
+        var v = Application.Properties.getValue(key);
+        return (v instanceof Number) ? v : dflt;
     }
 
     // ---------------------------------------------------------------- Daten
@@ -79,6 +98,15 @@ class LaeuferView extends WatchUi.DataField {
         _cadence = info.currentCadence;
         _distance = info.elapsedDistance;
         _timer = info.timerTime;
+
+        // Prognose: bisherige Ø-Geschwindigkeit auf die Wettkampfdistanz hochgerechnet
+        var d = _distance;
+        var t = _timer;
+        if (d != null && t != null && d >= 500 && t > 0) {
+            _forecast = (d >= _raceDist) ? t : (t.toFloat() * _raceDist / d).toNumber();
+        } else {
+            _forecast = null;
+        }
     }
 
     // ---------------------------------------------------------------- Anzeige
@@ -103,7 +131,7 @@ class LaeuferView extends WatchUi.DataField {
         var h = dc.getHeight();
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawText(w / 2, h * 0.18, Graphics.FONT_XTINY, "PACE", Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
-        dc.setColor(paceColor(fg), Graphics.COLOR_TRANSPARENT);
+        dc.setColor(targetColor(fg), Graphics.COLOR_TRANSPARENT);
         dc.drawText(w / 2, h * 0.6, Graphics.FONT_NUMBER_MEDIUM, fmtPace(_pace), Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 
@@ -132,7 +160,7 @@ class LaeuferView extends WatchUi.DataField {
         dc.drawText(cx, h * 0.27, Graphics.FONT_XTINY, (zone > 0) ? "HF  Z" + zone : "HF", center);
 
         // Aktuelle Pace (groß)
-        dc.setColor(paceColor(fg), Graphics.COLOR_TRANSPARENT);
+        dc.setColor(targetColor(fg), Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, h * 0.42, Graphics.FONT_NUMBER_HOT, fmtPace(_pace), center);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, h * 0.545, Graphics.FONT_XTINY, paceLabel(), center);
@@ -147,26 +175,32 @@ class LaeuferView extends WatchUi.DataField {
         drawCell(dc, w * 0.29, h * 0.665, fmtDist(_distance), distLabel(), fg);
         drawCell(dc, w * 0.71, h * 0.665, fmtTime(_timer), "ZEIT", fg);
         // Ø-Pace | Kadenz
-        drawCell(dc, w * 0.36, h * 0.855, fmtPace(_avgPace), "Ø PACE", fg);
+        if (_bottomLeft == 1) {
+            drawCell(dc, w * 0.36, h * 0.855, fmtForecast(_forecast), "PROGNOSE", forecastColor(fg));
+        } else {
+            drawCell(dc, w * 0.36, h * 0.855, fmtPace(_avgPace), "Ø PACE", fg);
+        }
         drawCell(dc, w * 0.64, h * 0.855, (_cadence != null) ? _cadence.format("%d") : "--", "SPM", fg);
     }
 
-    hidden function drawCell(dc as Graphics.Dc, x as Numeric, y as Numeric, value as String, label as String, fg as Number) as Void {
-        dc.setColor(fg, Graphics.COLOR_TRANSPARENT);
+    hidden function drawCell(dc as Graphics.Dc, x as Numeric, y as Numeric, value as String, label as String, color as Number) as Void {
+        dc.setColor(color, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y, Graphics.FONT_MEDIUM, value, Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawText(x, y + dc.getFontHeight(Graphics.FONT_MEDIUM) * 0.6, Graphics.FONT_XTINY, label,
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 
-    //! Fünf Segmente von 150° bis 30° (oben); aktive Zone kräftig, Rest gedimmt
+    //! Fünf Segmente von 150° bis 30° (oben); aktive Zone kräftig, Rest gedimmt.
+    //! Im HF-Zielmodus ist die Zielzone dünn in ihrer Farbe markiert.
     hidden function drawZoneArc(dc as Graphics.Dc, cx as Number, cy as Number, r as Number, zone as Number) as Void {
         for (var i = 0; i < 5; i++) {
             var start = 150 - i * 24 - 1;
             var stop = 150 - (i + 1) * 24 + 1;
             var active = (i + 1 == zone);
             dc.setPenWidth(active ? 10 : 4);
-            dc.setColor(active ? ZONE_COLORS[i] as Number : Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
+            var isTarget = (_targetMode == 1 && i + 1 == _targetZone);
+            dc.setColor((active || isTarget) ? ZONE_COLORS[i] as Number : Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
             dc.drawArc(cx, cy, r, Graphics.ARC_CLOCKWISE, start, stop);
         }
         dc.setPenWidth(1);
@@ -189,8 +223,19 @@ class LaeuferView extends WatchUi.DataField {
         return 5;
     }
 
-    //! Grün = im Zielbereich, Rot = zu langsam, Blau = zu schnell
-    hidden function paceColor(fg as Number) as Number {
+    //! Pace-Modus: Grün = im Zielbereich, Rot = zu langsam, Blau = zu schnell
+    //! HF-Modus:   Grün = in der Zielzone, Rot = darüber, Blau = darunter
+    hidden function targetColor(fg as Number) as Number {
+        if (_targetMode == 1) {
+            if (_hr == null) {
+                return fg;
+            }
+            var zone = hrZone();
+            if (zone == _targetZone) {
+                return Graphics.COLOR_GREEN;
+            }
+            return (zone > _targetZone) ? Graphics.COLOR_RED : Graphics.COLOR_BLUE;
+        }
         var pace = _pace;
         if (_targetPace <= 0 || pace == null) {
             return fg;
@@ -205,6 +250,16 @@ class LaeuferView extends WatchUi.DataField {
         return Graphics.COLOR_GREEN;
     }
 
+    //! Grün, wenn die Prognose die Zielzeit (Zielpace x Distanz) schafft, sonst Rot
+    hidden function forecastColor(fg as Number) as Number {
+        var f = _forecast;
+        if (f == null || _targetMode != 0 || _targetPace <= 0) {
+            return fg;
+        }
+        var targetMs = _targetPace * 1000.0 * _raceDist / paceUnitMeters();
+        return (f <= targetMs) ? Graphics.COLOR_GREEN : Graphics.COLOR_RED;
+    }
+
     hidden function isStatute() as Boolean {
         return System.getDeviceSettings().paceUnits == System.UNIT_STATUTE;
     }
@@ -215,7 +270,9 @@ class LaeuferView extends WatchUi.DataField {
 
     hidden function paceLabel() as String {
         var l = isStatute() ? "PACE /mi" : "PACE /km";
-        if (_targetPace > 0) {
+        if (_targetMode == 1) {
+            l += "  Ziel Z" + _targetZone;
+        } else if (_targetPace > 0) {
             l += "  Ziel " + fmtPace(_targetPace.toFloat());
         }
         return l;
@@ -244,6 +301,18 @@ class LaeuferView extends WatchUi.DataField {
             return h.format("%d") + ":" + m.format("%02d") + ":" + (s % 60).format("%02d");
         }
         return m.format("%d") + ":" + (s % 60).format("%02d");
+    }
+
+    //! "3h28" ab einer Stunde, sonst "24:30"
+    hidden function fmtForecast(ms as Number?) as String {
+        if (ms == null) {
+            return "--:--";
+        }
+        var s = ms / 1000;
+        if (s >= 3600) {
+            return (s / 3600).format("%d") + "h" + ((s % 3600) / 60).format("%02d");
+        }
+        return (s / 60).format("%d") + ":" + (s % 60).format("%02d");
     }
 
     hidden function fmtDist(m as Float?) as String {

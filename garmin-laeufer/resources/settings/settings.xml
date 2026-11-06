@@ -1,8 +1,37 @@
 <settings>
+    <setting propertyKey="@Properties.targetMode" title="@Strings.TargetModeTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.ModePace</listEntry>
+            <listEntry value="1">@Strings.ModeHr</listEntry>
+        </settingConfig>
+    </setting>
     <setting propertyKey="@Properties.targetPace" title="@Strings.TargetPaceTitle">
         <settingConfig type="alphaNumeric"/>
     </setting>
     <setting propertyKey="@Properties.paceTolerance" title="@Strings.ToleranceTitle">
         <settingConfig type="numeric" min="0" max="60"/>
+    </setting>
+    <setting propertyKey="@Properties.targetZone" title="@Strings.TargetZoneTitle">
+        <settingConfig type="list">
+            <listEntry value="1">@Strings.Zone1</listEntry>
+            <listEntry value="2">@Strings.Zone2</listEntry>
+            <listEntry value="3">@Strings.Zone3</listEntry>
+            <listEntry value="4">@Strings.Zone4</listEntry>
+            <listEntry value="5">@Strings.Zone5</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.bottomLeft" title="@Strings.BottomLeftTitle">
+        <settingConfig type="list">
+            <listEntry value="0">@Strings.ShowAvgPace</listEntry>
+            <listEntry value="1">@Strings.ShowForecast</listEntry>
+        </settingConfig>
+    </setting>
+    <setting propertyKey="@Properties.raceDistance" title="@Strings.RaceDistanceTitle">
+        <settingConfig type="list">
+            <listEntry value="42195">@Strings.DistMarathon</listEntry>
+            <listEntry value="21098">@Strings.DistHalf</listEntry>
+            <listEntry value="10000">@Strings.Dist10k</listEntry>
+            <listEntry value="5000">@Strings.Dist5k</listEntry>
+        </settingConfig>
     </setting>
 </settings>
