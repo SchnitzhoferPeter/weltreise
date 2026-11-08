@@ -2,23 +2,23 @@
   "format": 1,
   "sitzung": "d56f9aa0-6fbc-5ade-ac96-7c4968219bf9",
   "von": "2026-11-06T19:27:59.460Z",
-  "bis": "2026-11-06T19:35:15.090Z",
-  "commits": 2,
+  "bis": "2026-11-08T15:54:55.528Z",
+  "commits": 3,
   "modelle": {
     "claude-opus-5-5": {
-      "anfragen": 15,
-      "eingabe": 32,
-      "cache_schreiben": 57382,
-      "cache_lesen": 1311427,
-      "ausgabe": 30336
+      "anfragen": 27,
+      "eingabe": 61,
+      "cache_schreiben": 139628,
+      "cache_lesen": 2679458,
+      "ausgabe": 36971
     }
   },
   "summe": {
-    "anfragen": 15,
-    "eingabe": 32,
-    "cache_schreiben": 57382,
-    "cache_lesen": 1311427,
-    "ausgabe": 30336,
-    "gesamt": 1399177
+    "anfragen": 27,
+    "eingabe": 61,
+    "cache_schreiben": 139628,
+    "cache_lesen": 2679458,
+    "ausgabe": 36971,
+    "gesamt": 2856118
   }
 }

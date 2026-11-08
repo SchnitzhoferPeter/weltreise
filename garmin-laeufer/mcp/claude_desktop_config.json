@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "garmin": {
+      "command": "uvx",
+      "args": [
+        "--python", "3.12",
+        "--from", "git+https://github.com/Taxuspt/garmin_mcp@a2ca5fcac34524b83814fe2fcf3d479f8a75983f",
+        "garmin-mcp"
+      ],
+      "env": {
+        "GARMIN_TOOL_PROFILE": "minimal",
+        "GARMIN_ENABLED_TOOLS": "get_race_predictions,get_vo2max_trend,get_training_load_balance,get_training_load_trend,get_training_effect,get_endurance_score,get_lactate_threshold,get_running_tolerance,get_running_tolerance_trend,get_hrv_trend,get_recovery_time_remaining,get_activity_hr_in_timezones,get_activity_typed_splits,get_activity_weather,get_personal_record,get_progress_summary_between_dates,get_scheduled_workouts,get_training_plan_workouts"
+      }
+    }
+  }
+}
