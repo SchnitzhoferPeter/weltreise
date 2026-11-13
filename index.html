@@ -409,6 +409,13 @@ dialog.panel .note code{font-size:14px}
 .vland i{display:block;height:12px}
 .vland u{display:block;height:100%;background:var(--live);border-radius:0 4px 4px 0;text-decoration:none}
 .vland b{text-align:right;font-weight:600}
+.chip.is-new{border-color:var(--live);color:var(--live);font-weight:700}
+.guide-h{margin:18px 0 8px;font-family:'Newsreader',Georgia,serif;font-size:22px}
+details.guide{border:1px solid var(--line-soft);border-radius:10px;background:var(--card);margin:0 0 8px}
+details.guide summary{cursor:pointer;padding:12px 14px;font-weight:600;min-height:44px;list-style-position:inside}
+details.guide[open] summary{border-bottom:1px solid var(--line-soft)}
+details.guide p{margin:10px 14px 12px;font-size:16px;line-height:1.5}
+#guideBox{margin:0 0 14px}
 .cs-clim{font-size:17px;line-height:1.45}
 .cs-src{font-size:14px;color:var(--ink-2);margin-top:6px;line-height:1.45}
 .rows{display:grid;gap:0}
@@ -609,6 +616,7 @@ dialog.panel .note code{font-size:14px}
       <a class="chip" id="mtLink" href="https://www.marinetraffic.com/en/ais/details/ships/imo:9398917" target="_blank" rel="noopener">MarineTraffic</a>
       <button class="chip" id="cfgBtn">Positionsquelle</button>
       <button class="chip" id="refreshBtn">Aktualisieren</button>
+      <button class="chip" id="reloadBtn" title="Lädt die neueste Fassung der Seite; Einträge bleiben erhalten">App neu laden</button>
     </div>
   </section>
 
@@ -1185,6 +1193,24 @@ const CRUISESHEET = {
   }
 };
 const csFor = c => c.transit ? null : CRUISESHEET.ports[c.d1] || null;
+/* Hafenführer: deutsche Zusammenfassung der CruiseSheet-Hafenseiten (data/hafeninfo.json, Schlüssel = Kennung s).
+   Wird erst beim Öffnen eines Hafens geladen. Wo CruiseSheet einen anderen Ort führt (alt), bleibt der Block weg. */
+const GUIDE_FILE = "data/hafeninfo.json";
+const GUIDE_PARTS = [["top","Sehenswürdigkeiten"],["nah","Orte und Ziele in der Nähe"],["lage","Lage des Hafens"],["unterwegs","Unterwegs vor Ort"],["einkauf","Einkaufen"]];
+let guideData = null;
+function loadGuide(){
+  if(!guideData) guideData = fetch(GUIDE_FILE).then(r => r.ok ? r.json() : {}).catch(() => { guideData = null; return {}; });
+  return guideData;
+}
+function guideHtml(g, cs){
+  if(!g) return "";
+  const parts = GUIDE_PARTS.filter(([k]) => g[k]).map(([k, title]) => `<details class="guide"><summary>${title}</summary><p>${esc(g[k])}</p></details>`).join("");
+  const faq = Array.isArray(g.faq) && g.faq.length
+    ? `<details class="guide"><summary>Häufige Fragen</summary>${g.faq.map(([q, a]) => `<p><b>${esc(q)}</b><br>${esc(a)}</p>`).join("")}</details>` : "";
+  if(!parts && !faq) return "";
+  return `<h3 class="guide-h">Hafenführer</h3>${parts}${faq}
+    <p class="cs-src">Zusammengefasst nach dem <a href="${CRUISESHEET.port}${cs.s}" target="_blank" rel="noopener">Hafenführer von CruiseSheet</a> (englisch, Stand 13. Nov. 2026). Angaben vor Ort prüfen.</p>`;
+}
 const PORTS = CALLS.filter(c => !c.transit);            /* Anläufe ohne Kanaldurchfahrt */
 const countries = new Set(CALLS.map(c => c.c.split(" · ")[0]));
 const seaDayCount = TOTAL_DAYS - portDays.size;
@@ -2607,6 +2633,7 @@ function renderSheet(i){
       ${c.note ? `<p class="hint">${c.note}</p>` : ""}
 
       <div class="hint" id="diaryHint" style="margin-top:22px" hidden></div>
+      <div id="guideBox"></div>
       <div class="links">
         <a class="chip" href="https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lon}" target="_blank" rel="noopener">Google Maps</a>
         <a class="chip" href="https://de.wikipedia.org/wiki/${encodeURIComponent(c.w)}" target="_blank" rel="noopener">Wikipedia</a>
@@ -2621,6 +2648,14 @@ function renderSheet(i){
   sheetBody.dataset.i = i;
   sheetBody.querySelectorAll(".pager button[data-go]").forEach(b => b.addEventListener("click", () => goTo(+b.dataset.go)));
   renderExcursions(i);
+
+  /* Hafenführer */
+  const cs = csFor(c);
+  if(cs && !cs.alt) loadGuide().then(all => {
+    if(sheetBody.dataset.i != i) return;
+    const box = el("guideBox");
+    if(box) box.innerHTML = guideHtml(all[cs.s], cs);
+  });
 
   /* Bild */
   const hero = el("hero");
@@ -3112,6 +3147,53 @@ setInterval(() => { loadFilePosition().then(refreshView); }, 5 * 60000);
 setInterval(refreshWarnings, 30 * 60000);
 setInterval(renderList, 10 * 60000);
 document.addEventListener("visibilitychange", () => { if(!document.hidden){ loadFilePosition().then(refreshView); refreshWarnings(); if(sync.url){ recordVisit(); pullShared().then(ch => { if(ch) refreshShared(); }); } } });
+/* ---------- Neue Fassung der Seite ----------
+   Als App am Startbildschirm (iOS) bleibt die Seite tagelang im Speicher und hat keinen Neu-laden-Knopf.
+   Deshalb: Knopf „App neu laden“ (holt die Seite frisch vom Server, Einträge im Browser bleiben) und eine
+   Prüfung beim Zurückkehren zur App – liegt am Server eine neuere index.html, lädt die Seite von selbst neu,
+   außer es ist gerade ein Formular oder Dialog offen; dann meldet sich nur der Knopf. */
+let pageVersion = null, versionChecked = 0;
+async function serverVersion(){
+  try{
+    const r = await fetch(location.pathname + "?v=" + Date.now(), {method:"HEAD", cache:"no-store"});
+    return r.ok ? (r.headers.get("etag") || r.headers.get("last-modified") || "") : "";
+  }catch(e){ return ""; }
+}
+async function reloadApp(){
+  const btn = el("reloadBtn");
+  btn.disabled = true; btn.textContent = "Wird geladen …";
+  /* Der Service Worker holt bei Verbindung immer zuerst vom Netz; sein Zwischenspeicher bleibt als Rückfall für
+     schwaches Schiffs-WLAN bestehen. Hier wird nur die frische Seite am Browser-Cache vorbei geholt.
+     Das darf den Neustart nicht aufhalten: nach 4 Sekunden wird in jedem Fall neu geladen. */
+  const fresh = (async () => {
+    try{
+      await fetch(location.pathname, {cache:"reload"});
+      if("serviceWorker" in navigator){ const reg = await navigator.serviceWorker.getRegistration(); if(reg) await reg.update(); }
+    }catch(e){}
+  })();
+  await Promise.race([fresh, new Promise(done => setTimeout(done, 4000))]);
+  location.reload();
+}
+async function checkVersion(){
+  if(!location.protocol.startsWith("http") || !navigator.onLine || Date.now() - versionChecked < 5 * 60000) return;
+  versionChecked = Date.now();
+  const v = await serverVersion();
+  if(!v) return;
+  if(pageVersion === null){ pageVersion = v; return; }
+  if(v === pageVersion) return;
+  const form = el("excForm");
+  const busy = document.querySelector("dialog[open]") || (form && !form.hidden);
+  /* Höchstens ein selbsttätiger Neustart pro Stunde, damit ein schwankender Serverstand keine Schleife auslöst */
+  let lastAuto = 0;
+  try{ lastAuto = +localStorage.getItem(LS + "autoReload") || 0; }catch(e){}
+  const recent = Date.now() - lastAuto < 3600000;
+  if(busy || recent){ const btn = el("reloadBtn"); btn.textContent = "Neue Fassung – App neu laden"; btn.classList.add("is-new"); if(recent) pageVersion = v; }
+  else{ try{ localStorage.setItem(LS + "autoReload", String(Date.now())); }catch(e){} reloadApp(); }
+}
+el("reloadBtn").addEventListener("click", reloadApp);
+checkVersion();
+document.addEventListener("visibilitychange", () => { if(!document.hidden) checkVersion(); });
+setInterval(() => { if(!document.hidden) checkVersion(); }, 30 * 60000);
 if("serviceWorker" in navigator && location.protocol.startsWith("http")){
   navigator.serviceWorker.register("sw.js").catch(() => {});
 }
