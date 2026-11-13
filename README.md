@@ -75,6 +75,9 @@ Der Entwurf liegt als Design-Canvas vor: https://claude.ai/code/artifact/2898c28
 
 **Sonstiges**
 - `Kalender .ics`: alle Anläufe als Kalenderdatei für Outlook, iOS oder Android
+- **App neu laden** (unter der Bordkarte) holt die neueste Fassung der Seite, auch wenn sie als App am
+  Startbildschirm liegt; Einträge bleiben erhalten. Beim Zurückkehren zur App prüft die Seite selbst, ob es
+  eine neuere Fassung gibt, und lädt sie – außer es ist gerade ein Formular oder Dialog offen
 - Als App installierbar (Web-Manifest + Service Worker), startet auch bei schwachem
   Schiffs-WLAN; Wetter- und Positionsdaten werden zwischengespeichert
 - Direktlinks je Hafen (`index.html#hafen-21`)

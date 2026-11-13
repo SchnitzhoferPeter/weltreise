@@ -409,6 +409,7 @@ dialog.panel .note code{font-size:14px}
 .vland i{display:block;height:12px}
 .vland u{display:block;height:100%;background:var(--live);border-radius:0 4px 4px 0;text-decoration:none}
 .vland b{text-align:right;font-weight:600}
+.chip.is-new{border-color:var(--live);color:var(--live);font-weight:700}
 .cs-clim{font-size:17px;line-height:1.45}
 .cs-src{font-size:14px;color:var(--ink-2);margin-top:6px;line-height:1.45}
 .rows{display:grid;gap:0}
@@ -609,6 +610,7 @@ dialog.panel .note code{font-size:14px}
       <a class="chip" id="mtLink" href="https://www.marinetraffic.com/en/ais/details/ships/imo:9398917" target="_blank" rel="noopener">MarineTraffic</a>
       <button class="chip" id="cfgBtn">Positionsquelle</button>
       <button class="chip" id="refreshBtn">Aktualisieren</button>
+      <button class="chip" id="reloadBtn" title="Lädt die neueste Fassung der Seite; Einträge bleiben erhalten">App neu laden</button>
     </div>
   </section>
 
@@ -3112,6 +3114,52 @@ setInterval(() => { loadFilePosition().then(refreshView); }, 5 * 60000);
 setInterval(refreshWarnings, 30 * 60000);
 setInterval(renderList, 10 * 60000);
 document.addEventListener("visibilitychange", () => { if(!document.hidden){ loadFilePosition().then(refreshView); refreshWarnings(); if(sync.url){ recordVisit(); pullShared().then(ch => { if(ch) refreshShared(); }); } } });
+/* ---------- Neue Fassung der Seite ----------
+   Als App am Startbildschirm (iOS) bleibt die Seite tagelang im Speicher und hat keinen Neu-laden-Knopf.
+   Deshalb: Knopf „App neu laden“ (holt die Seite frisch vom Server, Einträge im Browser bleiben) und eine
+   Prüfung beim Zurückkehren zur App – liegt am Server eine neuere index.html, lädt die Seite von selbst neu,
+   außer es ist gerade ein Formular oder Dialog offen; dann meldet sich nur der Knopf. */
+let pageVersion = null, versionChecked = 0;
+async function serverVersion(){
+  try{
+    const r = await fetch(location.pathname + "?v=" + Date.now(), {method:"HEAD", cache:"no-store"});
+    return r.ok ? (r.headers.get("etag") || r.headers.get("last-modified") || "") : "";
+  }catch(e){ return ""; }
+}
+async function reloadApp(){
+  const btn = el("reloadBtn");
+  btn.disabled = true; btn.textContent = "Wird geladen …";
+  /* Der Service Worker holt bei Verbindung immer zuerst vom Netz; sein Zwischenspeicher bleibt als Rückfall für
+     schwaches Schiffs-WLAN bestehen. Hier wird nur die frische Seite am Browser-Cache vorbei geholt.
+     Das darf den Neustart nicht aufhalten: nach 4 Sekunden wird in jedem Fall neu geladen. */
+  const fresh = (async () => {
+    try{
+      await fetch(location.pathname, {cache:"reload"});
+      if("serviceWorker" in navigator){ const reg = await navigator.serviceWorker.getRegistration(); if(reg) await reg.update(); }
+    }catch(e){}
+  })();
+  await Promise.race([fresh, new Promise(done => setTimeout(done, 4000))]);
+  location.reload();
+}
+async function checkVersion(){
+  if(!location.protocol.startsWith("http") || !navigator.onLine || Date.now() - versionChecked < 5 * 60000) return;
+  versionChecked = Date.now();
+  const v = await serverVersion();
+  if(!v) return;
+  if(pageVersion === null){ pageVersion = v; return; }
+  if(v === pageVersion) return;
+  const form = el("excForm");
+  const busy = document.querySelector("dialog[open]") || (form && !form.hidden);
+  /* Höchstens ein selbsttätiger Neustart pro Stunde, damit ein schwankender Serverstand keine Schleife auslöst */
+  let lastAuto = 0;
+  try{ lastAuto = +localStorage.getItem(LS + "autoReload") || 0; }catch(e){}
+  if(busy || Date.now() - lastAuto < 3600000){ const btn = el("reloadBtn"); btn.textContent = "Neue Fassung – App neu laden"; btn.classList.add("is-new"); pageVersion = v; }
+  else{ try{ localStorage.setItem(LS + "autoReload", String(Date.now())); }catch(e){} reloadApp(); }
+}
+el("reloadBtn").addEventListener("click", reloadApp);
+checkVersion();
+document.addEventListener("visibilitychange", () => { if(!document.hidden) checkVersion(); });
+setInterval(() => { if(!document.hidden) checkVersion(); }, 30 * 60000);
 if("serviceWorker" in navigator && location.protocol.startsWith("http")){
   navigator.serviceWorker.register("sw.js").catch(() => {});
 }
