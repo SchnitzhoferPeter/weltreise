@@ -114,8 +114,8 @@ dann zeigt die Seite den Trip in einem eigenen Bereich.
 Selbst eingetragene Landausflüge liegen zuerst im Browser. Ist in `data/sync.json` die Adresse
 einer Firebase Realtime Database hinterlegt (Vorlage: `data/sync.example.json`), teilt die Seite
 sie mit allen: eigene Änderungen werden sofort hochgeladen, fremde jede Minute und beim Zurückkehren
-zur Seite abgeholt; der jüngere Stand gewinnt. Die Adresse ist im Repository öffentlich; wer sie
-kennt, kann mitschreiben.
+zur Seite abgeholt; der jüngere Stand gewinnt. Die Datenbank nimmt nur angemeldete Aufrufe der
+Website an – siehe „Datenbank absichern“.
 
 Jeder Eintrag hat die Knöpfe **Bearbeiten** und **Löschen**. Bearbeiten öffnet das Formular mit den
 vorhandenen Angaben; es lässt sich gezielt eine Angabe ändern oder ergänzen (etwa „Treffpunkt Deck 3“ oder die
@@ -134,9 +134,45 @@ hat. Häfen, die mehrfach angelaufen werden (Civitavecchia, Savona, Marseille �
 eigene Seite mit eigener Ausflugsliste; ein Hinweis auf der Seite nennt Tag und Datum und verlinkt die
 anderen Anläufe.
 
-Ob die Datenbank von außen erreichbar ist, prüft die Action **Gemeinsamen Speicher prüfen**
-(Actions → Run workflow): sie liest, schreibt und löscht einen Probeeintrag und zeigt die
-HTTP-Antworten im Protokoll.
+Ob der Schutz greift, prüft die Action **Gemeinsamen Speicher prüfen** (Actions → Run workflow):
+Ohne Anmeldung muss die Datenbank jeden Zugriff abweisen, mit anonymer Anmeldung müssen Lesen und
+Schreiben eines Probeeintrags gelingen. Sie schlägt fehl, solange die Datenbank offen ist.
+
+## Datenbank absichern
+
+Die Website meldet sich bei Firebase anonym an (ohne Konto, ohne Eingabe) und schickt das
+Anmelde-Token bei jedem Zugriff mit. Die Regeln in `database.rules.json` lassen nur solche Aufrufe
+zu, nur auf die drei Bereiche `notes`, `excursions` und `visits`, und prüfen Form und Größe jedes
+Eintrags. Hartes Löschen und das Überschreiben ganzer Listen sind gesperrt.
+
+Einmalig in dieser Reihenfolge einrichten:
+
+1. **Firebase-Konsole → Authentication → Sign-in method → Anonym** aktivieren.
+2. **Projekteinstellungen → Allgemein → Web-API-Schlüssel** kopieren und in `data/sync.json` als
+   `apiKey` eintragen. Der Schlüssel ist kein Geheimnis; er darf im Repository stehen.
+3. **Google-Cloud-Konsole → APIs & Dienste → Anmeldedaten →** diesen Schlüssel öffnen,
+   „Websites“ wählen und `schnitzhoferpeter.github.io/*` eintragen. Damit nimmt Google
+   Anmeldungen nur noch von der Website an.
+4. Seite neu laden und prüfen, dass unter einem Ausflug „Geteilt mit allen“ steht.
+5. **Realtime Database → Regeln:** Inhalt von `database.rules.json` einfügen und veröffentlichen.
+6. Action **Gemeinsamen Speicher prüfen** starten – alle Zeilen müssen grün sein.
+
+Erst mit Schritt 5 ist die Datenbank geschlossen; davor arbeitet die Seite wie bisher. Grenze des
+Schutzes: Eine öffentliche Seite ohne Login kann ihre Besucher nicht ausweisen. Wer die Seite
+gezielt nachbaut, kann sich ebenfalls anonym anmelden – dann aber nur einzelne, formgeprüfte
+Einträge lesen und schreiben. Wer mehr will, schaltet in Firebase zusätzlich App Check ein.
+
+## Besucherauswertung
+
+Der Knopf **Besucher** (Direktlink `index.html#besucher`) zeigt Besucher heute, in den letzten
+7 und 30 Tagen und insgesamt, die Besucher je Tag, die Herkunft nach Ländern, Gerätearten und die
+Zahl der App-Installationen. Gezählt wird in der eigenen Datenbank unter `visits/<Tag>/<Kennung>`;
+ein Aufruf zählt neu, wenn der letzte länger als 30 Minuten her ist.
+
+Ein Besucher ist ein Browser auf einem Gerät, erkannt an einer zufälligen Kennung im Browser.
+Die Herkunft ist das Land der am Gerät eingestellten Zeitzone (`data/zonen.json`, aus der
+IANA-Zeitzonendatenbank) – die Seite fragt dafür keinen fremden Dienst und speichert weder Namen
+noch IP-Adressen. Wer an Bord die Seite öffnet, erscheint dort, wo das Schiff gerade ist.
 
 ## Routenänderungen
 

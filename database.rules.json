@@ -1,0 +1,58 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "weltreise": {
+      "notes": {
+        ".read": "auth != null",
+        "$key": {
+          ".write": "auth != null && newData.exists()",
+          ".validate": "newData.hasChildren(['text', 'updatedAt'])",
+          "text": { ".validate": "newData.isString() && newData.val().length <= 5000" },
+          "updatedAt": { ".validate": "newData.isNumber()" },
+          "by": { ".validate": "newData.isString() && newData.val().length <= 60" },
+          "$other": { ".validate": false }
+        }
+      },
+      "excursions": {
+        ".read": "auth != null",
+        "$id": {
+          ".write": "auth != null && newData.exists()",
+          ".validate": "newData.hasChildren(['id', 'updatedAt'])",
+          "id": { ".validate": "newData.isString() && newData.val().length <= 60" },
+          "port": { ".validate": "newData.isString() && newData.val().length <= 120" },
+          "updatedAt": { ".validate": "newData.isNumber()" },
+          "deleted": { ".validate": "newData.isBoolean()" },
+          "title": { ".validate": "newData.isString() && newData.val().length <= 5000" },
+          "note": { ".validate": "newData.isString() && newData.val().length <= 5000" },
+          "$other": { ".validate": "(newData.isString() && newData.val().length <= 500) || newData.isNumber() || newData.isBoolean()" }
+        }
+      },
+      "visits": {
+        ".read": "auth != null",
+        "$day": {
+          ".validate": "$day.matches(/^20[0-9][0-9]-[0-9][0-9]-[0-9][0-9]$/)",
+          "$vid": {
+            ".write": "auth != null && newData.exists()",
+            ".validate": "$vid.matches(/^[A-Za-z0-9]{8,40}$/) && newData.hasChildren(['at', 'n'])",
+            "at": { ".validate": "newData.isNumber()" },
+            "n": { ".validate": "newData.isNumber() && newData.val() >= 1 && newData.val() <= 500" },
+            "tz": { ".validate": "newData.isString() && newData.val().length <= 64" },
+            "lang": { ".validate": "newData.isString() && newData.val().length <= 20" },
+            "dev": { ".validate": "newData.isString() && newData.val().length <= 12" },
+            "app": { ".validate": "newData.isBoolean()" },
+            "$other": { ".validate": false }
+          }
+        }
+      },
+      "_probe": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        ".validate": "newData.hasChildren(['at', 'from'])",
+        "at": { ".validate": "newData.isString() && newData.val().length <= 40" },
+        "from": { ".validate": "newData.isString() && newData.val().length <= 40" },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}

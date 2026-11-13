@@ -1,7 +1,7 @@
 /* Kleiner Service Worker: die Seite startet auch bei schlechtem Schiffs-WLAN.
    Wetter- und Positionsdaten werden bewusst nicht gecacht – die kommen aus dem Netz
    oder aus dem localStorage-Cache der Seite selbst. */
-const CACHE = "weltreise-v2";
+const CACHE = "weltreise-v3";
 const SHELL = [
   "./",
   "./index.html",
@@ -30,6 +30,7 @@ self.addEventListener("fetch", e => {
   const req = e.request;
   if(req.method !== "GET") return;
   const url = new URL(req.url);
+  if(url.hostname.endsWith("firebasedatabase.app") || url.hostname.endsWith("firebaseio.com") || url.hostname.endsWith("googleapis.com") && url.hostname !== "fonts.googleapis.com") return;
   if(url.hostname.includes("open-meteo.com") || url.pathname.endsWith("position.json") || url.pathname.endsWith("bilder.json")) return;
 
   e.respondWith(

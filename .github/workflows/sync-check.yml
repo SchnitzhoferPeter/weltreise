@@ -1,6 +1,7 @@
 name: Gemeinsamen Speicher prüfen
 
-# Prüft von GitHub aus, ob die Firebase-Datenbank aus data/sync.json lesbar und beschreibbar ist.
+# Prüft von GitHub aus, ob die Firebase-Datenbank aus data/sync.json ohne Anmeldung gesperrt
+# und mit anonymer Anmeldung (wie von der Website) lesbar und beschreibbar ist.
 # Manuell starten: Actions → „Gemeinsamen Speicher prüfen“ → Run workflow.
 
 on:
@@ -18,25 +19,45 @@ jobs:
         with:
           fetch-depth: 1
 
-      - name: Lesen und Schreiben testen
+      - name: Schutz und Zugriff testen
         run: |
           URL="$(node -e 'console.log(JSON.parse(require("fs").readFileSync("data/sync.json","utf8")).url.replace(/\/+$/,""))')"
+          KEY="$(node -e 'console.log((JSON.parse(require("fs").readFileSync("data/sync.json","utf8")).apiKey||"").trim())')"
+          SITE="https://schnitzhoferpeter.github.io/"
+          FAIL=0
           echo "Datenbank: $URL"
           echo
-          echo "== GET $URL/excursions.json (flach) =="
-          curl -sS -w "\nHTTP %{http_code}\n" "$URL/excursions.json?shallow=true" | head -c 3000
+          echo "== Ohne Anmeldung (muss abgewiesen werden) =="
+          for P in "" "/excursions" "/visits"; do
+            CODE="$(curl -sS -o /dev/null -w '%{http_code}' "$URL$P.json?shallow=true")"
+            echo "GET $P.json → HTTP $CODE"
+            if [ "$CODE" = "200" ]; then echo "::error::$URL$P.json ist ohne Anmeldung lesbar – Regeln aus database.rules.json einspielen"; FAIL=1; fi
+          done
+          CODE="$(curl -sS -o /dev/null -w '%{http_code}' -X PUT -H 'Content-Type: application/json' -d '{"at":"x","from":"github-action"}' "$URL/_probe.json")"
+          echo "PUT /_probe.json → HTTP $CODE"
+          if [ "$CODE" = "200" ]; then echo "::error::Die Datenbank ist ohne Anmeldung beschreibbar – Regeln aus database.rules.json einspielen"; FAIL=1; fi
           echo
-          echo "== GET $URL/.json (gesamt, gekürzt) =="
-          curl -sS -w "\nHTTP %{http_code}\n" "$URL/.json" | head -c 3000
+          if [ -z "$KEY" ]; then
+            echo "::warning::In data/sync.json fehlt apiKey – die Website kann sich nicht anmelden."
+            exit $FAIL
+          fi
+          echo "== Anonyme Anmeldung wie die Website =="
+          TOKEN="$(curl -sS -H "Referer: $SITE" -H 'Content-Type: application/json' -d '{"returnSecureToken":true}' \
+            "https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=$KEY" | node -e 'let d="";process.stdin.on("data",c=>d+=c).on("end",()=>{try{const j=JSON.parse(d);if(j.idToken)console.log(j.idToken);else console.error(JSON.stringify(j.error||j))}catch(e){console.error(d.slice(0,300))}})')"
+          if [ -z "$TOKEN" ]; then echo "::error::Anmeldung abgelehnt – apiKey, Website-Beschränkung und anonyme Anmeldung prüfen"; exit 1; fi
+          echo "Anmeldung in Ordnung"
           echo
-          echo "== PUT $URL/_probe.json =="
-          curl -sS -w "\nHTTP %{http_code}\n" -X PUT -H "Content-Type: application/json" \
-            -d "{\"at\":\"$(date -u +%FT%TZ)\",\"from\":\"github-action\"}" "$URL/_probe.json" | head -c 1000
-          echo
-          echo "== DELETE $URL/_probe.json =="
-          curl -sS -w "\nHTTP %{http_code}\n" -X DELETE "$URL/_probe.json" | head -c 500
-          echo
-          echo "== CORS-Preflight (wie der Browser) =="
-          curl -sS -o /dev/null -D - -X OPTIONS -H "Origin: https://schnitzhoferpeter.github.io" \
-            -H "Access-Control-Request-Method: PUT" -H "Access-Control-Request-Headers: content-type" \
-            "$URL/_probe.json" | head -20
+          echo "== Mit Anmeldung (muss funktionieren) =="
+          check() { # Beschreibung, erwarteter Code, curl-Argumente …
+            local WHAT="$1" WANT="$2"; shift 2
+            local CODE; CODE="$(curl -sS -o /dev/null -w '%{http_code}' "$@")"
+            echo "$WHAT → HTTP $CODE (erwartet $WANT)"
+            if [ "$CODE" != "$WANT" ]; then echo "::error::$WHAT: HTTP $CODE statt $WANT"; FAIL=1; fi
+          }
+          check "Ausflüge lesen" 200 "$URL/excursions.json?shallow=true&auth=$TOKEN"
+          check "Besuche lesen" 200 "$URL/visits.json?shallow=true&auth=$TOKEN"
+          check "Probe schreiben" 200 -X PUT -H 'Content-Type: application/json' -d "{\"at\":\"$(date -u +%FT%TZ)\",\"from\":\"github-action\"}" "$URL/_probe.json?auth=$TOKEN"
+          check "Probe löschen" 200 -X DELETE "$URL/_probe.json?auth=$TOKEN"
+          check "Gesamte Datenbank lesen (muss abgewiesen werden)" 401 "$URL/.json?shallow=true&auth=$TOKEN"
+          check "Fremden Pfad schreiben (muss abgewiesen werden)" 401 -X PUT -H 'Content-Type: application/json' -d '{"a":1}' "$URL/fremd.json?auth=$TOKEN"
+          exit $FAIL
