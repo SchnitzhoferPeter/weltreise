@@ -2,15 +2,15 @@
   "format": 1,
   "sitzung": "e4342411-2ff9-50ac-a707-bb23dc105556",
   "von": "2026-11-13T19:29:21.019Z",
-  "bis": "2026-11-13T20:22:48.496Z",
-  "commits": 5,
+  "bis": "2026-11-13T20:23:59.239Z",
+  "commits": 6,
   "modelle": {
     "claude-fable-5-2": {
-      "anfragen": 64,
-      "eingabe": 141,
-      "cache_schreiben": 185598,
-      "cache_lesen": 11401114,
-      "ausgabe": 71429
+      "anfragen": 66,
+      "eingabe": 145,
+      "cache_schreiben": 188834,
+      "cache_lesen": 11892128,
+      "ausgabe": 73502
     },
     "claude-haiku-5-5": {
       "anfragen": 2,
@@ -21,11 +21,11 @@
     }
   },
   "summe": {
-    "anfragen": 66,
-    "eingabe": 145,
-    "cache_schreiben": 193191,
-    "cache_lesen": 11406048,
-    "ausgabe": 72581,
-    "gesamt": 11671965
+    "anfragen": 68,
+    "eingabe": 149,
+    "cache_schreiben": 196427,
+    "cache_lesen": 11897062,
+    "ausgabe": 74654,
+    "gesamt": 12168292
   }
 }

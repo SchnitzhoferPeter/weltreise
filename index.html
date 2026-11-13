@@ -3153,7 +3153,8 @@ async function checkVersion(){
   /* Höchstens ein selbsttätiger Neustart pro Stunde, damit ein schwankender Serverstand keine Schleife auslöst */
   let lastAuto = 0;
   try{ lastAuto = +localStorage.getItem(LS + "autoReload") || 0; }catch(e){}
-  if(busy || Date.now() - lastAuto < 3600000){ const btn = el("reloadBtn"); btn.textContent = "Neue Fassung – App neu laden"; btn.classList.add("is-new"); pageVersion = v; }
+  const recent = Date.now() - lastAuto < 3600000;
+  if(busy || recent){ const btn = el("reloadBtn"); btn.textContent = "Neue Fassung – App neu laden"; btn.classList.add("is-new"); if(recent) pageVersion = v; }
   else{ try{ localStorage.setItem(LS + "autoReload", String(Date.now())); }catch(e){} reloadApp(); }
 }
 el("reloadBtn").addEventListener("click", reloadApp);
