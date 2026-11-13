@@ -42,6 +42,9 @@ Der Entwurf liegt als Design-Canvas vor: https://claude.ai/code/artifact/2898c28
   CruiseSheet (`cruisesheet.com/port/…`);
   die Werte stehen in `index.html` in `CRUISESHEET` (Stand 13. Nov. 2026). Civitavecchia fehlt dort,
   für Panama-Stadt führt CruiseSheet noch Colón
+- Hafenführer zum Aufklappen: Sehenswürdigkeiten, Ziele in der Nähe, Lage des Hafens, Unterwegs vor Ort,
+  Einkaufen und häufige Fragen – deutsche Zusammenfassung der CruiseSheet-Hafenseiten in
+  `data/hafeninfo.json` (Stand 13. Nov. 2026), mit Absprung zur Quelle
 - Ankunftsprognose, wenn es der nächste Hafen ist
 - Verweis auf das Reisetagebuch in FindPenguins
 - Links zu Google Maps, Wikipedia, Windy und ein kopierbarer Direktlink

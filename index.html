@@ -410,6 +410,12 @@ dialog.panel .note code{font-size:14px}
 .vland u{display:block;height:100%;background:var(--live);border-radius:0 4px 4px 0;text-decoration:none}
 .vland b{text-align:right;font-weight:600}
 .chip.is-new{border-color:var(--live);color:var(--live);font-weight:700}
+.guide-h{margin:18px 0 8px;font-family:'Newsreader',Georgia,serif;font-size:22px}
+details.guide{border:1px solid var(--line-soft);border-radius:10px;background:var(--card);margin:0 0 8px}
+details.guide summary{cursor:pointer;padding:12px 14px;font-weight:600;min-height:44px;list-style-position:inside}
+details.guide[open] summary{border-bottom:1px solid var(--line-soft)}
+details.guide p{margin:10px 14px 12px;font-size:16px;line-height:1.5}
+#guideBox{margin:0 0 14px}
 .cs-clim{font-size:17px;line-height:1.45}
 .cs-src{font-size:14px;color:var(--ink-2);margin-top:6px;line-height:1.45}
 .rows{display:grid;gap:0}
@@ -1187,6 +1193,24 @@ const CRUISESHEET = {
   }
 };
 const csFor = c => c.transit ? null : CRUISESHEET.ports[c.d1] || null;
+/* Hafenführer: deutsche Zusammenfassung der CruiseSheet-Hafenseiten (data/hafeninfo.json, Schlüssel = Kennung s).
+   Wird erst beim Öffnen eines Hafens geladen. Wo CruiseSheet einen anderen Ort führt (alt), bleibt der Block weg. */
+const GUIDE_FILE = "data/hafeninfo.json";
+const GUIDE_PARTS = [["top","Sehenswürdigkeiten"],["nah","Orte und Ziele in der Nähe"],["lage","Lage des Hafens"],["unterwegs","Unterwegs vor Ort"],["einkauf","Einkaufen"]];
+let guideData = null;
+function loadGuide(){
+  if(!guideData) guideData = fetch(GUIDE_FILE).then(r => r.ok ? r.json() : {}).catch(() => { guideData = null; return {}; });
+  return guideData;
+}
+function guideHtml(g, cs){
+  if(!g) return "";
+  const parts = GUIDE_PARTS.filter(([k]) => g[k]).map(([k, title]) => `<details class="guide"><summary>${title}</summary><p>${esc(g[k])}</p></details>`).join("");
+  const faq = Array.isArray(g.faq) && g.faq.length
+    ? `<details class="guide"><summary>Häufige Fragen</summary>${g.faq.map(([q, a]) => `<p><b>${esc(q)}</b><br>${esc(a)}</p>`).join("")}</details>` : "";
+  if(!parts && !faq) return "";
+  return `<h3 class="guide-h">Hafenführer</h3>${parts}${faq}
+    <p class="cs-src">Zusammengefasst nach dem <a href="${CRUISESHEET.port}${cs.s}" target="_blank" rel="noopener">Hafenführer von CruiseSheet</a> (englisch, Stand 13. Nov. 2026). Angaben vor Ort prüfen.</p>`;
+}
 const PORTS = CALLS.filter(c => !c.transit);            /* Anläufe ohne Kanaldurchfahrt */
 const countries = new Set(CALLS.map(c => c.c.split(" · ")[0]));
 const seaDayCount = TOTAL_DAYS - portDays.size;
@@ -2609,6 +2633,7 @@ function renderSheet(i){
       ${c.note ? `<p class="hint">${c.note}</p>` : ""}
 
       <div class="hint" id="diaryHint" style="margin-top:22px" hidden></div>
+      <div id="guideBox"></div>
       <div class="links">
         <a class="chip" href="https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lon}" target="_blank" rel="noopener">Google Maps</a>
         <a class="chip" href="https://de.wikipedia.org/wiki/${encodeURIComponent(c.w)}" target="_blank" rel="noopener">Wikipedia</a>
@@ -2623,6 +2648,14 @@ function renderSheet(i){
   sheetBody.dataset.i = i;
   sheetBody.querySelectorAll(".pager button[data-go]").forEach(b => b.addEventListener("click", () => goTo(+b.dataset.go)));
   renderExcursions(i);
+
+  /* Hafenführer */
+  const cs = csFor(c);
+  if(cs && !cs.alt) loadGuide().then(all => {
+    if(sheetBody.dataset.i != i) return;
+    const box = el("guideBox");
+    if(box) box.innerHTML = guideHtml(all[cs.s], cs);
+  });
 
   /* Bild */
   const hero = el("hero");
