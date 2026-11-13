@@ -38,6 +38,10 @@ Der Entwurf liegt als Design-Canvas vor: https://claude.ai/code/artifact/2898c28
 - Wetter vor Ort jetzt (inkl. Sonnenauf- und -untergang, Wassertemperatur) sowie Vorhersage
   für den Anlauftag, sobald er in der 16-Tage-Vorhersage liegt; Wassertemperatur am Anlauftag,
   sobald er in der 7-Tage-Marinevorhersage liegt
+- Klima im Monat des Anlaufs (Tag, Nacht, Regenwahrscheinlichkeit) und Absprung zum Hafenführer von
+  CruiseSheet (`cruisesheet.com/port/…`);
+  die Werte stehen in `index.html` in `CRUISESHEET` (Stand 13. Nov. 2026). Civitavecchia fehlt dort,
+  für Panama-Stadt führt CruiseSheet noch Colón
 - Ankunftsprognose, wenn es der nächste Hafen ist
 - Verweis auf das Reisetagebuch in FindPenguins
 - Links zu Google Maps, Wikipedia, Windy und ein kopierbarer Direktlink

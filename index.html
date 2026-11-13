@@ -409,6 +409,8 @@ dialog.panel .note code{font-size:14px}
 .vland i{display:block;height:12px}
 .vland u{display:block;height:100%;background:var(--live);border-radius:0 4px 4px 0;text-decoration:none}
 .vland b{text-align:right;font-weight:600}
+.cs-clim{font-size:17px;line-height:1.45}
+.cs-src{font-size:14px;color:var(--ink-2);margin-top:6px;line-height:1.45}
 .rows{display:grid;gap:0}
 .rows div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;padding:10px 0;border-bottom:1px solid var(--line-soft);font-size:16px}
 .rows div b{font-weight:600;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -1121,6 +1123,68 @@ const dayNoOf = now => Math.min(TOTAL_DAYS,
    ===================================================================== */
 const portDays = new Set();
 CALLS.forEach(c => { for(let d = c.d1; d <= c.d2; d++) portDays.add(d); });
+/* CruiseSheet (cruisesheet.com, Fahrplanblatt der Teilstrecke ab/bis Savona einer Mitreisenden, Stand 13. Nov. 2026).
+   Das Blatt selbst wird nicht verlinkt, weil es eine andere Buchung beschreibt; übernommen sind nur die Hafenangaben:
+   je Anlauf (Schlüssel = Reisetag d1) der Hafenführer, dazu Tageshöchst- und Tiefstwert (°C, aus °F umgerechnet)
+   und Regenwahrscheinlichkeit als Monatsmittel der letzten vier Jahre. Liegezeiten, Währungen und Zeitzonen
+   des Blatts stimmen mit dem Fahrplan hier überein. Civitavecchia führt das Blatt nicht (es beginnt in Savona). */
+const CRUISESHEET = {
+  port:"https://cruisesheet.com/port/",
+  ports:{
+  2:{s:"savona",hi:16,lo:8,rain:25},
+  3:{s:"marseille",hi:17,lo:8,rain:30},
+  4:{s:"barcelona",hi:18,lo:12,rain:30},
+  6:{s:"lisbon",hi:18,lo:13,rain:35},
+  9:{s:"ponta-delgada",hi:18,lo:14,rain:55},
+  10:{s:"praia-da-vitoria",hi:17,lo:14,rain:55},
+  16:{s:"new-york",hi:7,lo:0,rain:35},
+  20:{s:"fort-lauderdale",hi:25,lo:18,rain:40},
+  22:{s:"half-moon-cay",hi:26,lo:24,rain:40},
+  26:{s:"colon",hi:29,lo:24,rain:70,alt:"Colón"},
+  29:{s:"puntarenas",hi:30,lo:23,rain:55},
+  31:{s:"puerto-quetzal",hi:32,lo:23,rain:10},
+  34:{s:"puerto-vallarta",hi:28,lo:19,rain:5},
+  35:{s:"cabo-san-lucas",hi:27,lo:19,rain:5},
+  37:{s:"san-diego",hi:19,lo:9,rain:10},
+  38:{s:"los-angeles",hi:19,lo:9,rain:15},
+  41:{s:"san-francisco",hi:14,lo:8,rain:35},
+  48:{s:"honolulu",hi:26,lo:19,rain:35},
+  49:{s:"hilo",hi:26,lo:19,rain:45},
+  55:{s:"papeete",hi:29,lo:24,rain:95},
+  61:{s:"suva",hi:29,lo:23,rain:90},
+  63:{s:"lifou",hi:29,lo:23,rain:65},
+  64:{s:"noumea",hi:29,lo:23,rain:65},
+  67:{s:"sydney-australia",hi:26,lo:19,rain:45},
+  69:{s:"newcastle-australia",hi:27,lo:21,rain:40},
+  73:{s:"cairns",hi:31,lo:24,rain:80},
+  76:{s:"rabaul",hi:29,lo:26,rain:85},
+  82:{s:"tokyo",hi:11,lo:2,rain:25},
+  85:{s:"kobe",hi:9,lo:3,rain:30},
+  87:{s:"nagasaki",hi:12,lo:6,rain:35},
+  88:{s:"busan",hi:9,lo:1,rain:25},
+  90:{s:"taipei",hi:19,lo:14,rain:35},
+  92:{s:"hong-kong",hi:22,lo:14,rain:20},
+  95:{s:"nha-trang",hi:28,lo:22,rain:25},
+  97:{s:"ho-chi-minh",hi:32,lo:23,rain:20},
+  99:{s:"ko-samui",hi:31,lo:26,rain:35},
+  101:{s:"singapore",hi:31,lo:24,rain:80},
+  102:{s:"kuala-lumpur",hi:31,lo:24,rain:85},
+  103:{s:"penang",hi:32,lo:24,rain:70},
+  106:{s:"colombo",hi:32,lo:24,rain:55},
+  108:{s:"male",hi:29,lo:27,rain:35},
+  113:{s:"mauritius",hi:30,lo:24,rain:75},
+  117:{s:"durban",hi:28,lo:22,rain:40},
+  119:{s:"port-elizabeth",hi:24,lo:18,rain:25},
+  121:{s:"cape-town",hi:25,lo:16,rain:20},
+  124:{s:"walvis-bay",hi:22,lo:16,rain:5},
+  132:{s:"mindelo",hi:26,lo:21,rain:5},
+  135:{s:"las-palmas",hi:22,lo:17,rain:35},
+  138:{s:"barcelona",hi:19,lo:11,rain:20},
+  139:{s:"marseille",hi:21,lo:10,rain:20},
+  140:{s:"savona",hi:18,lo:11,rain:40}
+  }
+};
+const csFor = c => c.transit ? null : CRUISESHEET.ports[c.d1] || null;
 const PORTS = CALLS.filter(c => !c.transit);            /* Anläufe ohne Kanaldurchfahrt */
 const countries = new Set(CALLS.map(c => c.c.split(" · ")[0]));
 const seaDayCount = TOTAL_DAYS - portDays.size;
@@ -2513,6 +2577,10 @@ function renderSheet(i){
         <div><span>Sprache</span><b style="font-size:15px">${esc(L.lang)}</b></div></div>`; })()}
       <div class="wx-box" id="wxNow"><div class="lbl">Wetter vor Ort</div><div class="loading">wird geladen …</div></div>
       <div class="wx-box" id="wxDay" hidden></div>
+      ${(() => { const cs = csFor(c); if(!cs) return ""; const month = new Date(START + (c.d1 - 1) * 86400000).toLocaleDateString("de-DE", {month:"long", timeZone:"UTC"});
+        return `<div class="wx-box"><div class="lbl">Klima im ${month} · CruiseSheet</div>
+          <div class="cs-clim"><b class="num">${cs.hi} °C</b> am Tag · <b class="num">${cs.lo} °C</b> in der Nacht · Regenwahrscheinlichkeit rund <b class="num">${cs.rain} %</b></div>
+          <div class="cs-src">Monatsmittel der letzten vier Jahre${cs.alt ? ` für ${cs.alt} – CruiseSheet führt hier noch den ursprünglichen Anlauf` : ""}. <a href="${CRUISESHEET.port}${cs.s}" target="_blank" rel="noopener">Hafenführer bei CruiseSheet</a></div></div>`; })()}
       <p>${c.t}</p>
 
       <h3>${c.transit ? "An Bord während der Passage" : "Landausflüge"} <button class="more" id="excAdd">+ ${c.transit ? "Programmpunkt" : "Ausflug"} eintragen</button></h3>
@@ -2543,6 +2611,7 @@ function renderSheet(i){
         <a class="chip" href="https://www.google.com/maps/search/?api=1&query=${c.lat},${c.lon}" target="_blank" rel="noopener">Google Maps</a>
         <a class="chip" href="https://de.wikipedia.org/wiki/${encodeURIComponent(c.w)}" target="_blank" rel="noopener">Wikipedia</a>
         <a class="chip" href="https://www.windy.com/${c.lat}/${c.lon}?${c.lat},${c.lon},8" target="_blank" rel="noopener">Windy</a>
+        ${csFor(c) ? `<a class="chip" href="${CRUISESHEET.port}${csFor(c).s}" target="_blank" rel="noopener">CruiseSheet${csFor(c).alt ? ` (${csFor(c).alt})` : ""}</a>` : ""}
         <button class="chip" id="shareBtn">Link kopieren</button>
         <button class="chip" id="excCopy">Ausflüge als JSON</button>
       </div>
