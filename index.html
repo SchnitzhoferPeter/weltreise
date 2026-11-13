@@ -397,6 +397,18 @@ dialog.panel .note code{font-size:14px}
 .statgrid div{background:var(--card);border:1px solid var(--line-soft);border-radius:10px;padding:12px 14px}
 .statgrid b{display:block;font-family:'Newsreader',Georgia,serif;font-size:30px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
 .statgrid span{display:block;font-size:14px;color:var(--ink-2);margin-top:5px;line-height:1.3}
+.vh{margin:18px 0 8px;font-family:'Newsreader',Georgia,serif;font-size:22px}
+.vbars{display:flex;align-items:flex-end;gap:2px;height:120px;border-bottom:1px solid var(--line)}
+.vbar{flex:1 1 0;height:100%;display:flex;align-items:flex-end;min-width:0}
+.vbar i{display:block;width:100%;background:var(--live);border-radius:4px 4px 0 0}
+.vbar:hover i,.vbar:focus-visible i{background:var(--ink)}
+.vaxis{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--ink-2);margin-top:5px}
+.vland{display:grid;gap:8px}
+.vland div{display:grid;grid-template-columns:minmax(0,11em) minmax(0,1fr) 3ch;gap:10px;align-items:center;font-size:16px}
+.vland span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vland i{display:block;height:12px}
+.vland u{display:block;height:100%;background:var(--live);border-radius:0 4px 4px 0;text-decoration:none}
+.vland b{text-align:right;font-weight:600}
 .rows{display:grid;gap:0}
 .rows div{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:14px;padding:10px 0;border-bottom:1px solid var(--line-soft);font-size:16px}
 .rows div b{font-weight:600;text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -539,6 +551,7 @@ dialog.panel .note code{font-size:14px}
     <button class="btn" id="statsBtn">Reise in Zahlen</button>
     <button class="btn" id="tzBtn">Zeitumstellungen</button>
     <button class="btn" id="visaBtn">Visa Status</button>
+    <button class="btn" id="visitBtn">Besucher</button>
   </div>
 </header>
 
@@ -660,6 +673,11 @@ dialog.panel .note code{font-size:14px}
 <dialog class="panel" id="visaDlg">
   <h2>Visa Status <button data-close aria-label="Schließen"><svg class="ic" style="width:20px;height:20px"><use href="#i-close"/></svg></button></h2>
   <div class="inner" id="visaBody"></div>
+</dialog>
+
+<dialog class="panel" id="visitDlg">
+  <h2>Besucher <button data-close aria-label="Schließen"><svg class="ic" style="width:20px;height:20px"><use href="#i-close"/></svg></button></h2>
+  <div class="inner" id="visitBody"></div>
 </dialog>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -1606,12 +1624,12 @@ let who = (() => { try{ return localStorage.getItem(LS + "who") || ""; }catch(e)
 /* ---------- Gemeinsamer Speicher: Firebase Realtime Database über REST ----------
    data/sync.json: {"url":"https://<projekt>-default-rtdb.<region>.firebasedatabase.app/weltreise"}
    Ablage: <url>/notes/<schluessel>.json und <url>/excursions/<id>.json. Zuletzt geschriebener Stand gewinnt. */
-const sync = {url:null, ok:false, err:"", code:0, last:0, pending:0, pulled:0};
+const sync = {url:null, key:"", authErr:"", ok:false, err:"", code:0, last:0, pending:0, pulled:0};
 /* Fehler in verständliche Worte fassen */
 function syncFail(e){
   const m = /HTTP (\d+)/.exec(e && e.message || "");
   sync.ok = false; sync.code = m ? +m[1] : 0;
-  sync.err = sync.code === 401 || sync.code === 403 ? "die Datenbank verweigert den Zugriff – Regeln prüfen"
+  sync.err = sync.code === 401 || sync.code === 403 ? (sync.authErr || (sync.key ? "die Datenbank verweigert den Zugriff – Regeln prüfen" : "die Datenbank verlangt eine Anmeldung – apiKey in data/sync.json fehlt"))
     : sync.code === 404 ? "Adresse der Datenbank nicht gefunden"
     : sync.code ? `Datenbank meldet Fehler ${sync.code}`
     : "keine Verbindung zur Datenbank";
@@ -1622,19 +1640,60 @@ async function loadSyncConfig(){
   try{
     const c = await fetchJson(SYNC_FILE + "?_=" + Math.floor(Date.now() / 600000));
     if(c && typeof c.url === "string" && /^https:\/\//.test(c.url)) sync.url = c.url.replace(/\/+$/, "");
+    if(c && typeof c.apiKey === "string") sync.key = c.apiKey.trim();
   }catch(e){ sync.url = null; }
 }
-async function syncGet(path){
-  const r = await fetch(`${sync.url}/${path}.json`, {cache:"no-store"});
+/* Anonyme Anmeldung bei Firebase (REST): Die Datenbank-Regeln lassen nur angemeldete Aufrufe zu.
+   Der apiKey aus data/sync.json ist in der Google-Cloud-Konsole auf die Adresse der Website beschränkt.
+   Die Anmeldung bleibt im Browser gespeichert und wird stündlich erneuert. Ohne apiKey: Zugriff wie bisher ohne Anmeldung. */
+let auth = (() => { try{ return JSON.parse(localStorage.getItem(LS + "auth")) || null; }catch(e){ return null; } })();
+let authBusy = null;
+async function authPost(url, type, body){
+  const r = await fetch(url + "?key=" + encodeURIComponent(sync.key), {method:"POST", headers:{"Content-Type":type}, body});
+  if(!r.ok){ const e = new Error("HTTP " + r.status); e.status = r.status; throw e; }
+  return r.json();
+}
+async function authToken(force){
+  if(!sync.key) return null;
+  if(!force && auth && auth.token && auth.exp - Date.now() > 60000) return auth.token;
+  if(!authBusy) authBusy = (async () => {
+    try{
+      let next = null;
+      if(auth && auth.refresh){
+        try{
+          const j = await authPost("https://securetoken.googleapis.com/v1/token", "application/x-www-form-urlencoded", "grant_type=refresh_token&refresh_token=" + encodeURIComponent(auth.refresh));
+          next = {uid:j.user_id, token:j.id_token, refresh:j.refresh_token, exp:Date.now() + (+j.expires_in || 3600) * 1000};
+        }catch(e){ if(e.status !== 400) throw e; }   /* Anmeldung verfallen: neu anmelden */
+      }
+      if(!next){
+        const j = await authPost("https://identitytoolkit.googleapis.com/v1/accounts:signUp", "application/json", JSON.stringify({returnSecureToken:true}));
+        next = {uid:j.localId, token:j.idToken, refresh:j.refreshToken, exp:Date.now() + (+j.expiresIn || 3600) * 1000};
+      }
+      auth = next; sync.authErr = "";
+      try{ localStorage.setItem(LS + "auth", JSON.stringify(auth)); }catch(e){}
+      return auth.token;
+    }catch(e){
+      /* Antwort von Google (kein Netzfehler): Schlüssel, Freigabe der Adresse oder anonyme Anmeldung stimmen nicht */
+      sync.authErr = e.status ? "Anmeldung abgelehnt – apiKey, dessen Website-Beschränkung und die anonyme Anmeldung in Firebase prüfen" : "";
+      console.warn("Anmeldung:", e);
+      return null;
+    }finally{ authBusy = null; }
+  })();
+  return authBusy;
+}
+async function syncReq(path, opt, again = true){
+  const tok = await authToken();
+  const r = await fetch(`${sync.url}/${path}.json${tok ? "?auth=" + encodeURIComponent(tok) : ""}`, opt);
+  if(r.status === 401 && tok && again){ await authToken(true); return syncReq(path, opt, false); }
   if(!r.ok) throw new Error("HTTP " + r.status);
   return r.json();
 }
+const syncGet = path => syncReq(path, {cache:"no-store"});
 async function syncPut(path, data){
   if(!sync.url) return;
   sync.pending++;
   try{
-    const r = await fetch(`${sync.url}/${path}.json`, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)});
-    if(!r.ok) throw new Error("HTTP " + r.status);
+    await syncReq(path, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(data)});
     sync.ok = true; sync.err = ""; sync.code = 0; sync.last = Date.now();
   }catch(e){ syncFail(e); }
   finally{ sync.pending--; renderSyncLine(); }
@@ -1693,6 +1752,109 @@ async function syncNow(){
   await pushAllShared();
   if(await pullShared()) refreshShared();
   renderSyncLine();
+}
+
+/* ---------- Besucher: Zählung und Auswertung ----------
+   Ablage: <url>/visits/<Tag>/<Kennung>.json = {at, n, tz, lang, dev, app}. Die Kennung ist zufällig und liegt nur im
+   Browser; es werden weder Name noch IP-Adresse gespeichert. Herkunft = Land der am Gerät eingestellten Zeitzone.
+   Ein Aufruf zählt neu, wenn der letzte mehr als 30 Minuten her ist. */
+const ZONES_FILE = "data/zonen.json";
+const dayKey = t => new Intl.DateTimeFormat("en-CA", {timeZone:HOME.tz, year:"numeric", month:"2-digit", day:"2-digit"}).format(t);
+const visitorId = () => {
+  try{
+    let v = localStorage.getItem(LS + "vid");
+    if(!v){
+      v = Array.from(crypto.getRandomValues(new Uint8Array(12)), b => (b % 36).toString(36)).join("");
+      localStorage.setItem(LS + "vid", v);
+    }
+    return v;
+  }catch(e){ return ""; }
+};
+async function recordVisit(){
+  const vid = visitorId();
+  if(!sync.url || !vid) return;
+  const now = Date.now(), day = dayKey(now);
+  let last = null;
+  try{ last = JSON.parse(localStorage.getItem(LS + "visit")); }catch(e){}
+  if(last && last.day === day && now - last.t < 30 * 60000) return;
+  const n = last && last.day === day ? Math.min((last.n || 0) + 1, 500) : 1;
+  const ua = navigator.userAgent || "";
+  const dev = /iPad|Tablet/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1) ? "tablet" : /Mobi|iPhone|Android/i.test(ua) ? "handy" : "computer";
+  const rec = {at:now, n, tz:String(Intl.DateTimeFormat().resolvedOptions().timeZone || "").slice(0, 64),
+    lang:String(navigator.language || "").slice(0, 20), dev, app:matchMedia("(display-mode: standalone)").matches || navigator.standalone === true};
+  try{
+    await syncReq(`visits/${day}/${vid}`, {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(rec)});
+    localStorage.setItem(LS + "visit", JSON.stringify({day, n, t:now}));
+  }catch(e){ /* Zählung ist Nebensache: beim nächsten Aufruf wieder versuchen */ }
+}
+let zoneCountry = null;
+async function loadZones(){
+  if(zoneCountry) return zoneCountry;
+  const m = {};
+  try{ Object.entries(await fetchJson(ZONES_FILE)).forEach(([cc, zs]) => zs.forEach(z => { m[z] = cc; })); }catch(e){}
+  return zoneCountry = m;
+}
+function visitStats(all, zones, now){
+  const days = Object.keys(all || {}).filter(d => /^\d{4}-\d{2}-\d{2}$/.test(d)).sort();
+  const today = dayKey(now), since = n => dayKey(now - (n - 1) * 86400000);
+  const everyone = new Map();   /* Kennung → letzter Eintrag */
+  const uniq = from => { const s = new Set(); days.filter(d => d >= from && d <= today).forEach(d => Object.keys(all[d] || {}).forEach(v => s.add(v))); return s.size; };
+  let views = 0;
+  days.forEach(d => Object.entries(all[d] || {}).forEach(([v, r]) => {
+    if(!r || typeof r !== "object") return;
+    views += +r.n || 1;
+    const seen = everyone.get(v);
+    if(!seen || (r.at || 0) >= (seen.at || 0)) everyone.set(v, r);
+  }));
+  const tally = fn => { const m = new Map(); everyone.forEach(r => { const k = fn(r); m.set(k, (m.get(k) || 0) + 1); }); return [...m.entries()].sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0]))); };
+  const series = [];
+  for(let i = 29; i >= 0; i--){
+    const d = dayKey(now - i * 86400000), recs = Object.values(all && all[d] || {});
+    series.push({d, visitors:recs.length, views:recs.reduce((a, r) => a + (+(r && r.n) || 1), 0)});
+  }
+  return {
+    total:everyone.size, today:uniq(today), week:uniq(since(7)), month:uniq(since(30)), views, first:days[0] || "",
+    countries:tally(r => zones[r.tz] || "??"), devices:tally(r => r.dev || "unbekannt"),
+    apps:[...everyone.values()].filter(r => r.app).length, series
+  };
+}
+async function renderVisitorsDialog(){
+  const body = el("visitBody");
+  if(!sync.url) await loadSyncConfig();
+  if(!sync.url){ body.innerHTML = `<p>Die Auswertung braucht den gemeinsamen Speicher (<code>data/sync.json</code>).</p>`; return; }
+  body.innerHTML = `<p class="loading">Besucherzahlen werden geladen …</p>`;
+  let all, zones;
+  try{ [all, zones] = await Promise.all([syncGet("visits"), loadZones()]); }
+  catch(e){ syncFail(e); body.innerHTML = `<p>Die Besucherzahlen sind gerade nicht abrufbar: ${esc(sync.err)}.</p>`; return; }
+  const s = visitStats(all, zones, Date.now());
+  const n = v => Math.round(v).toLocaleString("de-DE");
+  const dm = d => `${+d.slice(8)}.${+d.slice(5, 7)}.`;
+  const regions = (() => { try{ return new Intl.DisplayNames(["de"], {type:"region"}); }catch(e){ return null; } })();
+  const land = cc => { if(cc === "??") return "Unbekannt"; try{ return regions ? regions.of(cc) : cc; }catch(e){ return cc; } };
+  const devName = {handy:"Handy", tablet:"Tablet", computer:"Computer"};
+  const peak = Math.max(0, ...s.series.map(x => x.visitors)), max = Math.max(1, peak);
+  const top = s.countries.length ? s.countries[0][1] : 1;
+  body.innerHTML = `
+    <p>${s.total ? `Gezählt seit ${dm(s.first)}${s.first.slice(0, 4)} – je Gerät und Browser, eigene Aufrufe eingeschlossen.` : "Noch keine Aufrufe gezählt. Die Zählung beginnt mit dem nächsten Öffnen der Seite."}</p>
+    <div class="statgrid">
+      <div><b class="num">${n(s.today)}</b><span>Besucher heute</span></div>
+      <div><b class="num">${n(s.week)}</b><span>in den letzten 7 Tagen</span></div>
+      <div><b class="num">${n(s.total)}</b><span>Besucher insgesamt</span></div>
+    </div>
+    <h3 class="vh">Besucher je Tag · letzte 30 Tage</h3>
+    <div class="vbars" role="img" aria-label="Besucher je Tag in den letzten 30 Tagen, höchster Wert ${peak}">
+      ${s.series.map(x => `<div class="vbar" tabindex="0" title="${dm(x.d)}: ${x.visitors} Besucher, ${x.views} Aufrufe"><i style="height:${x.visitors ? Math.max(4, Math.round(x.visitors / max * 100)) : 0}%"></i></div>`).join("")}
+    </div>
+    <div class="vaxis"><span>${dm(s.series[0].d)}</span><span>höchster Tag: ${n(peak)}</span><span>heute</span></div>
+    <h3 class="vh">Herkunft</h3>
+    ${s.countries.length ? `<div class="vland">${s.countries.map(([cc, c]) => `<div><span>${esc(land(cc))}</span><i><u style="width:${Math.max(2, Math.round(c / top * 100))}%"></u></i><b class="num">${n(c)}</b></div>`).join("")}</div>` : `<p class="muted">Noch keine Daten.</p>`}
+    <div class="rows" style="margin-top:14px">
+      <div><span>Besucher in den letzten 30 Tagen</span><b>${n(s.month)}</b></div>
+      <div><span>Aufrufe insgesamt</span><b>${n(s.views)}</b></div>
+      ${s.devices.map(([d, c]) => `<div><span>Mit ${esc(devName[d] || d)}</span><b>${n(c)}</b></div>`).join("")}
+      <div><span>Als App installiert</span><b>${n(s.apps)}</b></div>
+    </div>
+    <p class="note">Ein Besucher ist ein Gerät mit einem Browser; wer Handy und Computer nutzt, zählt zweimal. Die Herkunft ist das Land der am Gerät eingestellten Zeitzone – an Bord also dort, wo das Schiff gerade ist. Gespeichert werden weder Namen noch IP-Adressen.</p>`;
 }
 
 async function loadSharedExcursions(){
@@ -2805,6 +2967,7 @@ document.querySelectorAll("dialog.panel").forEach(d => d.addEventListener("click
 el("statsBtn").addEventListener("click", () => { renderStatsDialog(); el("statsDlg").showModal(); });
 el("tzBtn").addEventListener("click", () => { renderTzDialog(); el("tzDlg").showModal(); });
 el("visaBtn").addEventListener("click", () => { renderVisaDialog(); el("visaDlg").showModal(); });
+el("visitBtn").addEventListener("click", () => { el("visitDlg").showModal(); renderVisitorsDialog(); });
 
 const dlg = el("cfgDlg");
 function syncCfgForm(){
@@ -2862,6 +3025,7 @@ function openFromHash(){
   const m = /^#hafen-(\d+)$/.exec(location.hash);
   if(m) select(+m[1], true);
   else if(location.hash === "#schiff") openShip();
+  else if(location.hash === "#besucher"){ el("visitDlg").showModal(); renderVisitorsDialog(); }
   else if(location.hash === "#tagebuch") loadDiaryConfig().then(() => { if(diary.embed) openDiary(); else if(diary.url) location.replace(diary.url); });
 }
 applyMapTheme();
@@ -2869,7 +3033,7 @@ if(/^#ais=/.test(location.hash)) history.replaceState(null, "", location.pathnam
 renderList(); markToday(); renderNow(); renderWarnBox();
 Promise.all([loadFilePosition(), loadSharedExcursions(), loadSyncConfig(), loadDiaryConfig(), loadImages(), loadRates()]).then(async () => {
   refreshView(); refreshWarnings();
-  if(sync.url){ await pullShared(); await pushAllShared(); refreshShared(); }
+  if(sync.url){ recordVisit(); await pullShared(); await pushAllShared(); refreshShared(); }
 });
 setInterval(async () => { if(sync.url && await pullShared()) refreshShared(); }, 60000);
 openFromHash();
@@ -2878,7 +3042,7 @@ setInterval(() => { renderNow(); if(sheet.classList.contains("is-open") && sheet
 setInterval(() => { loadFilePosition().then(refreshView); }, 5 * 60000);
 setInterval(refreshWarnings, 30 * 60000);
 setInterval(renderList, 10 * 60000);
-document.addEventListener("visibilitychange", () => { if(!document.hidden){ loadFilePosition().then(refreshView); refreshWarnings(); if(sync.url) pullShared().then(ch => { if(ch) refreshShared(); }); } });
+document.addEventListener("visibilitychange", () => { if(!document.hidden){ loadFilePosition().then(refreshView); refreshWarnings(); if(sync.url){ recordVisit(); pullShared().then(ch => { if(ch) refreshShared(); }); } } });
 if("serviceWorker" in navigator && location.protocol.startsWith("http")){
   navigator.serviceWorker.register("sw.js").catch(() => {});
 }
