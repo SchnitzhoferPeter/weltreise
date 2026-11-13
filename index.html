@@ -1123,14 +1123,13 @@ const dayNoOf = now => Math.min(TOTAL_DAYS,
    ===================================================================== */
 const portDays = new Set();
 CALLS.forEach(c => { for(let d = c.d1; d <= c.d2; d++) portDays.add(d); });
-/* CruiseSheet (cruisesheet.com, Fahrplanblatt „138-Night Round World from Savona“, abgerufen 13. Nov. 2026):
+/* CruiseSheet (cruisesheet.com, Fahrplanblatt der Teilstrecke ab/bis Savona einer Mitreisenden, Stand 13. Nov. 2026).
+   Das Blatt selbst wird nicht verlinkt, weil es eine andere Buchung beschreibt; übernommen sind nur die Hafenangaben:
    je Anlauf (Schlüssel = Reisetag d1) der Hafenführer, dazu Tageshöchst- und Tiefstwert (°C, aus °F umgerechnet)
    und Regenwahrscheinlichkeit als Monatsmittel der letzten vier Jahre. Liegezeiten, Währungen und Zeitzonen
    des Blatts stimmen mit dem Fahrplan hier überein. Civitavecchia führt das Blatt nicht (es beginnt in Savona). */
 const CRUISESHEET = {
-  url:"https://cruisesheet.com/costa-deliziosa-138-night-savona-roundtrip-november-25-2026",
-  pdf:"https://cruisesheet.com/costa-deliziosa-138-night-savona-roundtrip-november-25-2026.pdf?w=1",
-  port:"https://cruisesheet.com/port/", nm:40300,
+  port:"https://cruisesheet.com/port/",
   ports:{
   2:{s:"savona",hi:16,lo:8,rain:25},
   3:{s:"marseille",hi:17,lo:8,rain:30},
@@ -2201,12 +2200,11 @@ function renderStatsDialog(){
       <div><span>Nördlichster Hafen</span><b>${s.north.n.split(" | ")[0]}, ${fmtLat(s.north.lat)}</b></div>
       <div><span>Südlichster Hafen</span><b>${s.south.n.split(" | ")[0]}, ${fmtLat(s.south.lat)}</b></div>
       <div><span>Seetage insgesamt</span><b>${seaDayCount}</b></div>
-      <div><span>Fahrstrecke laut CruiseSheet, ab/bis Savona</span><b>≈ ${n(CRUISESHEET.nm)} sm</b></div>
       <div><span>Landausflüge eingetragen</span><b>${s.excursions}</b></div>
     </div>
     <h3 style="margin:18px 0 8px;font-family:'Newsreader',Georgia,serif;font-size:22px">Höhepunkte der Reise</h3>
     <ul class="tzlist">${EVENTS.map(e => `<li class="${e.t < Date.now() ? "past" : (e === nextEvent(Date.now()) ? "next" : "")}">${icon(e.key === "aequator" || e.key === "datumsgrenze" ? "wave" : e.key === "heimkehr" ? "anchor" : "flag")}<b>${esc(e.title)}</b><span>${esc(e.detail)} · ${stampIn(e.t, HOME.tz)} ${HOME.label}er Zeit · Tag ${dayNoOf(e.t)}</span></li>`).join("")}</ul>
-    <p class="note">Seemeilen als Großkreisdistanz von Hafen zu Hafen; die tatsächliche Fahrstrecke liegt etwas darüber. Höhepunkte nach Fahrplan gerechnet. Zum Vergleich: <a href="${CRUISESHEET.url}" target="_blank" rel="noopener">Reiseblatt bei CruiseSheet</a> (<a href="${CRUISESHEET.pdf}" target="_blank" rel="noopener">PDF</a>).</p>`;
+    <p class="note">Seemeilen als Großkreisdistanz von Hafen zu Hafen; die tatsächliche Fahrstrecke liegt etwas darüber. Höhepunkte nach Fahrplan gerechnet.</p>`;
 }
 
 /* Visa und Einreiseformalitäten für österreichische Reisepässe, Stand 8. Oktober 2026.

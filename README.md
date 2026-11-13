@@ -39,7 +39,7 @@ Der Entwurf liegt als Design-Canvas vor: https://claude.ai/code/artifact/2898c28
   für den Anlauftag, sobald er in der 16-Tage-Vorhersage liegt; Wassertemperatur am Anlauftag,
   sobald er in der 7-Tage-Marinevorhersage liegt
 - Klima im Monat des Anlaufs (Tag, Nacht, Regenwahrscheinlichkeit) und Absprung zum Hafenführer von
-  [CruiseSheet](https://cruisesheet.com/costa-deliziosa-138-night-savona-roundtrip-november-25-2026);
+  CruiseSheet (`cruisesheet.com/port/…`);
   die Werte stehen in `index.html` in `CRUISESHEET` (Stand 13. Nov. 2026). Civitavecchia fehlt dort,
   für Panama-Stadt führt CruiseSheet noch Colón
 - Ankunftsprognose, wenn es der nächste Hafen ist
