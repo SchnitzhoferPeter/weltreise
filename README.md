@@ -42,6 +42,13 @@ Der Entwurf liegt als Design-Canvas vor: https://claude.ai/code/artifact/2898c28
   CruiseSheet (`cruisesheet.com/port/…`);
   die Werte stehen in `index.html` in `CRUISESHEET` (Stand 13. Nov. 2026). Civitavecchia fehlt dort,
   für Panama-Stadt führt CruiseSheet noch Colón
+- **Zurück zum Schiff:** üblicher Liegeplatz, Knopf „Weg zum Schiff“ (Google Maps) und eine Karte zum
+  Vorzeigen für den Taxifahrer. Liegeplatz und Telefon des Hafenagenten laut Tagesprogramm lassen sich je
+  Anlauf eintragen und werden mit allen geteilt
+- **Sätze zum Vorzeigen:** sieben Sätze in der Landessprache, groß am Bildschirm, mit Englisch und Deutsch darunter
+- **Geld im Kopf:** Umrechner mit Tageskurs, dazu Richtpreise für klassische Fahrten und einen Kaffee aus
+  `data/landgang.json` (im Nov. 2026 recherchiert, mit Quellen; wo nur wenige Quellen vorlagen, als
+  grobe Schätzung gekennzeichnet)
 - Hafenführer zum Aufklappen: Sehenswürdigkeiten, Ziele in der Nähe, Lage des Hafens, Unterwegs vor Ort,
   Einkaufen und häufige Fragen – deutsche Zusammenfassung der CruiseSheet-Hafenseiten in
   `data/hafeninfo.json` (Stand 13. Nov. 2026), mit Absprung zur Quelle
@@ -213,6 +220,17 @@ Uhrzeiten- und Prognoserechnungen gebraucht. `d1`/`d2` sind Reisetage (Tag 1 = 2
 
 Quellen: Kartenkacheln Esri World Ocean (Ersatz: OpenStreetMap), Wetter [Open-Meteo](https://open-meteo.com),
 Bilder Wikipedia/Wikimedia Commons, Schiffsdaten Costa Deliziosa (IMO 9398917, MMSI 247282900).
+
+## Fotobuch
+
+Der Knopf **Fotobuch** (Direktlink `index.html#fotobuch`) öffnet eine Druckansicht im Format A4: Titel mit
+Routenskizze, die Reise in Zahlen und alle Häfen der Reihe nach mit Landausflügen. Je Hafen lassen sich ein
+Höhepunkt (Text, wird mit allen geteilt) und Fotos ergänzen. „Drucken / als PDF sichern“ erzeugt über den
+Druckdialog des Browsers die PDF-Datei.
+
+Fotos werden auf 1800 px verkleinert und bleiben nur auf dem Gerät, auf dem sie hinzugefügt wurden – das Buch
+also am Ende auf einem Gerät zusammenstellen. FindPenguins lässt sich nicht automatisch auslesen (privater
+Trip, keine Schnittstelle); Texte und Bilder von dort werden von Hand übernommen.
 
 ## Ideen für später
 
