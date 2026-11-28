@@ -61,7 +61,8 @@ Der Entwurf liegt als Design-Canvas vor: https://claude.ai/code/artifact/2898c28
   dazu Äquator, Wendekreise, Nullmeridian und Datumsgrenze. 65 davon sind als große Höhepunkte (★) markiert
 - Kachel in der Bordkarte mit der nächsten Wegmarke, Liste über den Knopf **Unterwegs** (Direktlink
   `index.html#unterwegs`) mit geschätzter Uhrzeit an Bord und in Wien, Seite (Backbord/Steuerbord) und Kurztext,
-  Rauten auf der Karte
+  Rauten auf der Karte (★ in jeder Zoomstufe, die übrigen ab der Regionalansicht; Knopf **Wegmarken** blendet sie
+  aus). Die Routenlinie folgt dem Seeweg über die Wegmarken
 - Hinweis, sobald sich das Schiff nähert, und noch einmal, wenn die Wegmarke querab liegt: bei offener App als
   Einblendung, sonst als Push-Nachricht – siehe „Benachrichtigungen zu Wegmarken“
 
@@ -107,11 +108,19 @@ aisstream.io erlaubt keine Verbindungen direkt aus dem Browser. Deshalb holt ein
 Repository die Position serverseitig und die Seite liest nur noch das Ergebnis:
 
 1. **AIS-Abgleich über GitHub Action** (`.github/workflows/position.yml`, Skript
-   `scripts/fetch-position.mjs`): läuft alle 10 Minuten, lauscht bis 4 Minuten auf eine
+   `scripts/fetch-position.mjs`): fragt alle 5 Minuten ab, lauscht je bis 4 Minuten auf eine
    Positionsmeldung der MMSI 247282900 und schreibt `position.json` und `status.json` auf den
    Branch `position-data`. Die Seite liest beide von `raw.githubusercontent.com`.
    Voraussetzung: das Repository-Secret **`AISSTREAM_KEY`** (Settings → Secrets and variables →
-   Actions). Der Job lässt sich unter „Actions“ auch von Hand starten.
+   Actions).
+   **Dauerlauf statt Zeitplan:** GitHub startet Zeitplan-Jobs nur nach Möglichkeit. Gemessen bis 28. Nov. 2026
+   waren es 3 bis 5 Starts am Tag statt der eingestellten 144 (mittlerer Abstand 4,5 Stunden, alle Läufe
+   fehlerfrei) – das Schiff wurde also meist gar nicht abgefragt. Deshalb bleibt ein Lauf jetzt gut fünf Stunden
+   aktiv und startet am Ende selbst den nächsten; der stündliche Zeitplan ist nur noch die Rückversicherung,
+   falls die Kette reißt. Nach dem Übernehmen nach `main` einmal unter „Actions“ von Hand starten.
+   Veröffentlicht wird nur bei wesentlicher Änderung (neue Position, Empfang ja/nein, gemeldete Wegmarke) und
+   sonst alle 30 Minuten, damit der Branch klein bleibt. Neben der normalen Positionsmeldung nimmt das Skript
+   auch die AIS-Langstreckenmeldung (Typ 27) an.
    Meldungen älter als 18 Stunden gelten nicht mehr als aktuelle Position; die Seite zeigt sie
    aber weiterhin als „Letzte AIS-Meldung vor …“ (vor der Reise als Schiffsposition, unterwegs als
    Marke „zuletzt gesehen“). `status.json` zeigt, wann zuletzt geprüft wurde und ob das Schiff in
@@ -142,7 +151,7 @@ Die Wegmarken stehen in `data/unterwegs.json`, je Etappe in Fahrtrichtung geordn
 - Wegmarken mit `live: true` liegen an einer Route, die nicht feststeht (z. B. Seto-Inlandsee oder außen um
   Shikoku). Für sie kommt ein Hinweis nur, wenn die AIS-Position das Schiff wirklich in der Nähe zeigt.
 
-**Push bei geschlossener App.** Der Positions-Job ruft alle 10 Minuten `scripts/notify-highlights.mjs` auf. Das
+**Push bei geschlossener App.** Der Positions-Job ruft alle 5 Minuten `scripts/notify-highlights.mjs` auf. Das
 Skript verschickt die Nachrichten per Web Push an alle Geräte, die in der App „Benachrichtigungen einschalten“
 gewählt haben, und merkt sich in `unterwegs-state.json` (Branch `position-data`), was schon gemeldet wurde.
 Je Gerät einstellbar: alle Wegmarken oder nur die großen (★), Nachtruhe von 22 bis 7 Uhr Gerätezeit.
@@ -158,8 +167,7 @@ Einmalig einrichten:
 
 Ohne Schritt 1 und 2 rechnet der Job nur und sendet nichts; die App zeigt die Wegmarken trotzdem und meldet sie bei
 geöffneter Seite. Am iPhone gibt es Push nur für die App am Home-Bildschirm (Teilen → „Zum Home-Bildschirm“, ab iOS 16.4).
-Der Job läuft alle 10 Minuten und GitHub startet ihn manchmal verspätet: Eine Nachricht kann also 10 bis 20 Minuten
-nach dem eigentlichen Moment eintreffen.
+Der Job fragt alle 5 Minuten ab: Eine Nachricht kann also einige Minuten nach dem eigentlichen Moment eintreffen.
 
 Prüfen ohne zu senden:
 

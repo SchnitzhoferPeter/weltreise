@@ -112,6 +112,12 @@
     return path ? pathAt(path, f) : null;
   }
 
+  /* Anteil des Wegs einer Etappe, den das Schiff an dieser Position zurückgelegt hat (0 … 1) */
+  function progressOf(plan, legIdx, lat, lon){
+    const path = plan && plan.paths[legIdx];
+    return path ? nearestF(path, lat, lon).f : 0;
+  }
+
   /* Abstand zu einer Linie (Äquator, Wendekreis, Meridian) in sm und ob sie schon überschritten ist */
   function lineState(it, pos, startLat, startLon){
     if(it.achse === "lat"){
@@ -223,7 +229,7 @@
     return {title, body: [lead, it.t].filter(Boolean).join(" ") + tail};
   }
 
-  const api = {build, along, state, text, dark, distNm, bearingDeg, slug, short, SIDE, KIND, fmtMin, fmtNm, LIVE_MAX_AGE};
+  const api = {build, along, progressOf, state, text, dark, distNm, bearingDeg, slug, short, SIDE, KIND, fmtMin, fmtNm, LIVE_MAX_AGE};
   if(typeof module !== "undefined" && module.exports) module.exports = api;
   root.Unterwegs = api;
 })(typeof self !== "undefined" ? self : globalThis);

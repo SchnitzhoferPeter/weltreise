@@ -1,8 +1,15 @@
 name: Schiffsposition abholen
 
+# Holt die AIS-Position der Costa Deliziosa über aisstream.io und legt sie auf den Branch position-data.
+#
+# Dauerlauf statt Zeitplan: GitHub startet Zeitplan-Jobs nur „nach Möglichkeit“ – gemessen im November 2026
+# waren es 3 bis 5 Starts am Tag statt der eingestellten 144. Deshalb bleibt ein Lauf gut fünf Stunden aktiv,
+# fragt alle 5 Minuten ab und startet am Ende selbst den nächsten. Der Zeitplan ist nur noch die Rückversicherung,
+# falls die Kette einmal reißt. Es läuft immer nur ein Lauf (concurrency), ein zweiter wartet.
+
 on:
   schedule:
-    - cron: "*/10 * * * *"        # alle 10 Minuten (GitHub kann einige Minuten verzögern)
+    - cron: "17 * * * *"          # Rückversicherung: stößt die Kette wieder an, wenn kein Lauf aktiv ist
   workflow_dispatch:
     inputs:
       diag:
@@ -12,15 +19,19 @@ on:
 
 permissions:
   contents: write
+  actions: write                  # für den Start des Folgelaufs
 
 concurrency:
   group: position
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 jobs:
   position:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 345
+    env:
+      RUN_MINUTES: "315"          # Dauer eines Laufs; danach übernimmt der Folgelauf
+      CYCLE_SECONDS: "300"        # Abstand der Abfragen
     steps:
       - uses: actions/checkout@v4
         with:
@@ -30,60 +41,75 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Bisherige Positionsdaten laden
-        run: |
-          mkdir -p out
-          if git fetch --depth 1 origin position-data 2>/dev/null; then
-            if git show origin/position-data:position.json > out/position.tmp 2>/dev/null && [ -s out/position.tmp ]; then
-              mv out/position.tmp out/position.json
-            else
-              rm -f out/position.tmp
-            fi
-            if git show origin/position-data:unterwegs-state.json > out/state.tmp 2>/dev/null && [ -s out/state.tmp ]; then
-              mv out/state.tmp out/unterwegs-state.json
-            else
-              rm -f out/state.tmp
-            fi
-          fi
-
-      - name: Position über aisstream abfragen
-        env:
-          AISSTREAM_KEY: ${{ secrets.AISSTREAM_KEY }}
-          OUT_DIR: out
-          DIAG: ${{ inputs.diag && '1' || '0' }}
-        run: node scripts/fetch-position.mjs
-
-      # Push-Nachrichten zu den Wegmarken (data/unterwegs.json). Ohne das Secret VAPID_PRIVATE_KEY wird nur gerechnet.
-      # Ein Fehler hier darf die Position nicht aufhalten.
-      - name: Wegmarken melden
-        if: ${{ !inputs.diag }}
-        continue-on-error: true
-        env:
-          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
-          OUT_DIR: out
-        run: |
-          if [ -n "$VAPID_PRIVATE_KEY" ]; then npm install --no-save --no-audit --no-fund --silent web-push@3; fi
-          node scripts/notify-highlights.mjs
-
-      - name: Auf Branch position-data veröffentlichen
+      - name: Branch position-data bereitstellen
         run: |
           set -e
           git config user.name "weltreise-position"
           git config user.email "actions@users.noreply.github.com"
           if git ls-remote --exit-code --heads origin position-data >/dev/null 2>&1; then
+            git fetch --depth 1 origin position-data
             git worktree add -B position-data pub origin/position-data
           else
             git worktree add --detach pub
             (cd pub && git checkout --orphan position-data && git rm -rfq . && git clean -fdq)
           fi
-          cp out/status.json pub/status.json
-          [ -f out/position.json ] && cp out/position.json pub/position.json
-          [ -f out/unterwegs-state.json ] && cp out/unterwegs-state.json pub/unterwegs-state.json
-          cd pub
-          git add -A
-          if git diff --cached --quiet; then
-            echo "Keine Änderung."
-          else
-            git commit -qm "Position $(date -u +%Y-%m-%dT%H:%MZ)"
-            git push -q origin position-data
-          fi
+          mkdir -p out
+          for f in position.json unterwegs-state.json; do
+            if [ -s "pub/$f" ]; then cp "pub/$f" "out/$f"; fi
+          done
+
+      - name: Push-Bibliothek laden
+        if: ${{ !inputs.diag }}
+        env:
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+        run: |
+          if [ -n "$VAPID_PRIVATE_KEY" ]; then npm install --no-save --no-audit --no-fund --silent web-push@3 || echo "::warning::web-push nicht installierbar – Wegmarken werden nicht gemeldet"; fi
+
+      - name: Position abfragen, Wegmarken melden, veröffentlichen
+        env:
+          AISSTREAM_KEY: ${{ secrets.AISSTREAM_KEY }}
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          OUT_DIR: out
+          DIAG: ${{ inputs.diag && '1' || '0' }}
+        run: |
+          if [ -z "$AISSTREAM_KEY" ]; then echo "::error::AISSTREAM_KEY fehlt (Repository-Secret)."; exit 1; fi
+          # Veröffentlicht, wenn sich etwas Wesentliches geändert hat: neue Position, gemeldete Wegmarke
+          # oder spätestens alle 30 Minuten der Stand des Abgleichs. So bleibt der Branch klein.
+          LAST_PUSH=0
+          publish() {
+            cp out/status.json pub/status.json
+            [ -f out/position.json ] && cp out/position.json pub/position.json
+            [ -f out/unterwegs-state.json ] && cp out/unterwegs-state.json pub/unterwegs-state.json
+            local CHANGED AGE
+            CHANGED="$(node scripts/fetch-position.mjs --changed pub 2>/dev/null || echo yes)"
+            AGE=$(( SECONDS - LAST_PUSH ))
+            if [ "$CHANGED" != "yes" ] && [ "$LAST_PUSH" -ne 0 ] && [ "$AGE" -lt 1800 ]; then
+              (cd pub && git checkout -q -- . 2>/dev/null || true)
+              return 0
+            fi
+            ( cd pub && git add -A && if git diff --cached --quiet; then echo "Keine Änderung."; else
+                git commit -qm "Position $(date -u +%Y-%m-%dT%H:%MZ)"
+                git push -q origin position-data || { git pull -q --rebase origin position-data && git push -q origin position-data; }
+              fi ) && LAST_PUSH=$SECONDS || echo "::warning::Veröffentlichen fehlgeschlagen, nächster Versuch im nächsten Takt"
+          }
+          if [ "$DIAG" = "1" ]; then node scripts/fetch-position.mjs; publish; exit 0; fi
+          END=$(( SECONDS + RUN_MINUTES * 60 ))
+          N=0
+          while [ $SECONDS -lt $END ]; do
+            START=$SECONDS; N=$(( N + 1 ))
+            echo "::group::Abfrage $N · $(date -u +%H:%M:%SZ)"
+            node scripts/fetch-position.mjs || echo "::warning::Abfrage $N fehlgeschlagen"
+            node scripts/notify-highlights.mjs || echo "::warning::Wegmarken-Meldung fehlgeschlagen"
+            [ -f out/status.json ] && publish
+            echo "::endgroup::"
+            REST=$(( CYCLE_SECONDS - (SECONDS - START) ))
+            if [ $REST -gt 0 ] && [ $(( SECONDS + REST )) -lt $END ]; then sleep $REST; elif [ $REST -gt 0 ]; then break; fi
+          done
+          echo "$N Abfragen in diesem Lauf."
+
+      # Nur nach einem sauber beendeten Lauf – ein Fehler gleich zu Beginn darf keine Endlosschleife auslösen.
+      - name: Folgelauf starten
+        if: ${{ success() && !inputs.diag }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run position.yml --repo "$GITHUB_REPOSITORY" --ref "$GITHUB_REF_NAME"

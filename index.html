@@ -122,6 +122,7 @@ svg.ic{width:22px;height:22px;flex:0 0 auto;stroke:currentColor;fill:none;stroke
 .leaflet-tooltip.port-tip i{font-style:normal;display:block;font-size:13px;color:var(--brass);font-weight:600}
 .chart-tools{position:absolute;z-index:500;right:14px;top:14px;display:flex;flex-direction:column;gap:8px}
 .tool{box-shadow:var(--shadow)}
+.tool[aria-pressed="true"]{border-color:var(--brass);color:var(--brass);background:var(--brass-soft)}
 
 /* ---------- Tagesband ---------- */
 .log{border-top:1px solid var(--line);background:var(--card);padding:12px 20px 12px;overflow-x:auto;overflow-y:hidden}
@@ -439,7 +440,7 @@ dialog.panel .note code{font-size:14px}
 .tag.live{border-color:var(--live);color:var(--live);font-weight:700}
 .hl-pin{width:12px;height:12px;transform:rotate(45deg);background:var(--paper);border:2px solid var(--brass);border-radius:2px;box-sizing:border-box}
 .hl-pin.top{background:var(--brass)}
-.hl-pin.past{opacity:.45}
+.hl-pin.sm{width:8px;height:8px;border-width:1.5px;margin:2px}
 .shore{border:1px solid var(--line-soft);border-radius:10px;background:var(--card);padding:14px;margin:0 0 10px}
 .shore h4{margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brass)}
 .shore .big{font-family:'Newsreader',Georgia,serif;font-size:22px;font-weight:700;line-height:1.2}
@@ -669,6 +670,7 @@ details.guide p{margin:10px 14px 12px;font-size:16px;line-height:1.5}
         <button class="tool" id="fitBtn">Gesamte Route</button>
         <button class="tool" id="shipBtn">Schiff zeigen</button>
         <button class="tool" id="nextBtn">Nächster Hafen</button>
+        <button class="tool" id="hlMapBtn" aria-pressed="true" title="Sehenswertes entlang der Strecke auf der Karte ein- oder ausblenden">Wegmarken</button>
       </div>
     </div>
     <div class="log">
@@ -738,7 +740,7 @@ details.guide p{margin:10px 14px 12px;font-size:16px;line-height:1.5}
 <dialog class="panel" id="cfgDlg">
   <h2>Woher kommt die Schiffsposition? <button data-close aria-label="Schließen"><svg class="ic" style="width:20px;height:20px"><use href="#i-close"/></svg></button></h2>
   <div class="inner">
-    <p>Die echte Position kommt alle 15 Minuten über AIS: Ein Job im Repository fragt aisstream.io ab und legt die
+    <p>Die echte Position kommt alle 5 Minuten über AIS: Ein Job im Repository fragt aisstream.io ab und legt die
       Meldung ab, die Seite liest sie. Niemand muss dafür etwas eingeben. Landstationen empfangen das Schiff in Häfen
       und bis etwa 40 sm vor der Küste; auf hoher See rechnet die Seite die Position aus dem Fahrplan.</p>
     <label for="cfgMode">Quelle</label>
@@ -1650,7 +1652,7 @@ function splitAtDateline(points){
     let lon2 = bLon, d = lon2 - aLon;
     if(d > 180) lon2 -= 360; else if(d < -180) lon2 += 360;
     if(lon2 >= -180 && lon2 <= 180){
-      out.push([[aLat, aLon], [bLat, bLon]]);
+      out.push([[aLat, aLon], [bLat, lon2]]);          /* lon2 statt bLon: ein Punkt genau auf 180° bleibt auf seiner Seite */
     } else {
       const edge = lon2 > 180 ? 180 : -180;
       const t = (edge - aLon) / (lon2 - aLon);
@@ -1904,7 +1906,7 @@ const bathing = t => t >= 26 ? "badewarm" : t >= 22 ? "angenehm" : t >= 18 ? "fr
 /* =======================================================================
    10 · Schiffsposition: Server-AIS, Datei, manuell, Fahrplan
    aisstream.io erlaubt keine Browser-Verbindungen. Deshalb holt eine
-   GitHub Action (.github/workflows/position.yml) die Position alle 15 Min.
+   GitHub Action (.github/workflows/position.yml) die Position alle 5 Min.
    und legt sie auf dem Branch position-data ab; die Seite liest sie hier.
    ===================================================================== */
 const cfg = Object.assign({mode:"auto", manual:null}, (() => {
@@ -1920,7 +1922,7 @@ let shipZone = (() => {                               /* IANA-Zone an der Schiff
 
 const SRC_LABEL = {
   manual:"Position manuell eingetragen",
-  file:"AIS live · alle 10 Min. abgeholt",
+  file:"AIS live · alle 5 Min. abgeholt",
   stale:"Letzte AIS-Meldung",
   schedule:"Fahrplan-Schätzung"
 };
@@ -2557,33 +2559,54 @@ function highlightTile(fix, now){
   return `<button class="tile${live ? " is-live" : ""}" data-hl="1">${icon("flag")}<div><span>${head}${st.basis === "plan" ? " · laut Fahrplan" : ""}</span><b>${it.top ? "★ " : ""}${esc(it.n)}${side && it.k !== "linie" ? ", " + side.split(" (")[0] : ""}</b></div></button>`;
 }
 
-/* ---------- Karte ---------- */
+/* ---------- Karte ----------
+   Rauten für alle Wegmarken: die großen (★) gefüllt und in jeder Zoomstufe, die übrigen ab der Regionalansicht.
+   Die Routenlinie folgt dem Weg über die Wegmarken statt der Luftlinie zwischen zwei Häfen. */
 const hlLayer = L.layerGroup();
 let hlPins = [];
+let hlOnMap = (() => { try{ return localStorage.getItem(LS + "hlMap") !== "0"; }catch(e){ return true; } })();
+const legPts = i => HL.paths[i] ? HL.paths[i].pts : [[CALLS[i].lat, CALLS[i].lon], [CALLS[i + 1].lat, CALLS[i + 1].lon]];
+function routeWay(upTo = CALLS.length - 1){
+  const pts = [[CALLS[0].lat, CALLS[0].lon]];
+  for(let i = 0; i < upTo; i++) legPts(i).slice(1).forEach(p => pts.push(p));
+  return pts;
+}
 function drawHighlightPins(){
   hlLayer.clearLayers();
+  const way = splitAtDateline(routeWay());
+  routeGlow.setLatLngs(way); routeLine.setLatLngs(way);
   const seen = new Set();
   hlPins = HL.items.filter(it => it.k !== "linie").map(it => {
     const key = it.lat.toFixed(2) + "|" + it.lon.toFixed(2);          /* Hin- und Rückweg: nur eine Marke je Ort */
     if(seen.has(key)) return null;
     seen.add(key);
-    const m = L.marker([it.lat, it.lon], {icon:L.divIcon({className:"", html:`<div class="hl-pin${it.top ? " top" : ""}"></div>`, iconSize:[12, 12], iconAnchor:[6, 6]}), zIndexOffset:it.top ? 200 : 100});
-    m.bindTooltip(`<b>${esc(it.n)}</b><i>${esc(hlWhen(it))}</i>`, {className:"port-tip", direction:"top", offset:[0, -8]});
+    const m = L.marker([it.lat, it.lon], {zIndexOffset:it.top ? 200 : 100});
+    m.bindTooltip(`<b>${it.top ? "★ " : ""}${esc(it.n)}</b><i>${esc(hlWhen(it))}</i>`, {className:"port-tip", direction:"top", offset:[0, -8]});
     m.on("click", () => openHighlights(it.id));
     return {it, m};
   }).filter(Boolean);
   syncHighlightPins();
 }
 function syncHighlightPins(){
-  const z = map.getZoom();
+  const z = map.getZoom(), small = z < 5;
+  el("hlMapBtn").setAttribute("aria-pressed", String(hlOnMap));
   hlPins.forEach(({it, m}) => {
-    const show = it.top ? z >= 4 : z >= 6;
+    const show = hlOnMap && (it.top || z >= 5);
+    if(show && m._hlSmall !== small){
+      m._hlSmall = small;
+      m.setIcon(L.divIcon({className:"", html:`<div class="hl-pin${it.top ? " top" : ""}${small ? " sm" : ""}"></div>`, iconSize:[12, 12], iconAnchor:[6, 6]}));
+    }
     if(show && !hlLayer.hasLayer(m)) hlLayer.addLayer(m);
     if(!show && hlLayer.hasLayer(m)) hlLayer.removeLayer(m);
   });
 }
 hlLayer.addTo(map);
 map.on("zoomend", syncHighlightPins);
+el("hlMapBtn").addEventListener("click", () => {
+  hlOnMap = !hlOnMap;
+  try{ localStorage.setItem(LS + "hlMap", hlOnMap ? "1" : "0"); }catch(e){}
+  syncHighlightPins();
+});
 
 /* ---------- Liste ---------- */
 const hlView = (() => { try{ return Object.assign({ahead:true, top:false}, JSON.parse(localStorage.getItem(LS + "hlView") || "{}")); }catch(e){ return {ahead:true, top:false}; } })();
@@ -3113,7 +3136,13 @@ function renderNow(){
     lastSeenMarker.setLatLng([fix.lastSeen.lat, fix.lastSeen.lon]).setStyle({opacity:.9, fillOpacity:.25});
     lastSeenMarker.setTooltipContent(`<b>Zuletzt per AIS gesehen</b><br>vor ${fmtCountdown(now - fix.lastSeen.t)}<br>${fmtLat(fix.lastSeen.lat)} · ${fmtLon(fix.lastSeen.lon)}`);
   } else lastSeenMarker.setStyle({opacity:0, fillOpacity:0});
-  const sailedPts = !claim ? [] : CALLS.slice(0, Math.max(0, (fix.prevIdx >= 0 ? fix.prevIdx : fix.portIdx) + 1)).map(x => [x.lat, x.lon]);
+  const lastCall = fix.prevIdx >= 0 ? fix.prevIdx : fix.portIdx;
+  const sailedPts = !claim || lastCall < 0 ? [] : routeWay(lastCall);
+  if(claim && fix.phase === "sea" && HL.paths[lastCall]){
+    /* laufende Etappe: die schon passierten Wegpunkte, dann das Schiff */
+    const path = HL.paths[lastCall], done = Unterwegs.progressOf(HL, lastCall, fix.lat, fix.lon) * path.total;
+    path.pts.forEach((p, k) => { if(k > 0 && k < path.pts.length - 1 && path.cum[k] < done) sailedPts.push(p); });
+  }
   if(claim) sailedPts.push([fix.lat, fix.lon]);
   sailedLine.setLatLngs(sailedPts.length > 1 ? splitAtDateline(sailedPts) : []);
 
@@ -3501,7 +3530,7 @@ function renderShipSheet(){
     liveHint = aisCheck && aisCheck.error
       ? `Der automatische AIS-Abgleich meldet einen Fehler: ${aisCheck.error}. Bitte den Schlüssel im Repository prüfen.`
       : aisCheck
-        ? `Die Position wird alle 15 Minuten über AIS abgefragt. Landstationen empfangen das Schiff in Häfen und bis etwa 40 sm vor der Küste; auf hoher See bleibt es bei der Fahrplan-Schätzung. Die Anzeige aktualisiert sich von selbst.`
+        ? `Die Position wird alle 5 Minuten über AIS abgefragt. Landstationen empfangen das Schiff in Häfen und bis etwa 40 sm vor der Küste; auf hoher See bleibt es bei der Fahrplan-Schätzung. Die Anzeige aktualisiert sich von selbst.`
         : `Der automatische AIS-Abgleich hat noch kein Ergebnis geliefert. Läuft er, erscheint hier die echte Position, sobald eine Landstation das Schiff empfängt.`;
   }
 
