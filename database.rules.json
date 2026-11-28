@@ -61,6 +61,21 @@
           "$other": { ".validate": false }
         }
       },
+      "pos": {
+        ".read": "auth != null",
+        "ship": {
+          ".write": "auth != null && newData.exists()",
+          ".validate": "newData.hasChildren(['lat', 'lon', 't'])",
+          "lat": { ".validate": "newData.isNumber() && newData.val() >= -90 && newData.val() <= 90" },
+          "lon": { ".validate": "newData.isNumber() && newData.val() >= -180 && newData.val() <= 180" },
+          "t": { ".validate": "newData.isNumber() && newData.val() <= now + 600000 && newData.val() >= now - 3600000" },
+          "sog": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 40" },
+          "cog": { ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 360" },
+          "acc": { ".validate": "newData.isNumber() && newData.val() >= 0" },
+          "by": { ".validate": "newData.isString() && newData.val().length <= 40" },
+          "$other": { ".validate": false }
+        }
+      },
       "_probe": {
         ".read": "auth != null",
         ".write": "auth != null",

@@ -714,6 +714,7 @@ details.guide p{margin:10px 14px 12px;font-size:16px;line-height:1.5}
       <a class="chip" id="vfLink" href="https://www.vesselfinder.com/vessels/details/9398917" target="_blank" rel="noopener">VesselFinder</a>
       <a class="chip" id="mtLink" href="https://www.marinetraffic.com/en/ais/details/ships/imo:9398917" target="_blank" rel="noopener">MarineTraffic</a>
       <button class="chip" id="cfgBtn">Positionsquelle</button>
+      <button class="chip" id="gpsBtn" title="Für das Handy, das mitreist: teilt die GPS-Position des Schiffs mit allen">An Bord: GPS teilen</button>
       <button class="chip" id="refreshBtn">Aktualisieren</button>
       <button class="chip" id="reloadBtn" title="Lädt die neueste Fassung der Seite; Einträge bleiben erhalten">App neu laden</button>
     </div>
@@ -743,6 +744,7 @@ details.guide p{margin:10px 14px 12px;font-size:16px;line-height:1.5}
     <p>Die echte Position kommt alle 5 Minuten über AIS: Ein Job im Repository fragt aisstream.io ab und legt die
       Meldung ab, die Seite liest sie. Niemand muss dafür etwas eingeben. Landstationen empfangen das Schiff in Häfen
       und bis etwa 40 sm vor der Küste; auf hoher See rechnet die Seite die Position aus dem Fahrplan.</p>
+    <div id="gpsBox"></div>
     <label for="cfgMode">Quelle</label>
     <select id="cfgMode">
       <option value="auto">Automatisch (AIS-Abgleich, sonst Fahrplan)</option>
@@ -1921,6 +1923,7 @@ let shipZone = (() => {                               /* IANA-Zone an der Schiff
 })();
 
 const SRC_LABEL = {
+  gps:"GPS vom Handy an Bord",
   manual:"Position manuell eingetragen",
   file:"AIS live · alle 5 Min. abgeholt",
   stale:"Letzte AIS-Meldung",
@@ -1957,11 +1960,99 @@ function aisCheckText(now){
   return aisCheck.received ? `AIS-Meldung vor ${age} empfangen` : `AIS vor ${age} geprüft, Schiff außer Reichweite der Landstationen`;
 }
 
+/* ---------- GPS vom Handy an Bord ----------
+   Auf hoher See sieht keine Landstation das Schiff. Das Handy, das mitreist, kann deshalb seine GPS-Position teilen
+   (Schalter im Dialog „Positionsquelle“): beim Öffnen der App und danach alle paar Minuten, solange sie offen ist.
+   Ablage im gemeinsamen Speicher unter pos/ship; alle Geräte und der Push-Job lesen sie wie eine AIS-Meldung.
+   Geteilt und angenommen wird nur, was zum Schiff passt: auf See laut Fahrplan und nahe der erwarteten Position
+   oder der letzten AIS-Meldung. Im Hafen liefert AIS – und das Handy ist dann oft mit auf Landgang. */
+let gpsPos = null;
+const onboard = {on:(() => { try{ return localStorage.getItem(LS + "gps") === "1"; }catch(e){ return false; } })(), last:0, busy:false, msg:""};
+function gpsCheck(lat, lon, t){
+  const s = scheduleState(t);
+  if(s.phase !== "sea") return {ok:false, why:"port"};
+  const d = distNm(s.lat, s.lon, lat, lon);
+  if(d <= 400) return {ok:true};
+  if(filePos && isFinite(filePos.t)){
+    const h = Math.abs(t - filePos.t) / 3600000;
+    if(h < 24 && distNm(filePos.lat, filePos.lon, lat, lon) <= 30 + 25 * h) return {ok:true};
+  }
+  return {ok:false, why:"far", d};
+}
+async function loadGpsPos(){
+  if(!sync.url) return;
+  try{
+    const d = await syncGet("pos/ship");
+    if(!d || !isFinite(d.lat) || !isFinite(d.lon) || !isFinite(d.t) || d.t > Date.now() + 600000) return;
+    if(!gpsCheck(+d.lat, +d.lon, +d.t).ok) return;
+    gpsPos = {lat:+d.lat, lon:+d.lon, sog:isFinite(d.sog) ? +d.sog : null, cog:isFinite(d.cog) ? +d.cog : null, t:+d.t, acc:isFinite(d.acc) ? +d.acc : null, note:"GPS"};
+  }catch(e){}
+}
+function shareGps(manual){
+  if((!onboard.on && !manual) || onboard.busy) return;
+  if(!manual && Date.now() - onboard.last < 4 * 60000) return;
+  if(!("geolocation" in navigator)){ onboard.msg = "Dieses Gerät kann seinen Standort nicht bestimmen."; return renderGpsBox(); }
+  if(!sync.url){ onboard.msg = "Der gemeinsame Speicher ist nicht eingerichtet."; return renderGpsBox(); }
+  onboard.busy = true; onboard.last = Date.now();
+  if(manual){ onboard.msg = "Standort wird bestimmt …"; renderGpsBox(); }
+  navigator.geolocation.getCurrentPosition(async pos => {
+    try{
+      const c = pos.coords, now = Date.now();
+      const t = isFinite(pos.timestamp) && Math.abs(now - pos.timestamp) < 5 * 60000 ? Math.round(pos.timestamp) : now;
+      const chk = gpsCheck(c.latitude, c.longitude, t);
+      if(!(c.accuracy <= 2000)) onboard.msg = "Standort zu ungenau – am besten an Deck oder am Fenster noch einmal versuchen.";
+      else if(!chk.ok) onboard.msg = chk.why === "port"
+        ? "Laut Fahrplan liegt das Schiff im Hafen. Dort kommt die Position über AIS; das Handy sendet nur auf See."
+        : `Dieses Handy ist ${Math.round(chk.d).toLocaleString("de-DE")} sm von der erwarteten Schiffsposition entfernt – nicht gesendet.`;
+      else {
+        /* Fahrt und Kurs: vom Gerät, sonst aus der vorigen geteilten Position gerechnet */
+        let sog = isFinite(c.speed) && c.speed !== null && c.speed >= 0 ? c.speed * 1.94384 : null;
+        let cog = sog !== null && sog > 1 && isFinite(c.heading) && c.heading !== null ? c.heading : null;
+        if(gpsPos && t - gpsPos.t > 2 * 60000 && t - gpsPos.t < 3 * 3600000){
+          const nm = distNm(gpsPos.lat, gpsPos.lon, c.latitude, c.longitude), kn = nm / ((t - gpsPos.t) / 3600000);
+          if(sog === null && kn <= 30) sog = kn;
+          if(cog === null && nm > 0.3) cog = bearingDeg(gpsPos.lat, gpsPos.lon, c.latitude, c.longitude);
+        }
+        const rec = {lat:+c.latitude.toFixed(5), lon:+c.longitude.toFixed(5), t, acc:Math.round(c.accuracy)};
+        if(sog !== null) rec.sog = +Math.min(40, sog).toFixed(1);
+        if(cog !== null) rec.cog = Math.round(cog) % 360;
+        if(who) rec.by = who.slice(0, 40);
+        await syncReq("pos/ship", {method:"PUT", headers:{"Content-Type":"application/json"}, body:JSON.stringify(rec)});
+        gpsPos = {lat:rec.lat, lon:rec.lon, sog:rec.sog ?? null, cog:rec.cog ?? null, t, acc:rec.acc, note:"GPS"};
+        onboard.msg = `Gesendet um ${clockIn(now, HOME.tz)} Wiener Zeit, Genauigkeit ±${rec.acc.toLocaleString("de-DE")} m.`;
+        refreshView();
+      }
+    }catch(e){
+      onboard.msg = /HTTP 40[13]/.test(e && e.message || "") ? "Der gemeinsame Speicher nimmt die Position noch nicht an – die Datenbank-Regeln müssen neu eingespielt werden." : "Senden fehlgeschlagen – keine Verbindung? Der nächste Versuch folgt von selbst.";
+    }
+    onboard.busy = false; renderGpsBox();
+  }, err => {
+    onboard.busy = false;
+    onboard.msg = err.code === 1 ? "Der Standortzugriff ist für diese Seite gesperrt. Bitte in den Einstellungen des Handys erlauben."
+      : "Kein GPS-Empfang – an Deck oder am Fenster klappt es meist. Der nächste Versuch folgt von selbst.";
+    renderGpsBox();
+  }, {enableHighAccuracy:true, timeout:30000, maximumAge:60000});
+}
+function renderGpsBox(){
+  const btn = el("gpsBtn");
+  if(btn){ btn.textContent = onboard.on ? "An Bord: GPS wird geteilt" : "An Bord: GPS teilen"; btn.classList.toggle("on", onboard.on); }
+  const box = el("gpsBox");
+  if(!box) return;
+  const age = gpsPos ? ` Letzte geteilte GPS-Position vor ${fmtCountdown(Date.now() - gpsPos.t)}.` : "";
+  box.innerHTML = `<div class="hl-push${onboard.on ? " on" : ""}"><b>${onboard.on ? "Dieses Handy teilt die GPS-Position des Schiffs" : "An Bord? GPS dieses Handys teilen"}</b>
+    <p>Auf hoher See erreicht keine Landstation das Schiff. Ist der Schalter an, sendet dieses Handy beim Öffnen der App seine GPS-Position, und alle sehen die echte Schiffsposition statt der Schätzung. GPS geht ohne Internet, zum Senden braucht es das Bord-WLAN. Nur am Handy einschalten, das mitreist. Im Hafen wird nichts gesendet.${age}</p>
+    <div class="row">${onboard.on
+      ? `<button class="chip" type="button" data-gps="now">Jetzt senden</button><button class="chip" type="button" data-gps="off">Ausschalten</button>`
+      : `<button class="btn primary" type="button" data-gps="on">GPS teilen einschalten</button>`}</div>
+    ${onboard.msg ? `<p class="note" role="status">${esc(onboard.msg)}</p>` : ""}</div>`;
+}
+
 function pickFix(now){
   if(cfg.mode === "schedule") return null;
   const cands = [];
   if(cfg.manual && (cfg.mode === "auto" || cfg.mode === "manual")) cands.push({...cfg.manual, src:"manual"});
   if(filePos && cfg.mode === "auto") cands.push({...filePos, src:"file"});
+  if(gpsPos && cfg.mode === "auto") cands.push({...gpsPos, src:"gps"});
   const fresh = cands.filter(c => isFinite(c.t) && now - c.t < POS_MAX_AGE_H * 3600000);
   fresh.sort((a, b) => b.t - a.t);
   return fresh[0] || null;
@@ -3784,7 +3875,16 @@ function syncCfgForm(){
     ? `Aktuell aktiv: ${SRC_LABEL[fix.src]}, Meldung vor ${fmtCountdown(now - fix.t)}.`
     : `Aktuell aktiv: Fahrplan-Schätzung.`) + ` ${aisCheckText(now)}.`;
 }
-el("cfgBtn").addEventListener("click", () => { syncCfgForm(); dlg.showModal(); });
+el("cfgBtn").addEventListener("click", () => { syncCfgForm(); renderGpsBox(); dlg.showModal(); });
+el("gpsBtn").addEventListener("click", () => { syncCfgForm(); renderGpsBox(); dlg.showModal(); });
+el("gpsBox").addEventListener("click", e => {
+  const b = e.target.closest("button[data-gps]");
+  if(!b) return;
+  if(b.dataset.gps === "off"){ onboard.on = false; onboard.msg = ""; }
+  else { onboard.on = true; shareGps(true); }
+  try{ localStorage.setItem(LS + "gps", onboard.on ? "1" : "0"); }catch(err){}
+  renderGpsBox();
+});
 el("cfgMode").addEventListener("change", () => { cfg.mode = el("cfgMode").value; syncCfgForm(); });
 el("cfgSave").addEventListener("click", () => {
   cfg.mode = el("cfgMode").value;
@@ -3812,7 +3912,7 @@ function setFold(folded){
 foldBtn.addEventListener("click", () => setFold(!nowEl.classList.contains("is-folded")));
 try{ if(localStorage.getItem(LS + "fold") === "1") setFold(true); }catch(e){}
 el("vfLink").href = SHIP.vf; el("mtLink").href = SHIP.mt;
-el("refreshBtn").addEventListener("click", async () => { await Promise.all([loadFilePosition(), loadSharedExcursions(), sync.url ? pullShared() : null]); refreshView(); refreshWarnings(); });
+el("refreshBtn").addEventListener("click", async () => { if(onboard.on) shareGps(true); await Promise.all([loadFilePosition(), loadGpsPos(), loadSharedExcursions(), sync.url ? pullShared() : null]); refreshView(); refreshWarnings(); });
 
 /* =======================================================================
    18 · Start und Takt
@@ -3838,16 +3938,18 @@ if(/^#ais=/.test(location.hash)) history.replaceState(null, "", location.pathnam
 renderList(); markToday(); renderNow(); renderWarnBox();
 Promise.all([loadFilePosition(), loadSharedExcursions(), loadSyncConfig(), loadDiaryConfig(), loadImages(), loadRates(), loadHighlights()]).then(async () => {
   refreshView(); refreshWarnings(); pushResume();
+  loadGpsPos().then(() => { refreshView(); renderGpsBox(); shareGps(); });
   if(sync.url){ recordVisit(); await pullShared(); await pushAllShared(); refreshShared(); }
 });
 setInterval(async () => { if(sync.url && await pullShared()) refreshShared(); }, 60000);
 openFromHash();
 addEventListener("hashchange", openFromHash);
 setInterval(() => { renderNow(); if(sheet.classList.contains("is-open") && sheetMode === "ship") renderShipSheet(); }, 20000);
-setInterval(() => { loadFilePosition().then(refreshView); }, 5 * 60000);
+setInterval(() => { Promise.all([loadFilePosition(), loadGpsPos()]).then(refreshView); }, 5 * 60000);
+setInterval(() => { if(!document.hidden) shareGps(); }, 60000);
 setInterval(refreshWarnings, 30 * 60000);
 setInterval(renderList, 10 * 60000);
-document.addEventListener("visibilitychange", () => { if(!document.hidden){ loadFilePosition().then(refreshView); refreshWarnings(); if(sync.url){ recordVisit(); pullShared().then(ch => { if(ch) refreshShared(); }); } } });
+document.addEventListener("visibilitychange", () => { if(!document.hidden){ shareGps(); Promise.all([loadFilePosition(), loadGpsPos()]).then(refreshView); refreshWarnings(); if(sync.url){ recordVisit(); pullShared().then(ch => { if(ch) refreshShared(); }); } } });
 /* ---------- Neue Fassung der Seite ----------
    Als App am Startbildschirm (iOS) bleibt die Seite tagelang im Speicher und hat keinen Neu-laden-Knopf.
    Deshalb: Knopf „App neu laden“ (holt die Seite frisch vom Server, Einträge im Browser bleiben) und eine

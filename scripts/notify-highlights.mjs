@@ -72,7 +72,41 @@ if(fix && Number.isFinite(fix.lat) && Number.isFinite(fix.lon)){
   const t = Date.parse(fix.timestamp || "");
   if(Number.isFinite(t) && NOW - t <= U.LIVE_MAX_AGE && NOW - t > -5 * 60000) pos = {lat: fix.lat, lon: fix.lon, sog: fix.sog, cog: fix.cog, t, live: true};
 }
-console.log(pos ? `Position: AIS ${pos.lat}, ${pos.lon}, ${pos.sog} kn, Kurs ${pos.cog}°` : "Position: keine frische AIS-Meldung, es gilt der Fahrplan");
+
+/* ---------- Firebase: Anmeldung (für eine knappe Stunde in out/ gemerkt) ---------- */
+const sync = readJson(join(ROOT, "data/sync.json"), {});
+const base = (sync.url || "").replace(/\/+$/, "");
+let authQuery = null;
+async function firebaseAuth(){
+  if(authQuery) return authQuery;
+  const file = `${OUT}/.firebase-token.json`;
+  let tok = readJson(file, null);
+  if(!tok || !tok.idToken || Date.now() > tok.exp){
+    const login = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${encodeURIComponent(sync.apiKey)}`,
+      {method: "POST", headers: {"Content-Type": "application/json", Referer: SITE}, body: JSON.stringify({returnSecureToken: true}), signal: AbortSignal.timeout(15000)}).then(r => r.json());
+    if(!login.idToken) throw new Error("Anmeldung bei Firebase abgelehnt: " + JSON.stringify(login.error || login).slice(0, 200));
+    tok = {idToken: login.idToken, exp: Date.now() + 50 * 60000};
+    try{ mkdirSync(OUT, {recursive: true}); writeFileSync(file, JSON.stringify(tok)); }catch(e){}
+  }
+  return authQuery = "?auth=" + encodeURIComponent(tok.idToken);
+}
+
+/* GPS vom Handy an Bord (in der App geteilt, Bereich pos/ship): gilt wie eine AIS-Meldung, wenn sie frischer ist
+   und zum Fahrplan passt – auf See und höchstens 400 sm von der erwarteten Position. */
+let source = pos ? "ais" : "fahrplan";
+if(!DRY && base && sync.apiKey){
+  try{
+    const g = await fetch(`${base}/pos/ship.json${await firebaseAuth()}`, {signal: AbortSignal.timeout(15000)}).then(r => r.ok ? r.json() : null);
+    if(g && Number.isFinite(g.lat) && Number.isFinite(g.lon) && Number.isFinite(g.t) && NOW - g.t <= U.LIVE_MAX_AGE && NOW - g.t > -10 * 60000 && (!pos || g.t > pos.t)){
+      const leg = calls.findIndex((c, i) => i < calls.length - 1 && c.depUtc && calls[i + 1].arrUtc && g.t >= c.depUtc && g.t < calls[i + 1].arrUtc);
+      const est = leg >= 0 ? U.along(plan, leg, (g.t - calls[leg].depUtc) / (calls[leg + 1].arrUtc - calls[leg].depUtc)) : null;
+      const near = est ? U.distNm(est.lat, est.lon, g.lat, g.lon) <= 400 : leg >= 0;
+      if(near){ pos = {lat: g.lat, lon: g.lon, sog: Number.isFinite(g.sog) ? g.sog : null, cog: Number.isFinite(g.cog) ? g.cog : null, t: g.t, live: true}; source = "gps"; }
+      else console.log("GPS-Position verworfen: passt nicht zum Fahrplan.");
+    }
+  }catch(e){ console.log("GPS-Position nicht lesbar:", e.message); }
+}
+console.log(pos ? `Position: ${source === "gps" ? "GPS vom Handy" : "AIS"} ${pos.lat}, ${pos.lon}, ${pos.sog} kn, Kurs ${pos.cog}°` : "Position: keine frische Meldung, es gilt der Fahrplan");
 
 /* ---------- Was ist zu melden? ---------- */
 const stateFile = `${OUT}/unterwegs-state.json`;
@@ -98,18 +132,13 @@ const messages = batch.map(({it, st, kind}) => {
 });
 
 /* ---------- Senden ---------- */
-const sync = readJson(join(ROOT, "data/sync.json"), {});
 const PRIV = (process.env.VAPID_PRIVATE_KEY || "").trim();
 const canSend = !DRY && PRIV && sync.vapidKey && sync.url && sync.apiKey;
 if(messages.length && !canSend){
   console.log(DRY ? "Probelauf: nichts gesendet, nichts gemerkt." : "Push nicht eingerichtet (VAPID_PRIVATE_KEY oder vapidKey in data/sync.json fehlt) – nichts gesendet.");
 }
 if(messages.length && canSend){
-  const base = sync.url.replace(/\/+$/, "");
-  const login = await fetch(`https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${encodeURIComponent(sync.apiKey)}`,
-    {method: "POST", headers: {"Content-Type": "application/json", Referer: SITE}, body: JSON.stringify({returnSecureToken: true})}).then(r => r.json());
-  if(!login.idToken) throw new Error("Anmeldung bei Firebase abgelehnt: " + JSON.stringify(login.error || login).slice(0, 200));
-  const auth = "?auth=" + encodeURIComponent(login.idToken);
+  const auth = await firebaseAuth();
   const res = await fetch(`${base}/push.json${auth}`);
   if(!res.ok) throw new Error(`Empfänger nicht lesbar (HTTP ${res.status}) – Regeln aus database.rules.json eingespielt?`);
   const subs = Object.entries(await res.json() || {}).filter(([, s]) => s && s.endpoint && !s.off);
@@ -142,6 +171,6 @@ for(const [id, v] of Object.entries(mem.sent)) if(NOW - Math.max(v.near || 0, v.
 if(!DRY){
   mkdirSync(OUT, {recursive: true});
   mem.checked = new Date(NOW).toISOString();
-  mem.basis = pos ? "ais" : "fahrplan";
+  mem.basis = source;
   writeFileSync(stateFile, JSON.stringify(mem, null, 1) + "\n");
 }
