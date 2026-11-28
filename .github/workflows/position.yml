@@ -39,6 +39,11 @@ jobs:
             else
               rm -f out/position.tmp
             fi
+            if git show origin/position-data:unterwegs-state.json > out/state.tmp 2>/dev/null && [ -s out/state.tmp ]; then
+              mv out/state.tmp out/unterwegs-state.json
+            else
+              rm -f out/state.tmp
+            fi
           fi
 
       - name: Position über aisstream abfragen
@@ -47,6 +52,18 @@ jobs:
           OUT_DIR: out
           DIAG: ${{ inputs.diag && '1' || '0' }}
         run: node scripts/fetch-position.mjs
+
+      # Push-Nachrichten zu den Wegmarken (data/unterwegs.json). Ohne das Secret VAPID_PRIVATE_KEY wird nur gerechnet.
+      # Ein Fehler hier darf die Position nicht aufhalten.
+      - name: Wegmarken melden
+        if: ${{ !inputs.diag }}
+        continue-on-error: true
+        env:
+          VAPID_PRIVATE_KEY: ${{ secrets.VAPID_PRIVATE_KEY }}
+          OUT_DIR: out
+        run: |
+          if [ -n "$VAPID_PRIVATE_KEY" ]; then npm install --no-save --no-audit --no-fund --silent web-push@3; fi
+          node scripts/notify-highlights.mjs
 
       - name: Auf Branch position-data veröffentlichen
         run: |
@@ -61,6 +78,7 @@ jobs:
           fi
           cp out/status.json pub/status.json
           [ -f out/position.json ] && cp out/position.json pub/position.json
+          [ -f out/unterwegs-state.json ] && cp out/unterwegs-state.json pub/unterwegs-state.json
           cd pub
           git add -A
           if git diff --cached --quiet; then

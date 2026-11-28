@@ -410,6 +410,36 @@ dialog.panel .note code{font-size:14px}
 .vland u{display:block;height:100%;background:var(--live);border-radius:0 4px 4px 0;text-decoration:none}
 .vland b{text-align:right;font-weight:600}
 .chip.is-new{border-color:var(--live);color:var(--live);font-weight:700}
+/* ---------- Unterwegs zu sehen ---------- */
+.tile.is-live{border-color:var(--live);background:var(--live-soft)}
+.tile.is-live svg,.tile.is-live span{color:var(--live)}
+.hl-push{background:var(--card);border:1px solid var(--line-soft);border-radius:10px;padding:12px 14px;margin-bottom:14px}
+.hl-push b{display:block;font-size:17px}
+.hl-push p{font-size:15px;color:var(--ink-2);margin:4px 0 10px;line-height:1.45}
+.hl-push .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.hl-push label.opt{display:flex;gap:8px;align-items:center;font-size:15px;color:var(--ink);margin:10px 0 0}
+.hl-push label.opt input{width:20px;height:20px;min-height:0;padding:0;display:inline-block;flex:0 0 auto;-webkit-appearance:checkbox;appearance:auto;accent-color:var(--brass)}
+.hl-push select{width:auto;flex:1 1 180px;-webkit-appearance:menulist;appearance:auto}
+.hl-push.on{border-color:color-mix(in srgb,var(--live) 45%,transparent)}
+.hl-push.on b{color:var(--live)}
+.hl-filter{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.hl-leg{margin:18px 0 2px;font-family:'Newsreader',Georgia,serif;font-size:21px;font-weight:700}
+.hl-leg small{display:block;font-family:inherit;font:400 14px/1.3 system-ui,sans-serif;color:var(--ink-2)}
+.hllist{list-style:none;margin:0;padding:0}
+.hllist li{padding:12px 0;border-bottom:1px solid var(--line-soft)}
+.hllist li.past{opacity:.58}
+.hllist .hd{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+.hllist .hd b{font-size:17px;font-weight:600}
+.hllist .star{color:var(--brass)}
+.hllist .when{display:block;font-size:14px;color:var(--ink-2);margin-top:2px;font-variant-numeric:tabular-nums}
+.hllist p{margin:6px 0 0;font-size:15px;line-height:1.45}
+.hllist .more{display:flex;gap:14px;margin-top:6px;font-size:14px}
+.hllist .more button,.hllist .more a{color:var(--brass);text-decoration:underline;text-underline-offset:3px;padding:4px 0}
+.tag{display:inline-block;font-size:13px;line-height:1;padding:4px 7px;border-radius:999px;border:1px solid var(--line);color:var(--ink-2);white-space:nowrap}
+.tag.live{border-color:var(--live);color:var(--live);font-weight:700}
+.hl-pin{width:12px;height:12px;transform:rotate(45deg);background:var(--paper);border:2px solid var(--brass);border-radius:2px;box-sizing:border-box}
+.hl-pin.top{background:var(--brass)}
+.hl-pin.past{opacity:.45}
 .shore{border:1px solid var(--line-soft);border-radius:10px;background:var(--card);padding:14px;margin:0 0 10px}
 .shore h4{margin:0 0 8px;font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--brass)}
 .shore .big{font-family:'Newsreader',Georgia,serif;font-size:22px;font-weight:700;line-height:1.2}
@@ -622,6 +652,7 @@ details.guide p{margin:10px 14px 12px;font-size:16px;line-height:1.5}
   <div class="head-tools">
     <button class="btn" id="diaryBtn" hidden>Tagebuch</button>
     <button class="btn" id="icsBtn" title="Alle Häfen als Kalenderdatei herunterladen">Kalender</button>
+    <button class="btn" id="hlBtn" title="Sehenswertes entlang der Strecke und Benachrichtigungen">Unterwegs</button>
     <button class="btn" id="statsBtn">Reise in Zahlen</button>
     <button class="btn" id="tzBtn">Zeitumstellungen</button>
     <button class="btn" id="visaBtn">Visa Status</button>
@@ -741,6 +772,11 @@ details.guide p{margin:10px 14px 12px;font-size:16px;line-height:1.5}
   <div class="inner" id="statsBody"></div>
 </dialog>
 
+<dialog class="panel" id="hlDlg">
+  <h2>Unterwegs zu sehen <button data-close aria-label="Schließen"><svg class="ic" style="width:20px;height:20px"><use href="#i-close"/></svg></button></h2>
+  <div class="inner" id="hlBody"></div>
+</dialog>
+
 <dialog class="panel" id="tzDlg">
   <h2>Zeitumstellungen an Bord <button data-close aria-label="Schließen"><svg class="ic" style="width:20px;height:20px"><use href="#i-close"/></svg></button></h2>
   <div class="inner" id="tzBody"></div>
@@ -772,6 +808,7 @@ details.guide p{margin:10px 14px 12px;font-size:16px;line-height:1.5}
 </dialog>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="unterwegs.js"></script>
 <script>
 /* =======================================================================
    1 · Konfiguration und Reisedaten
@@ -825,6 +862,7 @@ const POS_FILE = "data/position.json";                /* optionale, gemeinsam ge
 const EXC_FILE = "data/ausfluege.json";               /* optionale, gemeinsam genutzte Landausflüge */
 const SYNC_FILE = "data/sync.json";                   /* Adresse des gemeinsamen Speichers (Firebase Realtime Database) */
 const DIARY_FILE = "data/tagebuch.json";              /* Reisetagebuch auf FindPenguins: Link und Einbettung */
+const HL_FILE = "data/unterwegs.json";                /* Wegmarken entlang der Strecke */
 const IMG_FILE = "data/bilder.json";                  /* im Repository hinterlegte Hafenbilder mit Urheberangaben */
 const POS_MAX_AGE_H = 18;                             /* danach gilt eine Meldung als veraltet */
 const WX_TTL_MS = 20 * 60 * 1000;                     /* Wetter-Cache */
@@ -1162,6 +1200,8 @@ const TOTAL_NM = LEGS.reduce((s, l) => s + l.nm, 0);
 const cumNm = [0];
 LEGS.forEach((l, i) => cumNm[i + 1] = cumNm[i] + l.nm);
 
+/* Wegmarken (data/unterwegs.json) samt Weg je Etappe; wird in Abschnitt 13c geladen */
+let HL = {items:[], paths:{}};
 /* Wo ist das Schiff laut Fahrplan? */
 function scheduleState(now){
   const first = CALLS[0], last = CALLS[CALLS.length - 1];
@@ -1186,9 +1226,11 @@ function scheduleState(now){
     const a = CALLS[leg.from], b = CALLS[leg.to];
     if(a.depUtc && b.arrUtc && now >= a.depUtc && now < b.arrUtc){
       const f = (now - a.depUtc) / (b.arrUtc - a.depUtc);
-      const [lat, lon] = gcPoint(a.lat, a.lon, b.lat, b.lon, f);
+      /* Sind Wegmarken hinterlegt, folgt die Schätzung dem Seeweg (z. B. durch Gibraltar) statt dem Großkreis über Land */
+      const way = Unterwegs.along(HL, leg.from, f);
+      const [lat, lon] = way ? [way.lat, way.lon] : gcPoint(a.lat, a.lon, b.lat, b.lon, f);
       return {phase:"sea", lat, lon, sog:leg.kn,
-        cog:bearingDeg(lat, lon, b.lat, b.lon),
+        cog:way ? way.cog : bearingDeg(lat, lon, b.lat, b.lon),
         portIdx:-1, prevIdx:leg.from, nextIdx:leg.to, nm:cumNm[leg.from] + leg.nm * f};
     }
   }
@@ -2049,7 +2091,7 @@ let who = (() => { try{ return localStorage.getItem(LS + "who") || ""; }catch(e)
 /* ---------- Gemeinsamer Speicher: Firebase Realtime Database über REST ----------
    data/sync.json: {"url":"https://<projekt>-default-rtdb.<region>.firebasedatabase.app/weltreise"}
    Ablage: <url>/notes/<schluessel>.json und <url>/excursions/<id>.json. Zuletzt geschriebener Stand gewinnt. */
-const sync = {url:null, key:"", authErr:"", ok:false, err:"", code:0, last:0, pending:0, pulled:0};
+const sync = {url:null, key:"", vapid:"", authErr:"", ok:false, err:"", code:0, last:0, pending:0, pulled:0};
 /* Fehler in verständliche Worte fassen */
 function syncFail(e){
   const m = /HTTP (\d+)/.exec(e && e.message || "");
@@ -2066,6 +2108,7 @@ async function loadSyncConfig(){
     const c = await fetchJson(SYNC_FILE + "?_=" + Math.floor(Date.now() / 600000));
     if(c && typeof c.url === "string" && /^https:\/\//.test(c.url)) sync.url = c.url.replace(/\/+$/, "");
     if(c && typeof c.apiKey === "string") sync.key = c.apiKey.trim();
+    if(c && typeof c.vapidKey === "string") sync.vapid = c.vapidKey.trim();
   }catch(e){ sync.url = null; }
 }
 /* Anonyme Anmeldung bei Firebase (REST): Die Datenbank-Regeln lassen nur angemeldete Aufrufe zu.
@@ -2454,7 +2497,7 @@ function computeEvents(){
       if(km > far.km) far = {km, t:a.depUtc + f * (b.arrUtc - a.depUtc), lat:p[0], lon:p[1]};
     }
   });
-  ev.push({key:"weitester", title:"Weitester Punkt von " + HOME.label, detail:`${Math.round(far.km).toLocaleString("de-DE")} km Luftlinie`, t:far.t, lat:far.lat, lon:far.lon});
+  ev.push({key:"weitester", title:"Weitester Punkt von " + HOME.label, detail:`${Math.round(far.km).toLocaleString("de-DE")} km Luftlinie`, km:far.km, t:far.t, lat:far.lat, lon:far.lon});
   const last = CALLS[CALLS.length - 1];
   ev.push({key:"halbzeit", title:"Halbzeit der Reise", detail:`Tag ${Math.round(TOTAL_DAYS / 2)} von ${TOTAL_DAYS}`, t:START + (last.arrUtc - START) / 2});
   ev.push({key:"heimkehr", title:"Heimkehr", detail:`Ankunft in ${short(last.n)}`, t:last.arrUtc});
@@ -2463,6 +2506,287 @@ function computeEvents(){
 const EVENTS = computeEvents();
 const FAR = EVENTS.find(e => e.key === "weitester");
 const nextEvent = now => EVENTS.find(e => e.t > now) || null;
+
+/* =======================================================================
+   13c · Unterwegs zu sehen: Wegmarken entlang der Strecke und Benachrichtigungen
+   Daten in data/unterwegs.json, Rechenlogik in unterwegs.js (dieselbe nutzt der Push-Job
+   scripts/notify-highlights.mjs). Ein Hinweis kommt, sobald sich das Schiff nähert, und noch
+   einmal, wenn die Wegmarke querab liegt. Bei offener App als Einblendung, sonst als Push.
+   ===================================================================== */
+let hlLoad = null;
+function loadHighlights(){
+  if(!hlLoad) hlLoad = fetchJson(HL_FILE + "?_=" + Math.floor(Date.now() / 3600000))
+    .then(d => { HL = Unterwegs.build(CALLS, d); drawHighlightPins(); })
+    .catch(() => { hlLoad = null; });
+  return hlLoad;
+}
+const hlPos = fix => ({lat:fix.lat, lon:fix.lon, cog:fix.cog, sog:fix.sog, t:fix.t, live:fix.live && !fix.stale});
+const hlState = (it, fix, now) => Unterwegs.state(it, hlPos(fix), now, CALLS);
+/* Uhrzeit an Bord zur Passage: Zone des näher gelegenen Hafens der Etappe */
+function hlZone(it){
+  if(it.inCall >= 0) return CALLS[it.inCall].tz;
+  const a = CALLS[it.from], b = CALLS[it.to];
+  return distNm(a.lat, a.lon, it.lat, it.lon) <= distNm(b.lat, b.lon, it.lat, it.lon) ? a.tz : b.tz;
+}
+function hlWhen(it){
+  if(!it.tPlan) return "";
+  const z = hlZone(it), same = offsetOf(it.tPlan, z) === offsetOf(it.tPlan, HOME.tz);
+  return `${dateIn(it.tPlan, z)}, ca. ${clockIn(it.tPlan, z)} an Bord${same ? "" : ` · ${clockIn(it.tPlan, HOME.tz)} in ${HOME.label}`}`;
+}
+const hlSide = st => st.side ? Unterwegs.SIDE[st.side] : "";
+/* Nächste Wegmarke: zuerst, was gerade querab oder nah ist, sonst die nächste sichere laut Plan */
+function nextHighlight(fix, now){
+  let best = null;
+  for(const it of HL.items){
+    if(!it.tPlan || now > it.t1 + 3600000) continue;
+    const st = hlState(it, fix, now);
+    if(st.phase === "vorbei") continue;
+    if(st.phase === "querab" || st.phase === "nah") return {it, st};
+    if(!best && !it.live) best = {it, st};
+    if(it.tPlan > now + 36 * 3600000) break;
+  }
+  return best;
+}
+function highlightTile(fix, now){
+  const n = nextHighlight(fix, now);
+  if(!n) return "";
+  const {it, st} = n, side = hlSide(st);
+  const live = st.phase === "querab" || st.phase === "nah";
+  const head = st.phase === "querab" ? (it.k === "linie" ? "Jetzt" : "Jetzt querab")
+    : `${live ? "Bald zu sehen" : "Unterwegs zu sehen"} · in ${fmtCountdown(Math.max(60000, (st.eta || it.tPlan) - now))}`;
+  return `<button class="tile${live ? " is-live" : ""}" data-hl="1">${icon("flag")}<div><span>${head}${st.basis === "plan" ? " · laut Fahrplan" : ""}</span><b>${it.top ? "★ " : ""}${esc(it.n)}${side && it.k !== "linie" ? ", " + side.split(" (")[0] : ""}</b></div></button>`;
+}
+
+/* ---------- Karte ---------- */
+const hlLayer = L.layerGroup();
+let hlPins = [];
+function drawHighlightPins(){
+  hlLayer.clearLayers();
+  const seen = new Set();
+  hlPins = HL.items.filter(it => it.k !== "linie").map(it => {
+    const key = it.lat.toFixed(2) + "|" + it.lon.toFixed(2);          /* Hin- und Rückweg: nur eine Marke je Ort */
+    if(seen.has(key)) return null;
+    seen.add(key);
+    const m = L.marker([it.lat, it.lon], {icon:L.divIcon({className:"", html:`<div class="hl-pin${it.top ? " top" : ""}"></div>`, iconSize:[12, 12], iconAnchor:[6, 6]}), zIndexOffset:it.top ? 200 : 100});
+    m.bindTooltip(`<b>${esc(it.n)}</b><i>${esc(hlWhen(it))}</i>`, {className:"port-tip", direction:"top", offset:[0, -8]});
+    m.on("click", () => openHighlights(it.id));
+    return {it, m};
+  }).filter(Boolean);
+  syncHighlightPins();
+}
+function syncHighlightPins(){
+  const z = map.getZoom();
+  hlPins.forEach(({it, m}) => {
+    const show = it.top ? z >= 4 : z >= 6;
+    if(show && !hlLayer.hasLayer(m)) hlLayer.addLayer(m);
+    if(!show && hlLayer.hasLayer(m)) hlLayer.removeLayer(m);
+  });
+}
+hlLayer.addTo(map);
+map.on("zoomend", syncHighlightPins);
+
+/* ---------- Liste ---------- */
+const hlView = (() => { try{ return Object.assign({ahead:true, top:false}, JSON.parse(localStorage.getItem(LS + "hlView") || "{}")); }catch(e){ return {ahead:true, top:false}; } })();
+function renderHighlights(focusId){
+  const body = el("hlBody");
+  if(!HL.items.length){ body.innerHTML = "<p>Die Wegmarken werden geladen …</p>"; return; }
+  const now = Date.now(), fix = livePos();
+  const rows = HL.items.map(it => ({it, st:hlState(it, fix, now)}))
+    .filter(r => (!hlView.ahead || r.st.phase !== "vorbei" || r.it.id === focusId) && (!hlView.top || r.it.top));
+  let html = "", leg = null;
+  rows.forEach(({it, st}) => {
+    if(it.leg !== leg){
+      if(leg !== null) html += "</ul>";
+      leg = it.leg;
+      const a = it.inCall >= 0 ? CALLS[it.inCall] : CALLS[it.from], b = it.inCall >= 0 ? null : CALLS[it.to];
+      html += `<h3 class="hl-leg">${b ? `${esc(short(a.n))} → ${esc(short(b.n))}` : `Durchfahrt ${esc(short(a.n))}`}<small>${b ? `Tag ${a.d2}–${b.d1} · ab ${stampIn(a.depUtc, a.tz)}` : `Tag ${a.d1} · ${clockIn(a.arrUtc, a.tz)}–${clockIn(a.depUtc, a.tz)} Ortszeit`}</small></h3><ul class="hllist">`;
+    }
+    const side = it.k === "linie" ? "" : hlSide(st);
+    const tags = [];
+    if(st.phase === "querab") tags.push(`<span class="tag live">${it.k === "linie" ? "jetzt" : "jetzt querab"}</span>`);
+    else if(st.phase === "nah") tags.push(`<span class="tag live">in ${fmtCountdown(Math.max(60000, (st.eta || it.tPlan) - now))}</span>`);
+    else if(st.phase === "vorbei") tags.push(`<span class="tag">vorbei</span>`);
+    if(side) tags.push(`<span class="tag">${esc(side.split(" (")[0].replace(/^an /, ""))}</span>`);
+    if(it.live) tags.push(`<span class="tag" title="Der genaue Kurs steht nicht fest. Ein Hinweis kommt nur, wenn die AIS-Position das Schiff wirklich in der Nähe zeigt.">je nach Route</span>`);
+    if(it.tPlan && Unterwegs.dark(it.lat, it.lon, it.tPlan) && it.k !== "linie") tags.push(`<span class="tag" title="Zur geplanten Zeit ist es dort dunkel">bei Nacht</span>`);
+    html += `<li id="hl-${it.id}" class="${st.phase === "vorbei" ? "past" : ""}">
+      <div class="hd"><b>${it.top ? '<span class="star" title="Großer Höhepunkt">★</span> ' : ""}${esc(it.n)}</b>${tags.join("")}</div>
+      <span class="when">${esc(hlWhen(it))}${st.basis === "live" && st.dist !== null && st.phase !== "vorbei" ? ` · noch ${Unterwegs.fmtNm(st.dist)} sm` : ""}</span>
+      <p>${esc(it.t)}</p>
+      <div class="more">${it.k === "linie" ? "" : `<button type="button" data-map="${it.id}">Auf der Karte</button>`}${it.w ? `<a href="https://de.wikipedia.org/w/index.php?search=${encodeURIComponent(it.w)}" target="_blank" rel="noopener">Wikipedia</a>` : ""}</div>
+    </li>`;
+  });
+  if(leg !== null) html += "</ul>";
+  const total = HL.items.length, tops = HL.items.filter(i => i.top).length;
+  body.innerHTML = `
+    <div id="hlPush"></div>
+    <p>${total} Wegmarken liegen an der Strecke, ${tops} davon sind große Höhepunkte (★). Die Zeiten sind aus dem Fahrplan geschätzt; in Küstennähe rechnet die Seite mit der echten AIS-Position. Backbord ist links, Steuerbord rechts in Fahrtrichtung.</p>
+    <div class="hl-filter">
+      <button class="switch" data-view="ahead" aria-pressed="${hlView.ahead}">Ab jetzt</button>
+      <button class="switch" data-view="top" aria-pressed="${hlView.top}">Nur ★</button>
+    </div>
+    ${html || "<p>Für diese Auswahl gibt es keine Wegmarken mehr.</p>"}`;
+  renderPushBox();
+  if(focusId){ const li = el("hl-" + focusId); if(li) li.scrollIntoView({block:"center"}); }
+}
+function openHighlights(focusId){
+  const id = typeof focusId === "string" ? focusId : null;
+  renderHighlights(id);
+  if(!el("hlDlg").open) el("hlDlg").showModal();
+}
+el("hlBody").addEventListener("click", e => {
+  const v = e.target.closest("button[data-view]"), m = e.target.closest("button[data-map]"), p = e.target.closest("button[data-push]");
+  if(v){ hlView[v.dataset.view] = !hlView[v.dataset.view]; try{ localStorage.setItem(LS + "hlView", JSON.stringify(hlView)); }catch(err){} renderHighlights(); }
+  if(m){
+    const it = HL.items.find(i => i.id === m.dataset.map);
+    if(it){ el("hlDlg").close(); closeSheet(); map.flyTo([it.lat, it.lon], Math.max(map.getZoom(), 9), {duration:.8}); }
+  }
+  if(p) pushAction(p.dataset.push);
+});
+el("hlBody").addEventListener("change", e => {
+  if(e.target.id === "pushOnly"){ pushCfg.nur = e.target.value; savePushCfg(); pushSave(); }
+  if(e.target.id === "pushQuiet"){ pushCfg.ruhe = e.target.checked; savePushCfg(); pushSave(); }
+});
+
+/* ---------- Hinweise bei offener App ---------- */
+let hlSeen = (() => { try{ return JSON.parse(localStorage.getItem(LS + "hlSeen") || "{}"); }catch(e){ return {}; } })();
+function checkHighlights(fix, now){
+  if(!HL.items.length || fix.phase === "pre" || fix.phase === "done") return;
+  let hit = null, changed = false;
+  for(const it of HL.items){
+    if(!it.tPlan || now < it.t0 - 3600000 || now > it.t1 + 3600000) continue;
+    const st = hlState(it, fix, now), done = hlSeen[it.id] || {};
+    const kind = st.phase === "nah" && !done.near && !done.pass ? "near" : st.phase === "querab" && !done.pass ? "pass" : null;
+    if(!kind) continue;
+    (hlSeen[it.id] = done)[kind] = now; changed = true;
+    if(pushCfg.nur === "top" && !it.top) continue;
+    if(!hit || (it.top && !hit.it.top)) hit = {it, st, kind};
+  }
+  if(!changed) return;
+  for(const id of Object.keys(hlSeen)) if(now - Math.max(hlSeen[id].near || 0, hlSeen[id].pass || 0) > 14 * 86400000) delete hlSeen[id];
+  try{ localStorage.setItem(LS + "hlSeen", JSON.stringify(hlSeen)); }catch(e){}
+  if(!hit) return;
+  const msg = Unterwegs.text(hit.it, hit.st, hit.kind, now);
+  toast(`${msg.title}. ${msg.body}`, 12000);
+  /* Systemmeldung nur, wenn kein Push eingerichtet ist – sonst käme sie doppelt */
+  if(!pushCfg.on && "Notification" in window && Notification.permission === "granted") showLocalNote(msg, `${hit.it.id}-${hit.kind}`);
+}
+async function showLocalNote(msg, tag){
+  try{
+    const reg = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistration() : null;
+    const opt = {body:msg.body, tag, lang:"de", icon:"img/costa-deliziosa.jpg", data:{url:"./#unterwegs"}};
+    if(reg) await reg.showNotification(msg.title, opt); else new Notification(msg.title, opt);
+  }catch(e){ console.warn("Benachrichtigung:", e); }
+}
+
+/* ---------- Push: Anmeldung des Geräts ----------
+   Das Gerät meldet sich beim Push-Dienst des Browsers an; Adresse und Schlüssel liegen in Firebase unter push/<Kennung>.
+   Der Positions-Job liest sie und verschickt die Nachrichten. Öffentlicher Schlüssel: vapidKey in data/sync.json. */
+const pushCfg = (() => { try{ return Object.assign({on:false, nur:"alle", ruhe:true}, JSON.parse(localStorage.getItem(LS + "push") || "{}")); }catch(e){ return {on:false, nur:"alle", ruhe:true}; } })();
+const savePushCfg = () => { try{ localStorage.setItem(LS + "push", JSON.stringify(pushCfg)); }catch(e){} };
+let pushMsg = "";
+const isIos = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+const isStandalone = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const pushCapable = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window && location.protocol.startsWith("http");
+const b64ToBytes = b => Uint8Array.from(atob(b.replace(/-/g, "+").replace(/_/g, "/").padEnd(Math.ceil(b.length / 4) * 4, "=")), ch => ch.charCodeAt(0));
+async function pushSubscription(create){
+  const reg = await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if(!sub && create) sub = await reg.pushManager.subscribe({userVisibleOnly:true, applicationServerKey:b64ToBytes(sync.vapid)});
+  return sub;
+}
+/* Anmeldung samt Einstellungen in den gemeinsamen Speicher schreiben */
+async function pushSave(off){
+  if(!pushCfg.on && !off) return true;
+  const id = visitorId();
+  if(!sync.url || !id) return false;
+  try{
+    const sub = await pushSubscription(false);
+    const j = sub ? sub.toJSON() : null;
+    if(!j && !pushCfg.last) return true;
+    const rec = j ? {endpoint:j.endpoint, p256dh:j.keys.p256dh, auth:j.keys.auth} : pushCfg.last;
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || HOME.tz;
+    await syncReq("push/" + id, {method:"PUT", headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({...rec, tz, nur:pushCfg.nur, ruhe:!!pushCfg.ruhe, off:!!off, at:Date.now()})});
+    pushCfg.last = rec; pushCfg.tz = tz; savePushCfg();
+    return true;
+  }catch(e){ console.warn("Push speichern:", e); return false; }
+}
+async function pushAction(what){
+  pushMsg = "";
+  try{
+    if(what === "on"){
+      const perm = await Notification.requestPermission();
+      if(perm !== "granted"){ pushMsg = "Der Browser hat Mitteilungen für diese Seite gesperrt. Bitte in den Einstellungen des Geräts erlauben."; return renderPushBox(); }
+      if(sync.vapid && sync.url && pushCapable()){
+        await pushSubscription(true);
+        pushCfg.on = true; savePushCfg();
+        if(!await pushSave()){ pushCfg.on = false; savePushCfg(); pushMsg = "Die Anmeldung konnte nicht gespeichert werden – später noch einmal versuchen."; }
+      } else pushMsg = "";
+    } else if(what === "off"){
+      await pushSave(true);
+      const sub = pushCapable() ? await pushSubscription(false) : null;
+      if(sub) await sub.unsubscribe();
+      pushCfg.on = false; delete pushCfg.last; savePushCfg();
+    } else if(what === "test"){
+      await showLocalNote({title:"Probe: Felsen von Gibraltar", body:"In etwa 40 Min. an Steuerbord (rechts), noch 12 sm. So sieht ein Hinweis aus."}, "probe");
+      pushMsg = "Probe gesendet – sie erscheint wie jede andere Mitteilung des Geräts.";
+    }
+  }catch(e){
+    console.warn("Push:", e);
+    pushMsg = "Das hat nicht geklappt: " + (e && e.message ? e.message : "unbekannter Fehler");
+  }
+  renderPushBox();
+}
+function renderPushBox(){
+  const box = el("hlPush");
+  if(!box) return;
+  const perm = "Notification" in window ? Notification.permission : "none";
+  const serverPush = pushCapable() && sync.vapid && sync.url;
+  let cls = "hl-push", head, text, ctl = "";
+  if(pushCfg.on && perm === "granted"){
+    cls += " on";
+    head = "Benachrichtigungen sind eingeschaltet";
+    text = "Dieses Gerät bekommt eine Mitteilung, sobald sich das Schiff einer Wegmarke nähert, und eine zweite, wenn es sie passiert – auch bei geschlossener App.";
+    ctl = `<div class="row"><select id="pushOnly" aria-label="Umfang"><option value="alle"${pushCfg.nur === "alle" ? " selected" : ""}>Alle Wegmarken</option><option value="top"${pushCfg.nur === "top" ? " selected" : ""}>Nur die großen (★)</option></select>
+      <button class="chip" data-push="test">Probe</button><button class="chip" data-push="off">Ausschalten</button></div>
+      <label class="opt"><input type="checkbox" id="pushQuiet"${pushCfg.ruhe ? " checked" : ""}> Nachtruhe von 22 bis 7 Uhr (Uhrzeit dieses Geräts)</label>`;
+  } else if(perm === "denied"){
+    head = "Mitteilungen sind gesperrt";
+    text = "Der Browser lässt für diese Seite keine Mitteilungen zu. In den Einstellungen des Geräts unter „Mitteilungen“ wieder erlauben, dann hier einschalten.";
+  } else if(isIos && !isStandalone()){
+    head = "Benachrichtigungen am iPhone";
+    text = "Zuerst die Seite als App ablegen: in Safari auf „Teilen“ tippen, dann „Zum Home-Bildschirm“. Die App vom Home-Bildschirm öffnen und hier einschalten.";
+  } else if(serverPush){
+    head = "Benachrichtigt werden, wenn es etwas zu sehen gibt";
+    text = "Eine Mitteilung, sobald sich das Schiff einer Wegmarke nähert, und eine zweite, wenn es sie passiert – auch bei geschlossener App.";
+    ctl = `<div class="row"><button class="btn primary" data-push="on">Benachrichtigungen einschalten</button></div>`;
+  } else if(perm === "granted"){
+    cls += " on";
+    head = "Hinweise bei geöffneter App";
+    text = "Solange die Seite offen ist, meldet sie jede Wegmarke als Mitteilung. Push bei geschlossener App ist auf diesem Gerät oder in dieser Einrichtung nicht verfügbar.";
+    ctl = `<div class="row"><button class="chip" data-push="test">Probe</button></div>`;
+  } else if(perm === "default"){
+    head = "Hinweise bei geöffneter App";
+    text = "Solange die Seite offen ist, kann sie jede Wegmarke als Mitteilung melden. Push bei geschlossener App ist auf diesem Gerät oder in dieser Einrichtung nicht verfügbar.";
+    ctl = `<div class="row"><button class="btn primary" data-push="on">Mitteilungen erlauben</button></div>`;
+  } else {
+    head = "Hinweise in der App";
+    text = "Dieser Browser kennt keine Mitteilungen. Bei geöffneter Seite erscheinen die Hinweise als Einblendung am unteren Rand.";
+  }
+  box.innerHTML = `<div class="${cls}"><b>${head}</b><p>${text}</p>${ctl}${pushMsg ? `<p class="note" role="status">${esc(pushMsg)}</p>` : ""}</div>`;
+}
+/* Beim Start: Anmeldung auffrischen (Push-Dienste tauschen die Adresse gelegentlich) und Zeitzone nachziehen */
+async function pushResume(){
+  if(!pushCfg.on || !pushCapable() || !sync.vapid) return;
+  try{
+    if(Notification.permission !== "granted"){ pushCfg.on = false; savePushCfg(); return; }
+    const sub = await pushSubscription(true);
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || HOME.tz;
+    if(!pushCfg.last || pushCfg.last.endpoint !== sub.endpoint || pushCfg.tz !== tz) await pushSave();
+  }catch(e){ console.warn("Push auffrischen:", e); }
+}
+if("serviceWorker" in navigator) navigator.serviceWorker.addEventListener("message", e => { if(e.data && e.data.open === "unterwegs") loadHighlights().then(openHighlights); });
 
 /* Wechselkurse (Basis Euro), einmal täglich */
 let RATES = null;
@@ -2746,8 +3070,11 @@ function renderNow(){
   }
   const nev = fix.phase === "done" ? null : nextEvent(now);
   if(nev) extra.push(`<button class="tile" data-stats="1">${icon(nev.key === "aequator" || nev.key === "datumsgrenze" ? "wave" : "flag")}<div><span>Nächster Höhepunkt · in ${fmtCountdown(nev.t - now)}</span><b>${esc(nev.title)}, ${dateIn(nev.t, HOME.tz)}</b></div></button>`);
+  const hlTile = fix.phase === "pre" || fix.phase === "done" ? "" : highlightTile(fix, now);
+  if(hlTile) extra.unshift(hlTile);
   el("nowExtra").innerHTML = extra.join("");
   el("nowExtra").hidden = !extra.length;
+  checkHighlights(fix, now);
 
   /* Fortschritt */
   const pct = fix.phase === "pre" ? 0 : Math.min(100, 100 * doneNm / TOTAL_NM);
@@ -2829,6 +3156,7 @@ function renderNow(){
 }
 el("nowExtra").addEventListener("click", e => {
   const t = e.target.closest("button[data-open]"), z = e.target.closest("button[data-tz]"), s = e.target.closest("button[data-stats]");
+  if(e.target.closest("button[data-hl]")) openHighlights();
   if(t) select(+t.dataset.open, true);
   if(z){ renderTzDialog(); el("tzDlg").showModal(); }
   if(s){ renderStatsDialog(); el("statsDlg").showModal(); }
@@ -3409,6 +3737,7 @@ document.querySelectorAll("dialog.panel [data-close]").forEach(b => b.addEventLi
 document.querySelectorAll("dialog.panel").forEach(d => d.addEventListener("click", e => { if(e.target === d) d.close(); }));
 el("statsBtn").addEventListener("click", () => { renderStatsDialog(); el("statsDlg").showModal(); });
 el("tzBtn").addEventListener("click", () => { renderTzDialog(); el("tzDlg").showModal(); });
+el("hlBtn").addEventListener("click", openHighlights);
 el("visaBtn").addEventListener("click", () => { renderVisaDialog(); el("visaDlg").showModal(); });
 el("visitBtn").addEventListener("click", () => { el("visitDlg").showModal(); renderVisitorsDialog(); });
 el("bookBtn").addEventListener("click", openBook);
@@ -3471,14 +3800,15 @@ function openFromHash(){
   if(m) select(+m[1], true);
   else if(location.hash === "#schiff") openShip();
   else if(location.hash === "#fotobuch") openBook();
+  else if(location.hash === "#unterwegs") loadHighlights().then(openHighlights);
   else if(location.hash === "#besucher"){ el("visitDlg").showModal(); renderVisitorsDialog(); }
   else if(location.hash === "#tagebuch") loadDiaryConfig().then(() => { if(diary.embed) openDiary(); else if(diary.url) location.replace(diary.url); });
 }
 applyMapTheme();
 if(/^#ais=/.test(location.hash)) history.replaceState(null, "", location.pathname);   /* alte Einladungslinks */
 renderList(); markToday(); renderNow(); renderWarnBox();
-Promise.all([loadFilePosition(), loadSharedExcursions(), loadSyncConfig(), loadDiaryConfig(), loadImages(), loadRates()]).then(async () => {
-  refreshView(); refreshWarnings();
+Promise.all([loadFilePosition(), loadSharedExcursions(), loadSyncConfig(), loadDiaryConfig(), loadImages(), loadRates(), loadHighlights()]).then(async () => {
+  refreshView(); refreshWarnings(); pushResume();
   if(sync.url){ recordVisit(); await pullShared(); await pushAllShared(); refreshShared(); }
 });
 setInterval(async () => { if(sync.url && await pullShared()) refreshShared(); }, 60000);

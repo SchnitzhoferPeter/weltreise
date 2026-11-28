@@ -1,11 +1,13 @@
 /* Kleiner Service Worker: die Seite startet auch bei schlechtem Schiffs-WLAN.
    Wetter- und Positionsdaten werden bewusst nicht gecacht – die kommen aus dem Netz
    oder aus dem localStorage-Cache der Seite selbst. */
-const CACHE = "weltreise-v3";
+const CACHE = "weltreise-v4";
 const SHELL = [
   "./",
   "./index.html",
   "./manifest.webmanifest",
+  "./unterwegs.js",
+  "./data/unterwegs.json",
   "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
   "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
 ];
@@ -45,4 +47,23 @@ self.addEventListener("fetch", e => {
       .catch(() => caches.match(req, {ignoreSearch:true})
         .then(hit => hit || (req.mode === "navigate" ? caches.match("./index.html") : Response.error())))
   );
+});
+
+/* Push: Hinweis auf eine Wegmarke (gesendet von scripts/notify-highlights.mjs im Positions-Job) */
+self.addEventListener("push", e => {
+  let d = {};
+  try{ d = e.data ? e.data.json() : {}; }catch(err){ d = {body: e.data ? e.data.text() : ""}; }
+  e.waitUntil(self.registration.showNotification(d.title || "Weltreise", {
+    body: d.body || "", tag: d.tag || undefined, lang: "de", icon: "img/costa-deliziosa.jpg", data: {url: d.url || "./#unterwegs"}
+  }));
+});
+/* Antippen öffnet die App bei „Unterwegs zu sehen“ */
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  const url = new URL((e.notification.data && e.notification.data.url) || "./#unterwegs", self.registration.scope).href;
+  e.waitUntil(self.clients.matchAll({type: "window", includeUncontrolled: true}).then(list => {
+    const open = list.find(c => c.url.startsWith(self.registration.scope));
+    if(open){ open.postMessage({open: "unterwegs"}); return open.focus(); }
+    return self.clients.openWindow(url);
+  }));
 });
