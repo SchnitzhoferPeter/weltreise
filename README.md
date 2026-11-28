@@ -126,10 +126,18 @@ Repository die Position serverseitig und die Seite liest nur noch das Ergebnis:
    Marke „zuletzt gesehen“). `status.json` zeigt, wann zuletzt geprüft wurde und ob das Schiff in
    Reichweite einer Landstation war. Der Job kennt einen Diagnosemodus (Eingabe „diag“ beim
    manuellen Start), der alle Schiffe im Mittelmeer zählt und prüft, ob die Deliziosa darunter ist.
-2. **Manuell eingetragene Position** – im Dialog **Positionsquelle** eintippen, gilt nur im
+2. **GPS vom Handy an Bord** – für die hohe See, wo keine Landstation das Schiff erreicht. Am Handy, das
+   mitreist, unter **An Bord: GPS teilen** einschalten: Beim Öffnen der App und danach alle paar Minuten, solange
+   sie offen ist, sendet das Handy seine GPS-Position in den gemeinsamen Speicher (`pos/ship`). Alle Geräte und
+   der Push-Job nutzen sie wie eine AIS-Meldung; es gilt die jeweils frischere. GPS geht ohne Internet, zum Senden
+   braucht es das Bord-WLAN. Gesendet und angenommen wird nur, was zum Schiff passt: laut Fahrplan auf See und
+   höchstens 400 sm von der erwarteten Position (oder passend zur letzten AIS-Meldung). Im Hafen wird nichts
+   gesendet – dort liefert AIS, und das Handy ist oft mit auf Landgang. Voraussetzung: die Regeln aus
+   `database.rules.json` (Bereich `pos`) sind eingespielt.
+3. **Manuell eingetragene Position** – im Dialog **Positionsquelle** eintippen, gilt nur im
    eigenen Browser. „Position als JSON kopieren“ liefert den Inhalt für eine Notlösung über
    `data/position.json` im Repository.
-3. **Fahrplan-Schätzung** – Großkreis zwischen den beiden Häfen, zeitlich interpoliert.
+4. **Fahrplan-Schätzung** – Großkreis zwischen den beiden Häfen, zeitlich interpoliert.
    Immer verfügbar, deutlich als Schätzung gekennzeichnet.
 
 Terrestrisches AIS erreicht das Schiff in Häfen und bis etwa 40 sm vor der Küste. Auf hoher See
@@ -229,7 +237,7 @@ Schreiben eines Probeeintrags gelingen. Sie schlägt fehl, solange die Datenbank
 
 Die Website meldet sich bei Firebase anonym an (ohne Konto, ohne Eingabe) und schickt das
 Anmelde-Token bei jedem Zugriff mit. Die Regeln in `database.rules.json` lassen nur solche Aufrufe
-zu, nur auf die Bereiche `notes`, `excursions`, `visits` und `push`, und prüfen Form und Größe jedes
+zu, nur auf die Bereiche `notes`, `excursions`, `visits`, `push` und `pos`, und prüfen Form und Größe jedes
 Eintrags. Hartes Löschen und das Überschreiben ganzer Listen sind gesperrt.
 
 Einmalig in dieser Reihenfolge einrichten:
