@@ -1,0 +1,369 @@
+{
+"stand": "2026-11-28",
+"hinweis": "Wegmarken entlang der Route, je Etappe in Fahrtrichtung geordnet. Felder: n Name, k Art, lat/lon, s Seite (bb Backbord, stb Steuerbord, beide), r Umkreis in sm für den Hinweis (Standard 20), top = großer Höhepunkt, live = Route unsicher, Hinweis nur bei echter AIS-Position, ab = liegt abseits und ist kein Wegpunkt, f = Anteil der Durchfahrt (nur Kanal), achse/wert = Linie auf der Erdkugel, t Text, w Wikipedia-Titel.",
+"legs": [
+{"leg": "Civitavecchia>Savona", "pts": [
+ {"n": "Monte Argentario und Giglio", "k": "insel", "lat": 42.38, "lon": 11.02, "r": 15, "t": "Das Schiff läuft zwischen dem Vorgebirge Monte Argentario und der Insel Giglio durch. Abends sind die Lichter von Porto Santo Stefano und Giglio Porto zu sehen.", "w": "Monte Argentario"},
+ {"n": "Elba", "k": "insel", "lat": 42.82, "lon": 10.33, "r": 20, "t": "Größte Insel des Toskanischen Archipels, Napoleons Exil 1814/15. Nachts Leuchtfeuer und die Lichter von Portoferraio.", "w": "Elba"}
+]},
+{"leg": "Savona>Marseille", "pts": [
+ {"n": "Monaco und Côte d’Azur", "k": "stadt", "lat": 43.73, "lon": 7.42, "s": "stb", "r": 30, "live": true, "t": "Das Lichterband von Sanremo über Monaco bis Nizza. Je nach Kurs liegt die Küste 15 bis 40 sm entfernt.", "w": "Monaco"},
+ {"n": "Îles d’Hyères", "k": "insel", "lat": 42.98, "lon": 6.30, "s": "stb", "r": 20, "t": "Porquerolles, Port-Cros und Île du Levant: die „goldenen Inseln“ vor Toulon, Port-Cros ist der älteste Meeres-Nationalpark Europas.", "w": "Îles d’Hyères"},
+ {"n": "Calanques und Cap Canaille", "k": "natur", "lat": 43.19, "lon": 5.50, "s": "stb", "r": 15, "t": "Weiße Kalkfjorde zwischen Cassis und Marseille. Das rötliche Cap Canaille ist mit 394 m die höchste Steilküste Frankreichs.", "w": "Calanques"},
+ {"n": "Château d’If und Frioul-Inseln", "k": "bauwerk", "lat": 43.280, "lon": 5.325, "r": 6, "top": true, "t": "Die Festungsinsel aus dem „Grafen von Monte Christo“ liegt direkt vor der Hafeneinfahrt. Über der Stadt glänzt die goldene Madonna von Notre-Dame de la Garde.", "w": "Château d’If"}
+]},
+{"leg": "Marseille>Barcelona", "pts": [
+ {"n": "Cap de Creus", "k": "kap", "lat": 42.319, "lon": 3.322, "s": "stb", "r": 20, "t": "Östlichster Punkt des spanischen Festlands, hier taucht die Pyrenäenkette ins Meer. Nachts am Leuchtfeuer zu erkennen.", "w": "Cap de Creus"},
+ {"n": "Einfahrt nach Barcelona", "k": "stadt", "lat": 41.355, "lon": 2.19, "r": 8, "top": true, "t": "Im Morgengrauen: die Türme der Sagrada Família, das segelförmige Hotel W an der Hafenmole und der Hausberg Montjuïc mit der Festung."}
+]},
+{"leg": "Barcelona>Lissabon", "pts": [
+ {"n": "Columbretes-Inseln", "k": "insel", "lat": 39.90, "lon": 0.68, "s": "stb", "r": 20, "t": "Kleiner Vulkanarchipel 50 km vor Castellón, die Hauptinsel ist ein halb versunkener Krater. Naturschutzgebiet mit Leuchtturm.", "w": "Columbretes"},
+ {"n": "Cabo de la Nao", "k": "kap", "lat": 38.733, "lon": 0.230, "s": "stb", "r": 20, "t": "Ostkap der Costa Blanca mit hohem Kliff und Leuchtturm. Auf der anderen Seite liegt Ibiza, an klaren Tagen mit dem Felsen Es Vedrà zu erkennen.", "w": "Cabo de la Nao"},
+ {"n": "Nullmeridian", "k": "linie", "achse": "lon", "wert": 0, "lat": 38.3, "lon": 0, "r": 8, "t": "Das Schiff wechselt von der östlichen auf die westliche Erdhalbkugel – der Längengrad von Greenwich verläuft hier vor der Costa Blanca durchs Meer."},
+ {"n": "Cabo de Palos", "k": "kap", "lat": 37.635, "lon": -0.690, "s": "stb", "r": 18, "t": "Leuchtturm am Eingang zum Mar Menor, der größten Salzwasserlagune Spaniens. Davor die Hormigas-Inseln, ein bekanntes Tauchrevier.", "w": "Cabo de Palos"},
+ {"n": "Cabo de Gata", "k": "kap", "lat": 36.722, "lon": -2.193, "s": "stb", "r": 20, "t": "Vulkanisches Kap und trockenster Winkel Europas, Naturpark mit Wüstenlandschaft. Ab hier fährt das Schiff durch das Alborán-Meer.", "w": "Cabo de Gata"},
+ {"n": "Sierra Nevada", "k": "berg", "lat": 36.55, "lon": -3.30, "s": "stb", "r": 25, "t": "Über der Costa Tropical stehen die Schneegipfel der Sierra Nevada. Der Mulhacén (3.479 m) ist der höchste Berg des spanischen Festlands und nur 35 km vom Meer entfernt.", "w": "Sierra Nevada (Spanien)"},
+ {"n": "Felsen von Gibraltar", "k": "meerenge", "lat": 36.125, "lon": -5.343, "s": "stb", "r": 25, "top": true, "t": "426 m hoher Kalkfelsen am Tor zum Atlantik, die nördliche „Säule des Herakles“. Die Meerenge ist hier 14 km breit, rund 300 Schiffe passieren sie täglich.", "w": "Felsen von Gibraltar"},
+ {"n": "Dschebel Musa und Ceuta", "k": "berg", "lat": 35.90, "lon": -5.41, "ab": true, "s": "bb", "r": 20, "t": "Die afrikanische Seite der Meerenge: der 851 m hohe Dschebel Musa in Marokko, die südliche Säule des Herakles, und davor die spanische Exklave Ceuta.", "w": "Dschebel Musa"},
+ {"n": "Tarifa", "k": "kap", "lat": 36.000, "lon": -5.610, "s": "stb", "r": 12, "t": "Die Punta de Tarifa ist der südlichste Punkt des europäischen Festlands. Hier treffen Mittelmeer und Atlantik aufeinander, oft mit Delfinen und im Sommer Orcas.", "w": "Tarifa"},
+ {"n": "Kap Spartel und Tanger", "k": "kap", "lat": 35.79, "lon": -5.92, "ab": true, "s": "bb", "r": 20, "t": "Die Nordwestecke Afrikas mit Leuchtturm, daneben die weiße Stadt Tanger. Hinter dem Kap beginnt der offene Atlantik.", "w": "Kap Spartel"},
+ {"n": "Kap Trafalgar", "k": "geschichte", "lat": 36.183, "lon": -6.035, "s": "stb", "r": 20, "t": "Vor diesem flachen Kap besiegte Admiral Nelson 1805 die französisch-spanische Flotte – und fiel in der Schlacht.", "w": "Kap Trafalgar"},
+ {"n": "Cabo de São Vicente", "k": "kap", "lat": 37.023, "lon": -8.996, "s": "stb", "r": 22, "top": true, "t": "Südwestspitze Europas, für die Seefahrer einst das „Ende der Welt“. 75 m hohe Klippen und eines der lichtstärksten Leuchtfeuer Europas, bei Nacht fast 60 km weit zu sehen.", "w": "Cabo de São Vicente"},
+ {"n": "Cabo Espichel", "k": "kap", "lat": 38.415, "lon": -9.217, "s": "stb", "r": 18, "t": "Steilkap südlich von Lissabon mit Leuchtturm und Wallfahrtskirche; in den Klippen sind Saurierspuren erhalten.", "w": "Cabo Espichel"},
+ {"n": "Tejo-Mündung: Bugio und Cascais", "k": "leuchtturm", "lat": 38.660, "lon": -9.299, "r": 8, "t": "Der runde Festungsleuchtturm Bugio steht mitten in der Flussmündung. Backbord liegen Cascais und Estoril.", "w": "Forte de São Lourenço do Bugio"},
+ {"n": "Torre de Belém und Entdeckerdenkmal", "k": "bauwerk", "lat": 38.692, "lon": -9.216, "s": "bb", "r": 4, "top": true, "t": "Der Turm von Belém (1521), das Hieronymus-Kloster und das Denkmal der Entdeckungen – von hier brach Vasco da Gama nach Indien auf.", "w": "Torre de Belém"},
+ {"n": "Ponte 25 de Abril und Cristo Rei", "k": "bauwerk", "lat": 38.690, "lon": -9.177, "s": "beide", "r": 4, "top": true, "t": "Das Schiff fährt unter der 2,3 km langen Hängebrücke durch, 70 m lichte Höhe. Steuerbord breitet die Christusstatue Cristo Rei die Arme aus, Backbord beginnt die Altstadt.", "w": "Ponte 25 de Abril"}
+]},
+{"leg": "Lissabon>Ponta Delgada", "pts": [
+ {"n": "Ponte 25 de Abril bei Nacht", "k": "bauwerk", "lat": 38.690, "lon": -9.177, "s": "beide", "r": 3, "top": true, "t": "Auslaufen unter der beleuchteten Brücke, dahinter Belém und der Leuchtturm Bugio – dann beginnt die Atlantiküberquerung.", "w": "Ponte 25 de Abril"},
+ {"n": "Santa Maria und Formigas", "k": "insel", "lat": 37.27, "lon": -24.78, "s": "bb", "r": 30, "live": true, "t": "Die Formigas-Felsen mit ihrem einsamen Leuchtturm und Santa Maria, die älteste und südlichste Azoreninsel.", "w": "Formigas"},
+ {"n": "São Miguel: Vila Franca do Campo", "k": "insel", "lat": 37.705, "lon": -25.443, "s": "stb", "r": 10, "t": "Vor der Südküste liegt das kreisrunde Kraterinselchen Ilhéu de Vila Franca. Darüber die grünen Vulkanhänge von São Miguel.", "w": "Ilhéu de Vila Franca"}
+]},
+{"leg": "Ponta Delgada>Praia da Vitória", "pts": [
+ {"n": "Ponta da Ferraria und Sete Cidades", "k": "vulkan", "lat": 37.858, "lon": -25.852, "s": "stb", "r": 12, "t": "Westspitze von São Miguel mit Leuchtturm und heißen Quellen im Meer. Dahinter der Vulkankessel von Sete Cidades mit seinen Zwillingsseen.", "w": "Sete Cidades"},
+ {"n": "Ilhéus das Cabras und Monte Brasil", "k": "insel", "lat": 38.633, "lon": -27.140, "s": "bb", "r": 10, "t": "Zwei aufgebrochene Vulkanfelsen vor Terceiras Südküste. Dahinter der Monte Brasil und Angra do Heroísmo, UNESCO-Welterbe.", "w": "Ilhéus das Cabras"}
+]},
+{"leg": "Praia da Vitória>New York", "pts": [
+ {"n": "Pico, São Jorge und Graciosa", "k": "vulkan", "lat": 38.75, "lon": -28.05, "s": "bb", "r": 35, "live": true, "t": "Die mittleren Azoren. Der Vulkan Pico ist mit 2.351 m der höchste Berg Portugals und ragt an klaren Tagen weit über die Wolken.", "w": "Ponta do Pico"},
+ {"n": "Flores und Corvo", "k": "insel", "lat": 39.50, "lon": -31.15, "r": 35, "live": true, "t": "Die westlichsten Inseln Europas. Geologisch liegen sie schon auf der Nordamerikanischen Platte – der Mittelatlantische Rücken ist überquert.", "w": "Flores (Azoren)"},
+ {"n": "Untergangsstelle der Titanic", "k": "geschichte", "lat": 41.73, "lon": -49.95, "r": 120, "t": "In dieser Gegend sank am 15. April 1912 die Titanic. Das Wrack liegt in 3.800 m Tiefe, je nach gewähltem Kurs 50 bis 150 sm vom Schiff entfernt.", "w": "RMS Titanic"},
+ {"n": "Ambrose-Ansteuerung vor New York", "k": "leuchtturm", "lat": 40.46, "lon": -73.83, "r": 10, "t": "Hier kommt der Lotse an Bord. Backbord Sandy Hook mit dem ältesten betriebenen Leuchtturm der USA, voraus die Lichter von Coney Island."},
+ {"n": "Verrazzano-Narrows Bridge", "k": "bauwerk", "lat": 40.606, "lon": -74.045, "s": "beide", "r": 5, "top": true, "t": "Das Tor nach New York: Das Schiff fährt unter der 1.298 m weit gespannten Hängebrücke zwischen Brooklyn und Staten Island durch.", "w": "Verrazzano-Narrows-Brücke"},
+ {"n": "Freiheitsstatue", "k": "bauwerk", "lat": 40.689, "lon": -74.045, "s": "bb", "r": 4, "top": true, "t": "Lady Liberty auf Liberty Island, daneben Ellis Island, wo zwölf Millionen Einwanderer ankamen. Früh an Deck sein lohnt sich.", "w": "Freiheitsstatue"},
+ {"n": "Skyline von Manhattan", "k": "stadt", "lat": 40.701, "lon": -74.017, "s": "stb", "r": 3, "top": true, "t": "Die Südspitze Manhattans mit dem One World Trade Center (541 m), rechts dahinter die Brooklyn Bridge.", "w": "Manhattan"}
+]},
+{"leg": "New York>Fort Lauderdale", "pts": [
+ {"n": "Freiheitsstatue beim Auslaufen", "k": "bauwerk", "lat": 40.689, "lon": -74.045, "s": "stb", "r": 3, "top": true, "t": "Sail-away am Abend: die beleuchtete Freiheitsstatue und die Lichter Manhattans achteraus.", "w": "Freiheitsstatue"},
+ {"n": "Verrazzano-Narrows Bridge", "k": "bauwerk", "lat": 40.606, "lon": -74.045, "s": "beide", "r": 3, "t": "Unter der beleuchteten Brücke hinaus auf den Atlantik.", "w": "Verrazzano-Narrows-Brücke"},
+ {"n": "Kap Hatteras", "k": "kap", "lat": 35.25, "lon": -75.40, "s": "stb", "r": 30, "t": "Vor den Outer Banks treffen Golfstrom und kalter Labradorstrom aufeinander. Über 600 Wracks liegen hier, daher der Name „Friedhof des Atlantiks“.", "w": "Kap Hatteras"},
+ {"n": "Cape Canaveral", "k": "geschichte", "lat": 28.49, "lon": -80.45, "s": "stb", "r": 30, "t": "Der Weltraumbahnhof Floridas mit den Startrampen der Apollo-Missionen. Mit Glück ist vom Schiff aus ein Raketenstart zu sehen.", "w": "Cape Canaveral"},
+ {"n": "Einfahrt Port Everglades", "k": "stadt", "lat": 26.094, "lon": -80.105, "r": 5, "t": "Schmale Hafeneinfahrt zwischen Strandhäusern; dahinter einer der größten Kreuzfahrthäfen der Welt."}
+]},
+{"leg": "Fort Lauderdale>Half Moon Cay", "pts": [
+ {"n": "Great Isaac und die Bahama-Bank", "k": "leuchtturm", "lat": 26.03, "lon": -79.09, "s": "stb", "r": 15, "t": "Verlassener Leuchtturm am Rand der Großen Bahama-Bank. Das Schiff quert die Floridastraße und läuft in den Nordwest-Providence-Kanal ein.", "w": "Great Isaac Cay"},
+ {"n": "Eleuthera", "k": "insel", "lat": 25.50, "lon": -76.55, "s": "stb", "r": 20, "t": "180 km lang und oft nur wenige hundert Meter breit. An der Glass Window Bridge trennt ein schmaler Felsriegel den tiefblauen Atlantik von der türkisen Bank.", "w": "Eleuthera"}
+]},
+{"leg": "Half Moon Cay>Panamakanal", "pts": [
+ {"n": "Cat Island", "k": "insel", "lat": 24.25, "lon": -75.45, "s": "bb", "r": 20, "t": "Auf dem Mount Alvernia steht eine winzige Einsiedelei – mit 63 m ist er der höchste Punkt der Bahamas.", "w": "Cat Island"},
+ {"n": "Wendekreis des Krebses", "k": "linie", "achse": "lat", "wert": 23.44, "lat": 23.44, "lon": -74.85, "r": 8, "t": "Ab hier fährt das Schiff in den Tropen: Südlich dieser Linie kann die Sonne mittags senkrecht stehen."},
+ {"n": "Crooked-Island-Passage", "k": "meerenge", "lat": 22.85, "lon": -74.36, "s": "bb", "r": 18, "t": "Tiefwasserweg durch die südlichen Bahamas, schon von Kolumbus befahren. Am Bird Rock steht ein Leuchtturm von 1876.", "w": "Crooked Island"},
+ {"n": "Windward-Passage: Punta de Maisí", "k": "meerenge", "lat": 20.24, "lon": -74.14, "s": "stb", "r": 30, "top": true, "t": "Die 80 km breite Meerenge zwischen Kuba und Haiti. Steuerbord die Ostspitze Kubas mit Leuchtturm, Backbord bei guter Sicht die Berge von Haiti.", "w": "Windward-Passage"},
+ {"n": "Navassa", "k": "insel", "lat": 18.40, "lon": -75.01, "r": 25, "t": "Unbewohnte Felseninsel zwischen Haiti und Jamaika, einst wegen ihres Guanos begehrt. Heute Naturschutzgebiet mit verlassenem Leuchtturm.", "w": "Navassa"},
+ {"n": "Ansteuerung Colón", "k": "stadt", "lat": 9.39, "lon": -79.92, "r": 10, "t": "Dutzende Frachter warten in der Limón-Bucht auf ihre Kanalpassage. Hinter den Wellenbrechern beginnt die Einfahrt zum Panamakanal."}
+]},
+{"leg": "Panamakanal", "pts": [
+ {"n": "Puente Atlántico", "k": "bauwerk", "lat": 9.310, "lon": -79.918, "f": 0.05, "s": "beide", "r": 3, "t": "Die 2019 eröffnete Schrägseilbrücke überspannt die Atlantikeinfahrt, 75 m über dem Wasser.", "w": "Puente Atlántico"},
+ {"n": "Gatún-Schleusen", "k": "bauwerk", "lat": 9.272, "lon": -79.922, "f": 0.12, "s": "beide", "r": 3, "top": true, "t": "Drei Kammern heben das Schiff 26 m hinauf auf den Gatúnsee. Zahnradloks, die „Mulas“, halten es in der Kammer – links und rechts bleibt kaum ein halber Meter Platz.", "w": "Gatún-Schleusen"},
+ {"n": "Gatúnsee", "k": "natur", "lat": 9.19, "lon": -79.88, "f": 0.28, "s": "beide", "r": 4, "t": "Bei seiner Flutung 1913 der größte Stausee der Welt. Die Inseln sind die Kuppen versunkener Hügel, im Regenwald leben Brüllaffen, Tukane und Krokodile.", "w": "Gatúnsee"},
+ {"n": "Barro Colorado", "k": "natur", "lat": 9.155, "lon": -79.846, "f": 0.38, "s": "stb", "r": 3, "t": "Die größte Insel im See ist seit 1923 Forschungsstation des Smithsonian-Instituts – einer der am besten untersuchten Regenwälder der Erde.", "w": "Barro Colorado Island"},
+ {"n": "Gamboa und Río Chagres", "k": "natur", "lat": 9.117, "lon": -79.697, "f": 0.55, "s": "bb", "r": 3, "t": "Hier mündet der Chagres, der den Kanal mit Wasser speist. In Gamboa liegt die Baggerflotte der Kanalbehörde."},
+ {"n": "Culebra Cut", "k": "bauwerk", "lat": 9.045, "lon": -79.647, "f": 0.65, "s": "beide", "r": 3, "top": true, "t": "Der schwierigste Abschnitt beim Bau: 13 km durch die kontinentale Wasserscheide gesprengt. Am Gold Hill sind die terrassierten Felswände am höchsten.", "w": "Culebra Cut"},
+ {"n": "Puente Centenario", "k": "bauwerk", "lat": 9.030, "lon": -79.636, "f": 0.69, "s": "beide", "r": 2, "t": "Schrägseilbrücke über den Culebra Cut, eröffnet 2004 zum 100. Geburtstag Panamas.", "w": "Puente Centenario"},
+ {"n": "Pedro-Miguel-Schleuse", "k": "bauwerk", "lat": 9.017, "lon": -79.613, "f": 0.74, "s": "beide", "r": 2, "t": "Eine Kammer senkt das Schiff um 9,5 m auf den kleinen Miraflores-See.", "w": "Pedro-Miguel-Schleuse"},
+ {"n": "Miraflores-Schleusen", "k": "bauwerk", "lat": 8.997, "lon": -79.591, "f": 0.83, "s": "beide", "r": 2, "top": true, "t": "Zwei Kammern bringen das Schiff hinunter auf Pazifikniveau. Backbord winken die Zuschauer von der Terrasse des Besucherzentrums.", "w": "Miraflores-Schleusen"},
+ {"n": "Puente de las Américas", "k": "bauwerk", "lat": 8.943, "lon": -79.565, "f": 0.95, "s": "beide", "r": 2, "top": true, "t": "Die Bogenbrücke von 1962 trägt die Panamericana über die Kanaleinfahrt. Dahinter öffnet sich der Pazifik.", "w": "Puente de las Américas"}
+]},
+{"leg": "Panamakanal>Panama-Stadt", "pts": [
+ {"n": "Skyline von Panama-Stadt", "k": "stadt", "lat": 8.935, "lon": -79.545, "s": "bb", "r": 3, "t": "Abends vom Amador-Damm: die Hochhäuser der Punta Paitilla, davor die Altstadt Casco Viejo und das bunte Biomuseo von Frank Gehry."}
+]},
+{"leg": "Panama-Stadt>Puntarenas", "pts": [
+ {"n": "Isla Taboga", "k": "insel", "lat": 8.79, "lon": -79.55, "s": "stb", "r": 8, "t": "Die „Blumeninsel“ vor der Kanaleinfahrt, umgeben von wartenden Frachtern. Paul Gauguin arbeitete hier 1887 kurz als Kanalarbeiter.", "w": "Isla Taboga"},
+ {"n": "Punta Mariato", "k": "kap", "lat": 7.21, "lon": -80.89, "s": "stb", "r": 20, "t": "Südspitze der Azuero-Halbinsel und südlichster Punkt des nordamerikanischen Festlands.", "w": "Punta Mariato"},
+ {"n": "Isla Coiba", "k": "insel", "lat": 7.25, "lon": -81.80, "s": "stb", "r": 30, "t": "Größte Insel Mittelamerikas, bis 2004 Gefängnisinsel und deshalb fast unberührt. UNESCO-Weltnaturerbe mit Walhaien, Buckelwalen und roten Aras.", "w": "Coiba"},
+ {"n": "Halbinsel Osa und Isla del Caño", "k": "natur", "lat": 8.60, "lon": -83.80, "s": "stb", "r": 25, "t": "Der Corcovado-Nationalpark gilt als einer der artenreichsten Orte der Erde. Vor der Küste oft Delfinschulen und Buckelwale.", "w": "Nationalpark Corcovado"},
+ {"n": "Golf von Nicoya", "k": "natur", "lat": 9.77, "lon": -84.85, "r": 10, "t": "Einfahrt bei Sonnenaufgang vorbei an Isla Tortuga und den Negritos-Inseln. Puntarenas liegt auf einer schmalen Sandzunge mitten im Golf.", "w": "Golf von Nicoya"}
+]},
+{"leg": "Puntarenas>Puerto Quetzal", "pts": [
+ {"n": "Cabo Blanco", "k": "kap", "lat": 9.56, "lon": -85.11, "s": "stb", "r": 15, "t": "Südspitze der Nicoya-Halbinsel und seit 1963 das erste Naturschutzgebiet Costa Ricas.", "w": "Cabo Blanco (Costa Rica)"},
+ {"n": "Vulkane von El Salvador", "k": "vulkan", "lat": 13.20, "lon": -88.90, "s": "stb", "r": 35, "live": true, "t": "Bei guter Sicht zeichnen sich die Kegel von San Miguel, San Vicente und Izalco über der Küste ab."},
+ {"n": "Vulkankette von Guatemala", "k": "vulkan", "lat": 13.95, "lon": -90.78, "r": 20, "top": true, "t": "Bei der Ansteuerung im Morgenlicht stehen Agua (3.760 m), Acatenango und der ständig aktive Fuego am Horizont. Der Fuego stößt oft im Viertelstundentakt Aschewolken aus.", "w": "Volcán de Fuego"}
+]},
+{"leg": "Puerto Quetzal>Puerto Vallarta", "pts": [
+ {"n": "Golf von Tehuantepec", "k": "natur", "lat": 15.0, "lon": -95.0, "r": 60, "t": "Durch die Landenge von Mexiko pfeift im Winter der „Tehuano“, ein Fallwind mit Sturmstärke. Hier kann es einen Tag lang kräftig schaukeln.", "w": "Golf von Tehuantepec"},
+ {"n": "Acapulco", "k": "stadt", "lat": 16.75, "lon": -99.90, "s": "stb", "r": 25, "t": "Die Bucht der Klippenspringer von La Quebrada. Nachts leuchtet die Stadt wie ein Amphitheater über dem Meer.", "w": "Acapulco"},
+ {"n": "Cabo Corrientes", "k": "kap", "lat": 20.41, "lon": -105.69, "s": "stb", "r": 15, "t": "Das Kap markiert die Einfahrt in die Bahía de Banderas, eine der größten Buchten Mexikos.", "w": "Cabo Corrientes (Mexiko)"},
+ {"n": "Bahía de Banderas: Buckelwale", "k": "natur", "lat": 20.62, "lon": -105.40, "s": "beide", "r": 10, "top": true, "t": "Von Dezember bis März bringen Buckelwale hier ihre Jungen zur Welt. Nach Blas und springenden Tieren Ausschau halten.", "w": "Bahía de Banderas"}
+]},
+{"leg": "Puerto Vallarta>Cabo San Lucas", "pts": [
+ {"n": "Islas Marietas", "k": "insel", "lat": 20.70, "lon": -105.58, "s": "stb", "r": 10, "t": "Vulkaninseln am Ausgang der Bucht mit dem „versteckten Strand“ in einem eingestürzten Krater. Brutgebiet der Blaufußtölpel.", "w": "Islas Marietas"},
+ {"n": "Islas Marías", "k": "insel", "lat": 21.45, "lon": -106.40, "s": "stb", "r": 30, "t": "Bis 2019 Mexikos Gefängnisinseln, heute Biosphärenreservat und Kulturzentrum.", "w": "Islas Marías"},
+ {"n": "El Arco am Land’s End", "k": "natur", "lat": 22.875, "lon": -109.895, "r": 8, "top": true, "t": "Das Felsentor an der Südspitze der Baja California, wo der Golf von Kalifornien auf den Pazifik trifft. Davor Seelöwen, im Winter Buckel- und Grauwale.", "w": "Cabo San Lucas"}
+]},
+{"leg": "Cabo San Lucas>San Diego", "pts": [
+ {"n": "Cabo Falso", "k": "kap", "lat": 22.87, "lon": -109.97, "s": "stb", "r": 8, "t": "Die eigentliche Südspitze der 1.250 km langen Halbinsel Baja California, mit altem Leuchtturm in den Dünen."},
+ {"n": "Wendekreis des Krebses", "k": "linie", "achse": "lat", "wert": 23.44, "lat": 23.44, "lon": -110.6, "r": 8, "t": "Das Schiff verlässt die Tropen Richtung Norden."},
+ {"n": "Bahía Magdalena", "k": "natur", "lat": 24.55, "lon": -112.15, "s": "stb", "r": 30, "t": "In den Lagunen hinter den Barriereinseln kalben von Januar bis März die Grauwale nach ihrer 8.000 km langen Wanderung aus Alaska. Auf dem Meer nach Blas Ausschau halten.", "w": "Bahía Magdalena"},
+ {"n": "Isla Cedros", "k": "insel", "lat": 28.15, "lon": -115.35, "s": "stb", "r": 30, "t": "Karge, 1.200 m hohe Wüsteninsel. Dahinter liegt die Lagune Ojo de Liebre, die wichtigste Kinderstube der Grauwale.", "w": "Isla de Cedros"},
+ {"n": "Islas Coronado", "k": "insel", "lat": 32.42, "lon": -117.25, "s": "stb", "r": 12, "t": "Vier mexikanische Felseninseln direkt an der Grenze zu den USA. Dahinter Tijuana und die Skyline von San Diego.", "w": "Coronado-Inseln"},
+ {"n": "Point Loma und Bucht von San Diego", "k": "kap", "lat": 32.665, "lon": -117.242, "s": "bb", "r": 5, "top": true, "t": "Einfahrt am Leuchtturm von Point Loma vorbei, wo 1542 Juan Rodríguez Cabrillo als erster Europäer Kalifornien betrat. Steuerbord die Flugzeugträger der Marinebasis North Island.", "w": "Point Loma"}
+]},
+{"leg": "San Diego>Los Angeles", "pts": [
+ {"n": "Santa Catalina Island", "k": "insel", "lat": 33.39, "lon": -118.42, "s": "bb", "r": 22, "t": "Die Ausflugsinsel der Angelenos, 35 km vor der Küste. In der Nacht sind die Lichter von Avalon zu sehen.", "w": "Santa Catalina Island"},
+ {"n": "Hafeneinfahrt Los Angeles", "k": "bauwerk", "lat": 33.708, "lon": -118.251, "r": 4, "t": "Am Leuchtturm Angels Gate in den größten Containerhafen der USA. Am Liegeplatz in San Pedro liegen das Schlachtschiff USS Iowa und die grüne Vincent Thomas Bridge.", "w": "Hafen von Los Angeles"}
+]},
+{"leg": "Los Angeles>San Francisco", "pts": [
+ {"n": "Channel Islands", "k": "insel", "lat": 34.10, "lon": -119.60, "s": "bb", "r": 20, "t": "Das „Galápagos Nordamerikas“: Nationalpark mit Inselfüchsen, die es nur hier gibt. Das Schiff läuft durch den Santa-Barbara-Kanal.", "w": "Channel-Islands-Nationalpark"},
+ {"n": "Point Conception", "k": "kap", "lat": 34.449, "lon": -120.471, "s": "stb", "r": 18, "t": "Hier knickt die kalifornische Küste nach Norden ab. Wegen Wind und Seegang auch „Kap Hoorn des Pazifiks“ genannt, für die Chumash das Tor ins Jenseits.", "w": "Point Conception"},
+ {"n": "Big Sur", "k": "natur", "lat": 36.306, "lon": -121.90, "s": "stb", "r": 20, "t": "130 km Steilküste, an der die Santa-Lucia-Berge direkt ins Meer fallen. Der Leuchtturm Point Sur steht auf einem Vulkanfelsen vor der Küste.", "w": "Big Sur"},
+ {"n": "Farallon-Inseln", "k": "insel", "lat": 37.70, "lon": -123.00, "s": "bb", "r": 15, "t": "Zerklüftete Felsen 43 km vor dem Golden Gate, größte Seevogelkolonie der USA südlich von Alaska – und Jagdrevier der Weißen Haie.", "w": "Farallon-Inseln"},
+ {"n": "Golden Gate Bridge", "k": "bauwerk", "lat": 37.820, "lon": -122.478, "s": "beide", "r": 6, "top": true, "t": "Einfahrt unter der 1937 eröffneten Hängebrücke: 1.280 m Spannweite, 67 m über dem Wasser. Vor Sonnenaufgang ist sie beleuchtet, oft hängt Nebel in den Türmen.", "w": "Golden Gate Bridge"},
+ {"n": "Alcatraz", "k": "bauwerk", "lat": 37.827, "lon": -122.423, "s": "bb", "r": 3, "top": true, "t": "Die Gefängnisinsel in der Bucht, bis 1963 Hochsicherheitstrakt. Steuerbord die Hügel der Stadt mit Coit Tower und Transamerica Pyramid.", "w": "Alcatraz"}
+]},
+{"leg": "San Francisco>Honolulu", "pts": [
+ {"n": "Alcatraz beim Auslaufen", "k": "bauwerk", "lat": 37.827, "lon": -122.423, "s": "stb", "r": 2, "t": "Auslaufen entlang der Waterfront, Alcatraz an Steuerbord, die Lichter der Stadt an Backbord.", "w": "Alcatraz"},
+ {"n": "Golden Gate Bridge", "k": "bauwerk", "lat": 37.820, "lon": -122.478, "s": "beide", "r": 4, "top": true, "t": "Unter der beleuchteten Brücke hinaus auf den Pazifik – bis Hawaii sind es fünf Seetage und rund 2.100 sm.", "w": "Golden Gate Bridge"},
+ {"n": "Wendekreis des Krebses", "k": "linie", "achse": "lat", "wert": 23.44, "lat": 23.44, "lon": -152.5, "r": 8, "t": "Zurück in den Tropen: Ab hier wird es spürbar wärmer, Hawaii liegt einen knappen Tag voraus."},
+ {"n": "Diamond Head und Waikīkī", "k": "vulkan", "lat": 21.262, "lon": -157.805, "s": "stb", "r": 12, "top": true, "t": "Der Tuffkrater Diamond Head ist das Wahrzeichen von Oʻahu. Dahinter die Hochhäuser von Waikīkī und die grünen Koʻolau-Berge.", "w": "Diamond Head"}
+]},
+{"leg": "Honolulu>Hilo", "pts": [
+ {"n": "Diamond Head im Abendlicht", "k": "vulkan", "lat": 21.255, "lon": -157.805, "s": "bb", "r": 6, "t": "Auslaufen vor der Skyline von Waikīkī, der Krater im letzten Licht.", "w": "Diamond Head"},
+ {"n": "Molokaʻi", "k": "insel", "lat": 21.20, "lon": -156.95, "s": "stb", "r": 20, "t": "An der Nordküste stehen die höchsten Meeresklippen der Welt, über 1.000 m. Darunter die Halbinsel Kalaupapa, einst Leprakolonie des Paters Damian.", "w": "Molokaʻi"},
+ {"n": "Maui und Haleakalā", "k": "vulkan", "lat": 20.95, "lon": -156.20, "s": "stb", "r": 30, "t": "Der Schildvulkan Haleakalā ragt 3.055 m auf. Im Januar sind die Gewässer um Maui voller Buckelwale.", "w": "Haleakalā"},
+ {"n": "Hāmākua-Küste und Mauna Kea", "k": "vulkan", "lat": 20.05, "lon": -155.25, "s": "stb", "r": 20, "top": true, "t": "Im Morgenlicht: grüne Klippen mit Wasserfällen, darüber der Mauna Kea (4.207 m), im Winter oft mit Schneekappe. Vom Meeresboden gemessen ist er der höchste Berg der Erde.", "w": "Mauna Kea"}
+]},
+{"leg": "Hilo>Papeete", "pts": [
+ {"n": "Kap Kumukahi und Kīlauea", "k": "vulkan", "lat": 19.52, "lon": -154.81, "s": "stb", "r": 20, "t": "Ostspitze von Big Island, 2018 von Lava überflossen. Ist der Kīlauea gerade aktiv, steht nachts ein roter Schein über der Insel.", "w": "Kīlauea"},
+ {"n": "Äquator", "k": "linie", "achse": "lat", "wert": 0, "lat": 0, "lon": -152.2, "r": 10, "top": true, "t": "Wechsel auf die Südhalbkugel. Wer zum ersten Mal die Linie quert, bekommt nach altem Seemannsbrauch die Äquatortaufe von Neptun."},
+ {"n": "Millennium-Insel", "k": "insel", "lat": -9.95, "lon": -150.21, "r": 35, "live": true, "t": "Unbewohntes Atoll von Kiribati, eines der unberührtesten Korallenriffe der Erde. Am 1. Januar 2000 ging hier als Erstes das neue Jahrtausend auf.", "w": "Millennium-Insel"},
+ {"n": "Tetiaroa", "k": "insel", "lat": -17.0, "lon": -149.56, "r": 15, "t": "Das Atoll gehörte einst den Königen von Tahiti, später Marlon Brando, der es nach „Meuterei auf der Bounty“ kaufte.", "w": "Tetiaroa"},
+ {"n": "Tahiti und Moorea", "k": "insel", "lat": -17.49, "lon": -149.62, "r": 10, "top": true, "t": "Einfahrt zwischen den zackigen Gipfeln von Moorea an Steuerbord und Tahiti voraus mit dem 2.241 m hohen Orohena. Backbord der Leuchtturm an der Pointe Vénus, wo James Cook 1769 den Venustransit beobachtete.", "w": "Moorea"}
+]},
+{"leg": "Papeete>Suva", "pts": [
+ {"n": "Moorea im Abendlicht", "k": "insel", "lat": -17.47, "lon": -149.83, "s": "bb", "r": 10, "top": true, "t": "Die Silhouette von Moorea mit Cook- und Opunohu-Bucht – einer der schönsten Sonnenuntergänge der Reise.", "w": "Moorea"},
+ {"n": "Bora Bora", "k": "insel", "lat": -16.50, "lon": -151.74, "s": "stb", "r": 40, "live": true, "t": "Der Vulkanstumpf Otemanu in seiner türkisen Lagune, dazu Raiatea, Tahaa und Huahine – die Inseln unter dem Wind.", "w": "Bora Bora"},
+ {"n": "Aitutaki", "k": "insel", "lat": -18.86, "lon": -159.79, "r": 35, "live": true, "t": "Atoll der Cookinseln mit einer der schönsten Lagunen der Südsee.", "w": "Aitutaki"},
+ {"n": "Palmerston", "k": "insel", "lat": -18.05, "lon": -163.16, "r": 30, "live": true, "t": "Auf dem Atoll leben rund 30 Menschen – alle Nachfahren des Engländers William Marsters, der sich 1863 mit drei Frauen hier niederließ.", "w": "Palmerston (Cookinseln)"},
+ {"n": "Niue", "k": "insel", "lat": -19.05, "lon": -169.87, "r": 35, "live": true, "t": "Eine der größten gehobenen Koralleninseln der Welt und mit rund 1.700 Einwohnern einer der kleinsten Staaten.", "w": "Niue"},
+ {"n": "Über dem Tongagraben", "k": "natur", "lat": -18.5, "lon": -172.6, "r": 40, "t": "Unter dem Kiel liegen jetzt 8 bis 10 km Wasser. Der Tongagraben ist nach dem Marianengraben der zweittiefste der Erde, das Horizon-Tief reicht 10.800 m hinab.", "w": "Tongagraben"},
+ {"n": "Vavaʻu, Tonga", "k": "insel", "lat": -18.65, "lon": -173.98, "r": 35, "live": true, "t": "Die nördliche Inselgruppe des Königreichs Tonga, im Südwinter Kinderstube der Buckelwale.", "w": "Vavaʻu"},
+ {"n": "Datumsgrenze", "k": "linie", "achse": "lon", "wert": 180, "lat": -18.3, "lon": 180, "r": 10, "top": true, "t": "Am 180. Längengrad wechselt das Schiff von der West- auf die Osthalbkugel. An Bord wird ein Kalendertag übersprungen, das Datum der Umstellung nennt das Bordprogramm."},
+ {"n": "Einfahrt nach Suva", "k": "natur", "lat": -18.17, "lon": 178.40, "r": 8, "t": "Durch die Riffpassage in den Hafen; über der Stadt der markante Felsdaumen Joske’s Thumb."}
+]},
+{"leg": "Suva>Lifou", "pts": [
+ {"n": "Beqa und Kadavu", "k": "insel", "lat": -18.62, "lon": 178.25, "s": "beide", "r": 18, "t": "Steuerbord Beqa, die Insel der Feuerläufer, Backbord Kadavu mit dem Great Astrolabe Reef, einem der größten Barriereriffe der Welt.", "w": "Kadavu"},
+ {"n": "Aneityum, Vanuatu", "k": "insel", "lat": -20.20, "lon": 169.80, "r": 25, "t": "Südlichste bewohnte Insel Vanuatus. Davor die winzige Sandinsel Inyeug, bekannt als „Mystery Island“.", "w": "Aneityum"},
+ {"n": "Klippen von Lifou", "k": "natur", "lat": -20.77, "lon": 167.10, "r": 8, "t": "Lifou ist ein gehobenes Atoll: 40 m hohe Korallenkalkklippen bei Jokin, davor die türkise Baie du Santal.", "w": "Lifou"}
+]},
+{"leg": "Lifou>Nouméa", "pts": [
+ {"n": "Canal de la Havannah", "k": "meerenge", "lat": -22.37, "lon": 166.98, "r": 12, "t": "Einfahrt durch das Barriereriff an der Südostspitze von Grande Terre in die größte Lagune der Welt, UNESCO-Weltnaturerbe.", "w": "Lagunen von Neukaledonien"},
+ {"n": "Phare Amédée", "k": "leuchtturm", "lat": -22.477, "lon": 166.468, "s": "bb", "r": 8, "t": "56 m hoher Eisenleuchtturm von 1865 auf einer winzigen Koralleninsel – in Paris gebaut, zerlegt und hierher verschifft.", "w": "Phare Amédée"}
+]},
+{"leg": "Nouméa>Sydney", "pts": [
+ {"n": "Phare Amédée und Riffpassage", "k": "leuchtturm", "lat": -22.477, "lon": 166.468, "r": 6, "top": true, "t": "Auslaufen durch die Passe de Boulari: Der weiße Leuchtturm Amédée weist den Weg durch das zweitlängste Barriereriff der Erde.", "w": "Phare Amédée"},
+ {"n": "Wendekreis des Steinbocks", "k": "linie", "achse": "lat", "wert": -23.44, "lat": -23.44, "lon": 165.2, "r": 8, "t": "Das Schiff verlässt die Tropen Richtung Süden und läuft in die Tasmansee."},
+ {"n": "Sydney Heads", "k": "kap", "lat": -33.833, "lon": 151.285, "s": "beide", "r": 6, "top": true, "t": "Einfahrt zwischen den Sandsteinklippen North Head und South Head in Port Jackson, einen der schönsten Naturhäfen der Welt.", "w": "Sydney Heads"},
+ {"n": "Opernhaus und Harbour Bridge", "k": "bauwerk", "lat": -33.857, "lon": 151.215, "s": "bb", "r": 2, "top": true, "t": "Das Schiff dreht direkt vor dem Opernhaus ein, voraus der „Kleiderbügel“ der Harbour Bridge. Unbedingt an Deck sein.", "w": "Sydney Opera House"}
+]},
+{"leg": "Sydney>Newcastle", "pts": [
+ {"n": "Opernhaus und Sydney Heads beim Auslaufen", "k": "bauwerk", "lat": -33.84, "lon": 151.27, "r": 4, "top": true, "t": "Sail-away durch den Hafen: Opernhaus, Fort Denison, die Villen von Vaucluse und schließlich die Klippen der Heads.", "w": "Port Jackson"},
+ {"n": "Barrenjoey-Leuchtturm", "k": "leuchtturm", "lat": -33.580, "lon": 151.330, "s": "bb", "r": 12, "t": "Sandsteinturm von 1881 auf der Landzunge von Palm Beach, an der Mündung des Hawkesbury River.", "w": "Barrenjoey Head Lighthouse"},
+ {"n": "Nobbys Head", "k": "leuchtturm", "lat": -32.918, "lon": 151.798, "s": "bb", "r": 4, "t": "Der Leuchtturm an der Hafeneinfahrt von Newcastle, dem größten Kohlehafen der Welt. Die Frachter liegen in langer Reihe vor der Küste auf Reede.", "w": "Nobbys Head"}
+]},
+{"leg": "Newcastle>Cairns", "pts": [
+ {"n": "Port Stephens", "k": "natur", "lat": -32.72, "lon": 152.20, "s": "bb", "r": 12, "t": "Naturhafen mit den Vulkankuppen Tomaree und Yacaaba an der Einfahrt, bekannt für seine Delfine.", "w": "Port Stephens"},
+ {"n": "Cape Byron", "k": "kap", "lat": -28.633, "lon": 153.638, "s": "bb", "r": 18, "top": true, "t": "Östlichster Punkt des australischen Festlands mit strahlend weißem Leuchtturm von 1901. Dahinter der Surferort Byron Bay.", "w": "Cape Byron"},
+ {"n": "Gold Coast", "k": "stadt", "lat": -28.00, "lon": 153.44, "s": "bb", "r": 18, "t": "Hochhausfront von Surfers Paradise direkt am Strand, überragt vom 322 m hohen Q1-Turm.", "w": "Gold Coast (Australien)"},
+ {"n": "Cape Moreton", "k": "kap", "lat": -27.03, "lon": 153.47, "s": "bb", "r": 18, "t": "Nordspitze von Moreton Island mit dem ältesten Leuchtturm Queenslands (1857). Dahinter die Bucht von Brisbane.", "w": "Moreton Island"},
+ {"n": "Kʼgari (Fraser Island)", "k": "insel", "lat": -24.70, "lon": 153.30, "s": "bb", "r": 22, "t": "Größte Sandinsel der Welt, 120 km lang, mit Regenwald auf Dünen und Süßwasserseen. UNESCO-Weltnaturerbe.", "w": "Fraser Island"},
+ {"n": "Lady Elliot Island", "k": "natur", "lat": -24.11, "lon": 152.72, "s": "bb", "r": 20, "live": true, "t": "Südlichste Koralleninsel des Great Barrier Reef – hier beginnt das größte Riffsystem der Erde, 2.300 km lang.", "w": "Lady Elliot Island"},
+ {"n": "Wendekreis des Steinbocks", "k": "linie", "achse": "lat", "wert": -23.44, "lat": -23.44, "lon": 152.1, "r": 8, "t": "Zurück in den Tropen. Ab hier verläuft die Route geschützt zwischen Festland und Barriereriff."},
+ {"n": "Whitsunday Islands", "k": "insel", "lat": -20.25, "lon": 148.95, "s": "beide", "r": 20, "top": true, "t": "74 bewaldete Inseln mitten im Riff. Auf Whitsunday Island liegt Whitehaven Beach, dessen Sand zu 98 % aus reinem Quarz besteht.", "w": "Whitsunday Islands"},
+ {"n": "Magnetic Island und Townsville", "k": "insel", "lat": -19.13, "lon": 146.87, "s": "bb", "r": 20, "t": "James Cook glaubte 1770, die Insel störe seinen Kompass – daher der Name. Granitfelsen, Buchten und Koalas.", "w": "Magnetic Island"},
+ {"n": "Hinchinbrook Island", "k": "insel", "lat": -18.35, "lon": 146.30, "s": "bb", "r": 20, "t": "Gebirgige, unbewohnte Regenwaldinsel, bis 1.121 m hoch – Australiens größter Insel-Nationalpark.", "w": "Hinchinbrook Island"},
+ {"n": "Fitzroy Island und Cape Grafton", "k": "insel", "lat": -16.93, "lon": 145.99, "s": "bb", "r": 10, "t": "Regenwald bis ans Riff. Hinter Cape Grafton öffnet sich die Trinity Bay mit Cairns.", "w": "Fitzroy Island"}
+]},
+{"leg": "Cairns>Rabaul", "pts": [
+ {"n": "Grafton Passage im Great Barrier Reef", "k": "natur", "lat": -16.65, "lon": 146.22, "s": "beide", "r": 10, "top": true, "t": "Das Schiff verlässt die Lagune durch eine Lücke im Außenriff. Links und rechts bricht sich die Dünung an den Riffkanten, das Wasser wechselt von Türkis zu Tiefblau.", "w": "Great Barrier Reef"},
+ {"n": "Jomard-Passage", "k": "meerenge", "lat": -11.25, "lon": 152.10, "r": 20, "t": "Die Durchfahrt durch die Riffe des Louisiade-Archipels führt aus dem Korallenmeer in die Salomonensee. Hier wurde 1942 die Schlacht im Korallenmeer geschlagen.", "w": "Louisiade-Archipel"},
+ {"n": "Woodlark Island", "k": "insel", "lat": -9.15, "lon": 152.95, "r": 30, "live": true, "t": "Abgelegene Insel der Salomonensee mit dichtem Regenwald, Heimat des Woodlark-Kuskus.", "w": "Woodlark (Insel)"},
+ {"n": "Kap St. George und St.-Georgs-Kanal", "k": "meerenge", "lat": -4.85, "lon": 152.88, "s": "stb", "r": 22, "t": "Die Südspitze Neuirlands. Der Kanal zwischen Neuirland und Neubritannien war in der deutschen Kolonialzeit die Zufahrt zum Bismarck-Archipel.", "w": "Sankt-Georgs-Kanal (Papua-Neuguinea)"},
+ {"n": "Vulkan Tavurvur", "k": "vulkan", "lat": -4.238, "lon": 152.210, "s": "stb", "r": 8, "top": true, "t": "Einfahrt in die Caldera von Rabaul. Der graue Kegel des Tavurvur begrub 1994 gemeinsam mit dem Vulcan gegenüber die halbe Stadt unter Asche; oft dampft er noch.", "w": "Tavurvur"}
+]},
+{"leg": "Rabaul>Tokio", "pts": [
+ {"n": "Tavurvur beim Auslaufen", "k": "vulkan", "lat": -4.238, "lon": 152.210, "s": "bb", "r": 5, "t": "Ein letzter Blick in die Caldera: Tavurvur, die Felsnadeln der „Bienenkörbe“ in der Bucht und die Duke-of-York-Inseln.", "w": "Tavurvur"},
+ {"n": "Äquator", "k": "linie", "achse": "lat", "wert": 0, "lat": 0, "lon": 150.9, "r": 10, "top": true, "t": "Zurück auf der Nordhalbkugel – die zweite Linienüberquerung der Reise."},
+ {"n": "Über dem Marianengraben", "k": "natur", "lat": 14.0, "lon": 147.3, "r": 40, "t": "Das Schiff quert den tiefsten Graben der Weltmeere, hier rund 8 km tief. Das Challengertief, mit 10.900 m der tiefste Punkt der Erde, liegt rund 600 km südwestlich.", "w": "Marianengraben"},
+ {"n": "Saipan und Tinian", "k": "geschichte", "lat": 15.10, "lon": 145.72, "s": "bb", "r": 40, "live": true, "t": "Inseln der Nördlichen Marianen. Von Tinian startete im August 1945 die Enola Gay nach Hiroshima.", "w": "Saipan"},
+ {"n": "Wendekreis des Krebses", "k": "linie", "achse": "lat", "wert": 23.44, "lat": 23.44, "lon": 143.6, "r": 8, "t": "Das Schiff verlässt die Tropen – bis Tokio wird es Tag für Tag kühler."},
+ {"n": "Ogasawara-Inseln", "k": "insel", "lat": 27.07, "lon": 142.20, "r": 35, "live": true, "t": "Chichijima und Hahajima, das „Galápagos des Orients“: UNESCO-Weltnaturerbe, 1.000 km von Tokio entfernt und doch Teil der Stadt.", "w": "Ogasawara-Inseln"},
+ {"n": "Hachijōjima und Aogashima", "k": "vulkan", "lat": 33.11, "lon": 139.79, "s": "bb", "r": 35, "live": true, "t": "Vulkaninseln der Izu-Kette. Aogashima ist ein Doppelkrater mitten im Meer, in dem 170 Menschen leben.", "w": "Hachijō-jima"},
+ {"n": "Izu-Ōshima", "k": "vulkan", "lat": 34.73, "lon": 139.42, "s": "bb", "r": 20, "t": "Die größte der Izu-Inseln mit dem aktiven Vulkan Mihara (758 m) – in den Filmen die Heimat von Godzilla.", "w": "Izu-Ōshima"},
+ {"n": "Blick auf den Fuji", "k": "berg", "lat": 35.13, "lon": 139.72, "s": "bb", "r": 15, "top": true, "t": "Bei klarer Winterluft steht der Fuji (3.776 m) rund 90 km entfernt über der Sagami-Bucht. Vormittags ist die Sicht am besten.", "w": "Fuji (Vulkan)"},
+ {"n": "Uraga-Kanal und Kannonzaki", "k": "meerenge", "lat": 35.256, "lon": 139.745, "s": "bb", "r": 6, "t": "Die nur 7 km breite Einfahrt in die Bucht von Tokio, eine der meistbefahrenen Wasserstraßen der Welt. In Kannonzaki steht Japans erster westlicher Leuchtturm.", "w": "Uraga-Kanal"},
+ {"n": "Yokohama", "k": "stadt", "lat": 35.44, "lon": 139.70, "s": "bb", "r": 5, "t": "Die Skyline von Minato Mirai mit dem Landmark Tower und die weiße Yokohama Bay Bridge.", "w": "Yokohama"},
+ {"n": "Tokyo Gate Bridge und Skyline", "k": "bauwerk", "lat": 35.611, "lon": 139.827, "r": 4, "top": true, "t": "Die „Dinosaurierbrücke“ an der Hafeneinfahrt, dahinter Rainbow Bridge, Tokyo Tower und der 634 m hohe Skytree.", "w": "Tokyo Gate Bridge"}
+]},
+{"leg": "Tokio>Kobe", "pts": [
+ {"n": "Bucht von Tokio bei Nacht", "k": "stadt", "lat": 35.45, "lon": 139.78, "r": 6, "t": "Auslaufen durch das Lichtermeer von Tokio, Kawasaki und Yokohama, vorbei an der künstlichen Insel Umihotaru der Aqua-Line."},
+ {"n": "Kap Irōzaki", "k": "kap", "lat": 34.602, "lon": 138.845, "s": "stb", "r": 15, "t": "Südspitze der Izu-Halbinsel mit Leuchtturm und Schrein auf zerklüfteten Lavaklippen.", "w": "Irōzaki"},
+ {"n": "Fuji über der Suruga-Bucht", "k": "berg", "lat": 34.55, "lon": 138.45, "s": "stb", "r": 20, "top": true, "t": "Der klassische Blick: der schneebedeckte Fuji über Japans tiefster Bucht. Am besten am frühen Morgen.", "w": "Suruga-Bucht"},
+ {"n": "Kap Shionomisaki", "k": "kap", "lat": 33.433, "lon": 135.755, "s": "stb", "r": 15, "t": "Südlichster Punkt der Hauptinsel Honshū. Der warme Kuroshio-Strom zieht hier dicht unter der Küste vorbei.", "w": "Shionomisaki"},
+ {"n": "Kitan-Straße", "k": "meerenge", "lat": 34.28, "lon": 135.00, "s": "beide", "r": 8, "t": "Enge Einfahrt in die Bucht von Osaka zwischen der Insel Awaji und den Tomogashima-Inseln mit ihren verlassenen Festungen.", "w": "Kitan-Straße"},
+ {"n": "Einfahrt nach Kobe", "k": "stadt", "lat": 34.66, "lon": 135.20, "r": 5, "t": "Die Stadt zieht sich als schmales Band unter dem Rokkō-Gebirge entlang. Am Hafen der rote Port Tower, im Westen die Akashi-Kaikyō-Brücke."}
+]},
+{"leg": "Kobe>Nagasaki", "pts": [
+ {"n": "Akashi-Kaikyō-Brücke", "k": "bauwerk", "lat": 34.617, "lon": 135.022, "s": "beide", "r": 8, "top": true, "live": true, "t": "Nimmt das Schiff den Weg durch die Seto-Inlandsee, fährt es unter der zweitlängsten Hängebrücke der Welt durch: 1.991 m Spannweite, Pylone fast 300 m hoch.", "w": "Akashi-Kaikyō-Brücke"},
+ {"n": "Seto-Ōhashi-Brücke", "k": "bauwerk", "lat": 34.39, "lon": 133.81, "s": "beide", "r": 8, "live": true, "t": "13 km lange Kette aus sechs Brücken über fünf Inseln, unten Eisenbahn, oben Autobahn.", "w": "Seto-Ōhashi-Brücke"},
+ {"n": "Kurushima-Kaikyō-Brücke", "k": "bauwerk", "lat": 34.12, "lon": 132.99, "s": "beide", "r": 8, "live": true, "t": "Drei Hängebrücken hintereinander über eine Meerenge mit starken Gezeitenströmen, Teil der Shimanami-Radroute.", "w": "Kurushima-Kaikyō-Brücke"},
+ {"n": "Kanmon-Straße", "k": "meerenge", "lat": 33.962, "lon": 130.958, "s": "beide", "r": 8, "top": true, "live": true, "t": "Nur 600 m breit ist die Durchfahrt zwischen Honshū und Kyūshū unter der Kanmon-Brücke, mit Shimonoseki zur einen und Moji zur anderen Seite.", "w": "Kammon-Straße"},
+ {"n": "Kap Muroto", "k": "kap", "lat": 33.245, "lon": 134.176, "s": "stb", "r": 20, "live": true, "t": "Fährt das Schiff außen um Shikoku, passiert es dieses Kap am UNESCO-Geopark Muroto mit seinem weit sichtbaren Leuchtturm.", "w": "Kap Muroto"},
+ {"n": "Kap Ashizuri", "k": "kap", "lat": 32.724, "lon": 133.020, "s": "stb", "r": 20, "live": true, "t": "Südspitze von Shikoku: 80 m hohe Granitklippen, darauf ein Leuchtturm und der 38. Tempel des Shikoku-Pilgerwegs.", "w": "Kap Ashizuri"},
+ {"n": "Kap Sata und Kaimondake", "k": "vulkan", "lat": 31.05, "lon": 130.60, "s": "stb", "r": 22, "live": true, "t": "Südspitze von Kyūshū. An der Einfahrt zur Kagoshima-Bucht steht der perfekt geformte Vulkankegel Kaimondake, der „Fuji von Satsuma“.", "w": "Kaimon-dake"},
+ {"n": "Gunkanjima", "k": "geschichte", "lat": 32.628, "lon": 129.738, "r": 8, "live": true, "t": "Die „Kriegsschiffinsel“ Hashima: eine verlassene Kohlebergbau-Stadt aus Beton mitten im Meer, einst der dichtest besiedelte Ort der Welt. UNESCO-Welterbe.", "w": "Hashima (Insel)"},
+ {"n": "Megami-Brücke", "k": "bauwerk", "lat": 32.716, "lon": 129.848, "s": "beide", "r": 4, "top": true, "t": "Die „Göttinnen-Brücke“ überspannt die Einfahrt in den fjordartigen Hafen von Nagasaki. Backbord der riesige Hammerkopfkran der Mitsubishi-Werft von 1909.", "w": "Megami-Brücke"}
+]},
+{"leg": "Nagasaki>Busan", "pts": [
+ {"n": "Megami-Brücke bei Nacht", "k": "bauwerk", "lat": 32.716, "lon": 129.848, "s": "beide", "r": 3, "t": "Auslaufen unter der beleuchteten Brücke; die Hänge der Stadt gelten als eines der drei schönsten Nachtpanoramen Japans.", "w": "Megami-Brücke"},
+ {"n": "Iki und Tsushima", "k": "geschichte", "lat": 34.05, "lon": 129.50, "s": "beide", "r": 25, "t": "Die Koreastraße: Steuerbord Iki, Backbord Tsushima. Hier vernichtete Japan 1905 die russische Ostseeflotte.", "w": "Tsushima"},
+ {"n": "Oryukdo und Taejongdae", "k": "natur", "lat": 35.07, "lon": 129.11, "r": 6, "top": true, "t": "Im Morgenlicht die Felsinselchen Oryukdo, die je nach Tide zu fünft oder zu sechst sind, und die Klippen von Taejongdae. Dahinter die Busan Harbor Bridge.", "w": "Oryukdo"}
+]},
+{"leg": "Busan>Keelung", "pts": [
+ {"n": "Jeju und Hallasan", "k": "vulkan", "lat": 33.46, "lon": 127.10, "s": "stb", "r": 35, "t": "Die Vulkaninsel Jeju mit dem Hallasan (1.947 m), Südkoreas höchstem Berg. An der Ostspitze der Tuffkrater Seongsan Ilchulbong, UNESCO-Weltnaturerbe.", "w": "Hallasan"},
+ {"n": "Pengjia-Insel", "k": "leuchtturm", "lat": 25.63, "lon": 122.07, "r": 18, "t": "Taiwans nördlichster Vorposten mit Leuchtturm von 1909, nur von Wetterbeobachtern und Küstenwache bewohnt.", "w": "Pengjia"},
+ {"n": "Keelung Islet und Hafeneinfahrt", "k": "insel", "lat": 25.19, "lon": 121.78, "r": 6, "t": "Der Felsbuckel Keelung Islet bewacht die Einfahrt. Der Hafen reicht tief in die Stadt, umgeben von grünen Hügeln."}
+]},
+{"leg": "Keelung>Hongkong", "pts": [
+ {"n": "Yehliu und Kap Fugui", "k": "kap", "lat": 25.30, "lon": 121.54, "s": "bb", "r": 12, "t": "Die Nordküste Taiwans mit den Pilzfelsen von Yehliu („Kopf der Königin“). Am Kap Fugui steht der nördlichste Leuchtturm der Insel.", "w": "Yehliu"},
+ {"n": "Wendekreis des Krebses", "k": "linie", "achse": "lat", "wert": 23.44, "lat": 23.44, "lon": 117.8, "r": 8, "t": "In der Taiwanstraße geht es wieder in die Tropen."},
+ {"n": "Waglan Island", "k": "leuchtturm", "lat": 22.183, "lon": 114.303, "r": 8, "t": "Der Leuchtturm von 1893 markiert die östliche Zufahrt nach Hongkong."},
+ {"n": "Victoria Harbour", "k": "stadt", "lat": 22.293, "lon": 114.185, "s": "beide", "r": 4, "top": true, "t": "Durch die Enge Lei Yue Mun in den Hafen: Backbord die Hochhauswand von Hong Kong Island unter dem Victoria Peak, Steuerbord Kowloon mit dem 484 m hohen ICC.", "w": "Victoria Harbour"}
+]},
+{"leg": "Hongkong>Nha Trang", "pts": [
+ {"n": "Victoria Harbour beim Auslaufen", "k": "stadt", "lat": 22.290, "lon": 114.165, "s": "beide", "r": 3, "top": true, "t": "Sail-away in der Abenddämmerung, wenn in den Türmen die Lichter angehen – eine der großen Hafenausfahrten der Welt.", "w": "Victoria Harbour"},
+ {"n": "Bucht von Nha Trang", "k": "natur", "lat": 12.21, "lon": 109.24, "r": 6, "t": "Einfahrt vor der Insel Hòn Tre. Über das Wasser führt eine der längsten Seilbahnen der Welt, ihre Masten sehen aus wie kleine Eiffeltürme.", "w": "Nha Trang"}
+]},
+{"leg": "Nha Trang>Phu My", "pts": [
+ {"n": "Kap Padaran (Mũi Dinh)", "k": "kap", "lat": 11.36, "lon": 109.02, "s": "stb", "r": 15, "t": "Trockenstes Kap Vietnams mit Sanddünen und einem Leuchtturm aus der Kolonialzeit; hier knickt die Küste nach Südwesten ab.", "w": "Mũi Dinh"},
+ {"n": "Leuchtturm Kê Gà", "k": "leuchtturm", "lat": 10.697, "lon": 107.99, "s": "stb", "r": 15, "t": "Der höchste alte Leuchtturm Vietnams (1899), aus Granit auf einer kleinen Felseninsel.", "w": "Kê Gà"},
+ {"n": "Vũng Tàu", "k": "bauwerk", "lat": 10.327, "lon": 107.084, "s": "stb", "r": 8, "top": true, "t": "Auf dem Berg Núi Nhỏ breitet eine 32 m hohe Christusstatue die Arme aus. Hier biegt das Schiff in die Flussmündung ein.", "w": "Vũng Tàu"},
+ {"n": "Mangroven am Thị Vải", "k": "natur", "lat": 10.50, "lon": 107.01, "s": "bb", "r": 4, "t": "Flussfahrt nach Phu My entlang des Mangrovenwalds von Cần Giờ, UNESCO-Biosphärenreservat. Mit Glück sind Affen und Reiher zu sehen.", "w": "Cần Giờ"}
+]},
+{"leg": "Phu My>Koh Samui", "pts": [
+ {"n": "Vũng Tàu im Abendlicht", "k": "bauwerk", "lat": 10.327, "lon": 107.084, "s": "bb", "r": 6, "t": "Flussabwärts zurück aufs Meer, vorbei an Christusstatue und Leuchtturm von Vũng Tàu.", "w": "Vũng Tàu"},
+ {"n": "Côn Đảo", "k": "insel", "lat": 8.69, "lon": 106.61, "s": "bb", "r": 30, "t": "Archipel aus 16 Inseln, zu Kolonialzeiten gefürchtete Gefängnisinsel, heute Nationalpark mit Meeresschildkröten.", "w": "Côn Đảo"},
+ {"n": "Kap Cà Mau", "k": "kap", "lat": 8.43, "lon": 104.83, "s": "stb", "r": 25, "t": "Die Südspitze Vietnams am Ende des Mekongdeltas. Davor die Insel Hòn Khoai mit Leuchtturm; dahinter beginnt der Golf von Thailand.", "w": "Kap Cà Mau"},
+ {"n": "Ankunft vor Koh Samui", "k": "insel", "lat": 9.55, "lon": 100.0, "r": 12, "top": true, "t": "Das Schiff ankert vor Nathon. Im Norden liegt Koh Phangan, im Westen die 42 Kalksteininseln des Meeresnationalparks Ang Thong.", "w": "Ang Thong (Nationalpark)"}
+]},
+{"leg": "Koh Samui>Singapur", "pts": [
+ {"n": "Redang und Perhentian-Inseln", "k": "insel", "lat": 5.80, "lon": 103.10, "s": "stb", "r": 30, "t": "Die Tauchinseln vor der Ostküste Malaysias, Meeresschutzgebiet mit Korallengärten und Schildkrötenstränden.", "w": "Redang"},
+ {"n": "Tioman", "k": "insel", "lat": 2.80, "lon": 104.20, "s": "stb", "r": 30, "t": "Regenwaldinsel mit zwei markanten Granitnadeln im Süden, den „Drachenhörnern“.", "w": "Tioman"},
+ {"n": "Horsburgh-Leuchtturm", "k": "leuchtturm", "lat": 1.330, "lon": 104.406, "r": 12, "t": "Der Granitturm von 1851 auf dem Felsen Pedra Branca markiert die östliche Einfahrt in die Straße von Singapur.", "w": "Pedra Branca"},
+ {"n": "Straße von Singapur", "k": "meerenge", "lat": 1.24, "lon": 103.90, "s": "stb", "r": 8, "top": true, "t": "Eine der meistbefahrenen Schifffahrtsstraßen der Welt: Hunderte Schiffe auf Reede, Steuerbord die Skyline mit Marina Bay Sands und dem Riesenrad.", "w": "Straße von Singapur"}
+]},
+{"leg": "Singapur>Port Kelang (Kuala Lumpur)", "pts": [
+ {"n": "Raffles-Leuchtturm", "k": "leuchtturm", "lat": 1.160, "lon": 103.741, "s": "bb", "r": 6, "t": "Leuchtturm von 1855 auf Singapurs südlichster Insel Pulau Satumu. Ringsum liegt eine Armada von Tankern und Frachtern vor Anker.", "w": "Raffles-Leuchtturm"},
+ {"n": "Tanjung Piai", "k": "kap", "lat": 1.266, "lon": 103.508, "s": "stb", "r": 10, "t": "Südlichster Punkt des asiatischen Festlands – von hier bis zum Nordkap ist alles ein Kontinent. Dahinter beginnt die Straße von Malakka.", "w": "Tanjung Piai"},
+ {"n": "Malakka", "k": "stadt", "lat": 2.10, "lon": 102.20, "s": "stb", "r": 18, "t": "Die Stadt, die der Meerenge den Namen gab: 500 Jahre Handelsgeschichte unter Sultanen, Portugiesen, Holländern und Briten. UNESCO-Welterbe.", "w": "Malakka (Stadt)"},
+ {"n": "Kap Rachado", "k": "kap", "lat": 2.407, "lon": 101.852, "s": "stb", "r": 12, "t": "Am Tanjung Tuan ist die Straße von Malakka am schmalsten, nur 38 km bis Sumatra. Der Leuchtturm geht auf die Portugiesen zurück.", "w": "Tanjung Tuan"}
+]},
+{"leg": "Port Kelang (Kuala Lumpur)>Penang", "pts": [
+ {"n": "Pulau Pangkor", "k": "insel", "lat": 4.22, "lon": 100.50, "s": "stb", "r": 18, "t": "Fischerinsel vor Perak mit holländischem Fort aus dem 17. Jahrhundert.", "w": "Pangkor"},
+ {"n": "Muka Head und Einfahrt nach George Town", "k": "stadt", "lat": 5.47, "lon": 100.25, "s": "stb", "r": 8, "t": "Um die Nordwestspitze der Insel Penang mit ihrem Leuchtturm, dann am Strand von Batu Ferringhi entlang. Über George Town der Penang Hill und der Turm Komtar.", "w": "Penang (Insel)"}
+]},
+{"leg": "Penang>Colombo", "pts": [
+ {"n": "Pulau Perak", "k": "insel", "lat": 5.68, "lon": 98.94, "r": 18, "t": "Einsamer, kahler Felsen mitten in der Straße von Malakka – westlichster Punkt Malaysias und Brutplatz Tausender Seevögel.", "w": "Pulau Perak"},
+ {"n": "Pulau Weh und die Nordspitze Sumatras", "k": "insel", "lat": 5.95, "lon": 95.25, "s": "bb", "r": 35, "t": "Bei Sabang liegt der „Kilometer null“ Indonesiens. Die Küste von Aceh dahinter traf der Tsunami von 2004 am schwersten.", "w": "Weh"},
+ {"n": "Großer Kanal und Indira Point", "k": "meerenge", "lat": 6.55, "lon": 93.85, "s": "stb", "r": 40, "t": "Zwischen Sumatra und den Nikobaren führt die Hauptroute Europa–Ostasien. Indira Point auf Groß Nikobar ist der südlichste Punkt Indiens.", "w": "Indira Point"},
+ {"n": "Dondra Head", "k": "kap", "lat": 5.921, "lon": 80.594, "s": "stb", "r": 18, "top": true, "t": "Südspitze Sri Lankas mit 49 m hohem Leuchtturm. Vor dem Kap ziehen ganzjährig Blauwale – bis zur Antarktis kommt jetzt kein Land mehr.", "w": "Dondra Head"},
+ {"n": "Galle", "k": "stadt", "lat": 6.02, "lon": 80.21, "s": "stb", "r": 15, "t": "Holländisches Fort auf einer Landzunge, die besterhaltene europäische Festungsstadt Südasiens. UNESCO-Welterbe.", "w": "Galle"},
+ {"n": "Skyline von Colombo", "k": "stadt", "lat": 6.94, "lon": 79.83, "s": "stb", "r": 6, "t": "Über der Stadt der 351 m hohe Lotus Tower, das höchste Bauwerk Südasiens, davor das neu aufgeschüttete Port City."}
+]},
+{"leg": "Colombo>Malé", "pts": [
+ {"n": "Nord-Malé-Atoll", "k": "insel", "lat": 4.20, "lon": 73.56, "r": 10, "top": true, "t": "Einfahrt durch den Atollring: türkise Riffe und Resortinseln, dann die dicht bebaute Hauptstadtinsel, mit dem Flughafen durch die Sinamalé-Brücke verbunden.", "w": "Nord-Malé-Atoll"}
+]},
+{"leg": "Malé>Port Louis", "pts": [
+ {"n": "Atolle der Malediven", "k": "insel", "lat": 3.3, "lon": 73.3, "r": 25, "t": "Auf dem Weg nach Süden ziehen die Atolle Süd-Malé und Felidhu vorbei. Kein Punkt der Malediven liegt höher als 2,4 m über dem Meer.", "w": "Malediven"},
+ {"n": "Äquator", "k": "linie", "achse": "lat", "wert": 0, "lat": 0, "lon": 71.5, "r": 10, "top": true, "t": "Dritte Linienüberquerung: wieder auf die Südhalbkugel."},
+ {"n": "Saint Brandon", "k": "insel", "lat": -16.6, "lon": 59.6, "r": 35, "live": true, "t": "Die Cargados-Carajos-Bänke: rund 40 winzige Sandinseln auf einem 50 km langen Riff, nur von ein paar Fischern bewohnt.", "w": "Cargados-Carajos-Inseln"},
+ {"n": "Coin de Mire", "k": "insel", "lat": -19.94, "lon": 57.61, "r": 10, "t": "Die keilförmige Felseninsel vor der Nordspitze von Mauritius, Brutplatz der Tropikvögel.", "w": "Coin de Mire"},
+ {"n": "Port Louis und die Moka-Berge", "k": "berg", "lat": -20.14, "lon": 57.47, "r": 5, "top": true, "t": "Hinter der Stadt eine gezackte Bergkette: Le Pouce, der „Daumen“, und der Pieter Both mit einem Felsbrocken auf der Spitze.", "w": "Pieter Both (Berg)"}
+]},
+{"leg": "Port Louis>Durban", "pts": [
+ {"n": "Le Morne Brabant", "k": "berg", "lat": -20.45, "lon": 57.25, "s": "bb", "r": 20, "t": "Der Tafelberg an der Südwestspitze von Mauritius, einst Zuflucht entflohener Sklaven. UNESCO-Welterbe.", "w": "Le Morne Brabant"},
+ {"n": "La Réunion", "k": "vulkan", "lat": -20.87, "lon": 55.45, "s": "bb", "r": 35, "t": "Das Schiff passiert die Nordküste der französischen Vulkaninsel. Der Piton des Neiges (3.070 m) ist der höchste Berg im Indischen Ozean, der Piton de la Fournaise einer der aktivsten Vulkane der Erde.", "w": "Réunion"},
+ {"n": "Wendekreis des Steinbocks", "k": "linie", "achse": "lat", "wert": -23.44, "lat": -23.44, "lon": 50.2, "r": 8, "t": "Das Schiff verlässt die Tropen Richtung Süden."},
+ {"n": "Südspitze Madagaskars", "k": "kap", "lat": -25.75, "lon": 45.5, "s": "stb", "r": 45, "t": "Das Cap Sainte-Marie ist der südlichste Punkt Madagaskars. Hinter dem Kap beginnt die Straße von Mosambik.", "w": "Kap Sainte Marie"},
+ {"n": "Einfahrt nach Durban", "k": "stadt", "lat": -29.865, "lon": 31.06, "r": 5, "t": "Vorbei am bewaldeten Höhenzug The Bluff in den größten Hafen Afrikas. Über der Golden Mile der Bogen des Moses-Mabhida-Stadions."}
+]},
+{"leg": "Durban>Port Elizabeth", "pts": [
+ {"n": "Wild Coast und Hole in the Wall", "k": "natur", "lat": -32.04, "lon": 29.15, "s": "stb", "r": 18, "t": "Grüne Hügel, Klippen und Wasserfälle, die direkt ins Meer stürzen. Bei Coffee Bay hat die Brandung ein Tor durch eine Felswand geschlagen.", "w": "Wild Coast"},
+ {"n": "East London", "k": "stadt", "lat": -33.03, "lon": 27.93, "s": "stb", "r": 15, "t": "Südafrikas einziger Flusshafen. Vor dieser Küste wurde 1938 der erste lebende Quastenflosser gefangen – ein Fisch, der seit 65 Millionen Jahren als ausgestorben galt.", "w": "East London (Südafrika)"},
+ {"n": "Bird Island und Algoa Bay", "k": "natur", "lat": -33.84, "lon": 26.29, "s": "stb", "r": 15, "t": "Auf Bird Island brütet die größte Kaptölpel-Kolonie der Welt, rund 200.000 Vögel. In der Bucht leben Brillenpinguine und große Delfinschulen.", "w": "Algoa Bay"}
+]},
+{"leg": "Port Elizabeth>Cape Town", "pts": [
+ {"n": "Cape Recife", "k": "kap", "lat": -34.029, "lon": 25.701, "s": "stb", "r": 8, "t": "Schwarz-weiß gestreifter Leuchtturm von 1851 am Ausgang der Algoa Bay.", "w": "Cape Recife"},
+ {"n": "Cape St. Francis", "k": "kap", "lat": -34.212, "lon": 24.836, "s": "stb", "r": 15, "t": "Leuchtturm an einem der berühmtesten Surfreviere der Welt, bekannt aus dem Film „The Endless Summer“."},
+ {"n": "Garden Route: Knysna und Plettenberg Bay", "k": "natur", "lat": -34.12, "lon": 23.25, "s": "stb", "r": 18, "t": "Die Halbinsel Robberg und die Sandsteinfelsen der Knysna Heads; dahinter die Urwälder des Tsitsikamma.", "w": "Garden Route"},
+ {"n": "Kap Agulhas", "k": "kap", "lat": -34.833, "lon": 20.0, "s": "stb", "r": 22, "top": true, "t": "Der südlichste Punkt Afrikas. Am 20. Längengrad treffen offiziell Indischer und Atlantischer Ozean aufeinander – ab jetzt geht es wieder nach Norden.", "w": "Kap Agulhas"},
+ {"n": "Danger Point", "k": "geschichte", "lat": -34.63, "lon": 19.30, "s": "stb", "r": 15, "t": "Hier sank 1852 der Truppentransporter Birkenhead. Die Soldaten ließen Frauen und Kindern den Vortritt – der Ursprung von „Frauen und Kinder zuerst“.", "w": "Danger Point"},
+ {"n": "Kap der Guten Hoffnung", "k": "kap", "lat": -34.357, "lon": 18.474, "s": "stb", "r": 18, "top": true, "t": "Cape Point und das Kap, das Bartolomeu Dias 1488 als erster Europäer umrundete. Nachts am Leuchtfeuer zu erkennen, einem der stärksten Afrikas.", "w": "Kap der Guten Hoffnung"},
+ {"n": "Tafelberg und Table Bay", "k": "berg", "lat": -33.89, "lon": 18.40, "s": "stb", "r": 8, "top": true, "t": "Einfahrt im Morgenlicht: die Zwölf Apostel, Lion’s Head und der Tafelberg, oft mit seinem „Tischtuch“ aus Wolken.", "w": "Tafelberg"}
+]},
+{"leg": "Cape Town>Walvis Bay", "pts": [
+ {"n": "Robben Island", "k": "geschichte", "lat": -33.806, "lon": 18.366, "r": 6, "top": true, "t": "Auf der flachen Insel war Nelson Mandela 18 seiner 27 Haftjahre eingesperrt. Achteraus der Tafelberg im Abendlicht. UNESCO-Welterbe.", "w": "Robben Island"},
+ {"n": "Cape Columbine", "k": "kap", "lat": -32.83, "lon": 17.85, "s": "stb", "r": 18, "t": "Der letzte bemannte Leuchtturm Südafrikas an der rauen Westküste. Der kalte Benguelastrom macht das Meer hier fischreich und nebelig.", "w": "Cape Columbine"},
+ {"n": "Lüderitz und das Sperrgebiet", "k": "geschichte", "lat": -26.64, "lon": 15.09, "s": "stb", "r": 45, "live": true, "t": "Am Diaz Point errichtete Bartolomeu Dias 1488 ein Steinkreuz. Dahinter das Diamanten-Sperrgebiet mit der Geisterstadt Kolmanskuppe.", "w": "Lüderitz"},
+ {"n": "Wendekreis des Steinbocks", "k": "linie", "achse": "lat", "wert": -23.44, "lat": -23.44, "lon": 14.2, "r": 8, "t": "Zurück in den Tropen – auch wenn der kalte Benguelastrom davon wenig spüren lässt."},
+ {"n": "Dünen von Sandwich Harbour", "k": "natur", "lat": -23.37, "lon": 14.45, "s": "stb", "r": 15, "t": "Hier fallen die bis zu 100 m hohen Sanddünen der Namib direkt in den Atlantik – eine der ältesten Wüsten der Erde.", "w": "Sandwich Harbour"},
+ {"n": "Pelican Point", "k": "leuchtturm", "lat": -22.89, "lon": 14.44, "s": "stb", "r": 6, "t": "Die Sandzunge mit Leuchtturm schützt die Bucht von Walvis Bay. An ihrer Spitze leben Tausende Kap-Pelzrobben, oft begleitet von Delfinen.", "w": "Pelican Point (Namibia)"}
+]},
+{"leg": "Walvis Bay>Mindelo", "pts": [
+ {"n": "Skelettküste und Kreuzkap", "k": "natur", "lat": -21.77, "lon": 13.80, "s": "stb", "r": 30, "t": "Nebel, Brandung und Wüste machten diese Küste zum Schiffsfriedhof. Am Kreuzkap lebt eine Kolonie von über 100.000 Pelzrobben.", "w": "Kreuzkap"},
+ {"n": "Nullmeridian", "k": "linie", "achse": "lon", "wert": 0, "lat": -8.4, "lon": 0, "r": 10, "t": "Das Schiff wechselt auf die westliche Erdhalbkugel. Die Bordzeit entspricht jetzt der Weltzeit UTC."},
+ {"n": "Äquator", "k": "linie", "achse": "lat", "wert": 0, "lat": 0, "lon": -8.3, "r": 10, "top": true, "t": "Vierte und letzte Linienüberquerung – das Schiff ist zurück auf der Nordhalbkugel."},
+ {"n": "Fogo und Santiago", "k": "vulkan", "lat": 14.95, "lon": -23.9, "s": "bb", "r": 45, "live": true, "t": "Die südlichen Kapverden. Der Pico do Fogo (2.829 m) ist ein aktiver Vulkan und der höchste Berg des Landes.", "w": "Pico do Fogo"},
+ {"n": "Monte Cara und Porto Grande", "k": "berg", "lat": 16.90, "lon": -25.02, "r": 6, "top": true, "t": "Einfahrt in die Bucht von Mindelo, einen versunkenen Krater. Der Monte Cara sieht aus wie ein liegendes Gesicht; gegenüber die Berge von Santo Antão.", "w": "Monte Cara"}
+]},
+{"leg": "Mindelo>Las Palmas", "pts": [
+ {"n": "Santo Antão", "k": "insel", "lat": 17.05, "lon": -25.08, "s": "bb", "r": 12, "t": "Die gebirgigste Insel der Kapverden, bis 1.979 m hoch, mit tief eingeschnittenen grünen Tälern im Norden.", "w": "Santo Antão"},
+ {"n": "Wendekreis des Krebses", "k": "linie", "achse": "lat", "wert": 23.44, "lat": 23.44, "lon": -19.2, "r": 8, "t": "Das Schiff verlässt die Tropen zum letzten Mal auf dieser Reise."},
+ {"n": "Dünen von Maspalomas", "k": "natur", "lat": 27.735, "lon": -15.58, "s": "bb", "r": 12, "t": "An der Südspitze Gran Canarias ein Stück Sahara am Meer, bewacht vom 56 m hohen Leuchtturm von 1890.", "w": "Dünen von Maspalomas"}
+]},
+{"leg": "Las Palmas>Barcelona", "pts": [
+ {"n": "Fuerteventura und Lanzarote", "k": "insel", "lat": 29.0, "lon": -13.7, "r": 40, "live": true, "t": "Die östlichen Kanaren, nur 100 km von Afrika entfernt: Vulkankegel, Lavafelder und im Norden die kleine Insel La Graciosa.", "w": "Lanzarote"},
+ {"n": "Kap Spartel und Tanger", "k": "kap", "lat": 35.79, "lon": -5.92, "ab": true, "s": "stb", "r": 20, "t": "Die Nordwestecke Afrikas: Hier endet der Atlantik, die Straße von Gibraltar beginnt.", "w": "Kap Spartel"},
+ {"n": "Tarifa", "k": "kap", "lat": 36.000, "lon": -5.610, "s": "bb", "r": 12, "t": "Südlichster Punkt des europäischen Festlands – nach 133 Tagen ist Europa wieder in Sicht.", "w": "Tarifa"},
+ {"n": "Dschebel Musa und Ceuta", "k": "berg", "lat": 35.90, "lon": -5.41, "ab": true, "s": "stb", "r": 20, "t": "Die afrikanische Säule des Herakles über der spanischen Exklave Ceuta.", "w": "Dschebel Musa"},
+ {"n": "Felsen von Gibraltar", "k": "meerenge", "lat": 36.125, "lon": -5.343, "s": "bb", "r": 25, "top": true, "t": "Zurück im Mittelmeer: Der 426 m hohe Felsen steht diesmal an Backbord. Die Weltumrundung ist damit geschlossen.", "w": "Felsen von Gibraltar"},
+ {"n": "Sierra Nevada", "k": "berg", "lat": 36.55, "lon": -3.30, "s": "bb", "r": 25, "t": "Im April liegt auf den Dreitausendern noch Schnee, während unten an der Küste Zuckerrohr und Avocados wachsen.", "w": "Sierra Nevada (Spanien)"},
+ {"n": "Cabo de Gata", "k": "kap", "lat": 36.722, "lon": -2.193, "s": "bb", "r": 20, "t": "Vulkanisches Kap im trockensten Winkel Europas, Kulisse vieler Italowestern.", "w": "Cabo de Gata"},
+ {"n": "Cabo de Palos", "k": "kap", "lat": 37.635, "lon": -0.690, "s": "bb", "r": 18, "t": "Leuchtturm am Mar Menor, davor die Hormigas-Inseln.", "w": "Cabo de Palos"},
+ {"n": "Cabo de la Nao und Nullmeridian", "k": "kap", "lat": 38.733, "lon": 0.230, "s": "bb", "r": 20, "t": "Am Ostkap der Costa Blanca quert das Schiff den Längengrad von Greenwich und ist zurück auf der östlichen Erdhalbkugel. Steuerbord liegt Ibiza.", "w": "Cabo de la Nao"},
+ {"n": "Einfahrt nach Barcelona", "k": "stadt", "lat": 41.355, "lon": 2.19, "r": 8, "top": true, "t": "Am frühen Nachmittag: Montjuïc, die Seilbahn über dem Hafen und die fertigen Türme der Sagrada Família."}
+]},
+{"leg": "Barcelona>Marseille", "pts": [
+ {"n": "Cap de Creus", "k": "kap", "lat": 42.319, "lon": 3.322, "s": "bb", "r": 20, "t": "Östlichster Punkt Spaniens, die bizarren Felsen inspirierten Salvador Dalí im nahen Cadaqués.", "w": "Cap de Creus"},
+ {"n": "Château d’If und Frioul-Inseln", "k": "bauwerk", "lat": 43.280, "lon": 5.325, "r": 6, "top": true, "t": "Die Festungsinsel des Grafen von Monte Christo vor der Hafeneinfahrt, darüber Notre-Dame de la Garde.", "w": "Château d’If"}
+]},
+{"leg": "Marseille>Savona", "pts": [
+ {"n": "Château d’If beim Auslaufen", "k": "bauwerk", "lat": 43.280, "lon": 5.325, "r": 5, "t": "Abschied von Marseille im Abendlicht.", "w": "Château d’If"},
+ {"n": "Calanques und Cap Canaille", "k": "natur", "lat": 43.19, "lon": 5.50, "s": "bb", "r": 15, "top": true, "t": "Bei Sonnenuntergang leuchten die weißen Kalkfjorde und das rote Cap Canaille, mit 394 m die höchste Steilküste Frankreichs.", "w": "Calanques"},
+ {"n": "Îles d’Hyères", "k": "insel", "lat": 42.98, "lon": 6.30, "s": "bb", "r": 20, "t": "Porquerolles und Port-Cros, die „goldenen Inseln“ vor Toulon.", "w": "Îles d’Hyères"},
+ {"n": "Monaco und Côte d’Azur", "k": "stadt", "lat": 43.73, "lon": 7.42, "s": "bb", "r": 30, "live": true, "t": "Das Lichterband von Nizza über Monaco bis Sanremo.", "w": "Monaco"}
+]},
+{"leg": "Savona>Civitavecchia", "pts": [
+ {"n": "Elba", "k": "insel", "lat": 42.82, "lon": 10.33, "r": 20, "t": "Letzte Nacht an Bord: die Lichter von Portoferraio auf Napoleons Insel.", "w": "Elba"},
+ {"n": "Monte Argentario und Giglio", "k": "insel", "lat": 42.38, "lon": 11.02, "r": 15, "top": true, "t": "Im ersten Morgenlicht das Vorgebirge Monte Argentario – noch zwei Stunden bis Civitavecchia, die Weltreise ist vollendet.", "w": "Monte Argentario"}
+]}
+]
+}

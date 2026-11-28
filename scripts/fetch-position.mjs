@@ -3,6 +3,26 @@
    Ergebnis: out/position.json (nur bei empfangener Meldung) und out/status.json (immer). */
 import { mkdirSync, writeFileSync, existsSync, readFileSync } from "node:fs";
 
+/* Hilfsaufruf für den Job: „node fetch-position.mjs --changed <ordner>“ sagt „yes“, wenn sich der Ordner gegenüber dem
+   letzten Commit wesentlich geändert hat – neue Meldung mit merklich anderer Position (ab 0,1 sm) oder anderer Fahrt,
+   erstmals bzw. nicht mehr empfangen, Fehlerzustand gewechselt oder eine Wegmarke gemeldet. Sonst „no“. */
+if(process.argv[2] === "--changed"){
+  const { execFileSync } = await import("node:child_process");
+  const dir = process.argv[3] || "pub";
+  const now = f => { try{ return JSON.parse(readFileSync(`${dir}/${f}`, "utf8")); }catch(e){ return null; } };
+  const old = f => { try{ return JSON.parse(execFileSync("git", ["-C", dir, "show", `HEAD:${f}`], {encoding: "utf8", stdio: ["ignore", "pipe", "ignore"]})); }catch(e){ return null; } };
+  const p1 = now("position.json"), p0 = old("position.json"), s1 = now("status.json"), s0 = old("status.json");
+  const sent = j => JSON.stringify((j && j.sent) || {});
+  let changed = !s0 || !!s1 !== !!s0 || !!(s1 && s1.received) !== !!s0.received || (s1 && s1.error || null) !== (s0.error || null)
+    || sent(now("unterwegs-state.json")) !== sent(old("unterwegs-state.json"));
+  if(!changed && p1 && (!p0 || p1.timestamp !== p0.timestamp)){
+    const nm = p0 ? Math.hypot((p1.lat - p0.lat) * 60, (p1.lon - p0.lon) * 60 * Math.cos(p1.lat * Math.PI / 180)) : 99;
+    changed = nm >= 0.1 || Math.abs((p1.sog || 0) - (p0.sog || 0)) >= 1;
+  }
+  console.log(changed ? "yes" : "no");
+  process.exit(0);
+}
+
 const KEY = process.env.AISSTREAM_KEY;
 const MMSI = process.env.SHIP_MMSI || "247282900";
 const LISTEN_MS = Number(process.env.LISTEN_MS || 240000);   /* 4 Minuten lauschen */
@@ -74,7 +94,7 @@ const seen = new Map();                                          /* Diagnose: MM
 const ws = new WebSocket("wss://stream.aisstream.io/v0/stream");
 ws.addEventListener("open", () => {
   const box = DIAG ? [[30, -6], [46, 37]] : searchBox();
-  ws.send(JSON.stringify({ APIKey: KEY, BoundingBoxes: [box], FilterMessageTypes: ["PositionReport"] }));
+  ws.send(JSON.stringify({ APIKey: KEY, BoundingBoxes: [box], FilterMessageTypes: ["PositionReport", "LongRangeAisBroadcastMessage"] }));
   console.log(DIAG ? "Diagnose: alle Positionsmeldungen im Mittelmeer"
     : `Verbunden, Suchfenster ${box[0][0].toFixed(1)}..${box[1][0].toFixed(1)} N / ${box[0][1].toFixed(1)}..${box[1][1].toFixed(1)} O, warte auf MMSI ${MMSI}`);
 });
@@ -82,7 +102,9 @@ ws.addEventListener("message", async ev => {
   let m;
   try{ m = JSON.parse(await toText(ev.data)); }catch(e){ return; }
   if(m && (m.error || m.Error)){ error = String(m.error || m.Error); console.error("aisstream:", error); return finish(); }
-  const pr = m && m.Message && m.Message.PositionReport;
+  /* Neben der normalen Positionsmeldung (Typ 1–3) auch die Langstrecken-Meldung (Typ 27), die Schiffe fern der Küste senden */
+  const long = m && m.Message && m.Message.LongRangeAisBroadcastMessage;
+  const pr = m && m.Message && (m.Message.PositionReport || long);
   const meta = (m && m.MetaData) || {};
   if(!pr) return;
   const id = String(meta.MMSI ?? pr.UserID ?? "");
@@ -100,7 +122,7 @@ ws.addEventListener("message", async ev => {
     navStatus: pr.NavigationalStatus ?? null,
     shipName: (meta.ShipName || "").trim() || null,
     timestamp: new Date(Number.isFinite(t) ? t : Date.now()).toISOString(),
-    source: "aisstream.io, terrestrisches AIS, über GitHub Action"
+    source: long ? "aisstream.io, AIS-Langstreckenmeldung, über GitHub Action" : "aisstream.io, terrestrisches AIS, über GitHub Action"
   };
   finish();
 });

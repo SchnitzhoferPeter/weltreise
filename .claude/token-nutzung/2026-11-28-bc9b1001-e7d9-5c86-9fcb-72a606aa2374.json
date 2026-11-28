@@ -1,0 +1,24 @@
+{
+  "format": 1,
+  "sitzung": "bc9b1001-e7d9-5c86-9fcb-72a606aa2374",
+  "von": "2026-11-28T06:58:29.271Z",
+  "bis": "2026-11-28T07:28:10.284Z",
+  "commits": 2,
+  "modelle": {
+    "claude-fable-5-2": {
+      "anfragen": 42,
+      "eingabe": 82,
+      "cache_schreiben": 324553,
+      "cache_lesen": 10938994,
+      "ausgabe": 166399
+    }
+  },
+  "summe": {
+    "anfragen": 42,
+    "eingabe": 82,
+    "cache_schreiben": 324553,
+    "cache_lesen": 10938994,
+    "ausgabe": 166399,
+    "gesamt": 11430028
+  }
+}

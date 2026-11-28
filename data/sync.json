@@ -1,4 +1,5 @@
 {
   "url": "https://weltreise-59ec1-default-rtdb.europe-west1.firebasedatabase.app/weltreise",
-  "apiKey": "AIzaSyA7yG4VDeE41UfjmNvbS79i-5ZqOr5Gnxs"
+  "apiKey": "AIzaSyA7yG4VDeE41UfjmNvbS79i-5ZqOr5Gnxs",
+  "vapidKey": "BATqHEL_IpMu0HQ5C4ib4V_8JbbOV4nnzNEuQh_GtJACqss3y9IKTwVuAsulw9HRH4f0dBhOo2tfYztRMkNID0o"
 }

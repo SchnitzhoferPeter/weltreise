@@ -56,6 +56,16 @@ Der Entwurf liegt als Design-Canvas vor: https://claude.ai/code/artifact/2898c28
 - Verweis auf das Reisetagebuch in FindPenguins
 - Links zu Google Maps, Wikipedia, Windy und ein kopierbarer Direktlink
 
+**Unterwegs zu sehen**
+- 255 Wegmarken entlang der ganzen Strecke: Kaps, Meerengen, Inseln, Vulkane, Brücken, Hafeneinfahrten,
+  dazu Äquator, Wendekreise, Nullmeridian und Datumsgrenze. 65 davon sind als große Höhepunkte (★) markiert
+- Kachel in der Bordkarte mit der nächsten Wegmarke, Liste über den Knopf **Unterwegs** (Direktlink
+  `index.html#unterwegs`) mit geschätzter Uhrzeit an Bord und in Wien, Seite (Backbord/Steuerbord) und Kurztext,
+  Rauten auf der Karte (★ in jeder Zoomstufe, die übrigen ab der Regionalansicht; Knopf **Wegmarken** blendet sie
+  aus). Die Routenlinie folgt dem Seeweg über die Wegmarken
+- Hinweis, sobald sich das Schiff nähert, und noch einmal, wenn die Wegmarke querab liegt: bei offener App als
+  Einblendung, sonst als Push-Nachricht – siehe „Benachrichtigungen zu Wegmarken“
+
 **Landausflüge**
 - Je Hafen Ausflüge mit Uhrzeit, Dauer, Treffpunkt und Hinweisen erfassen, später einzeln ändern oder löschen
 - Erscheinen in der Routenliste, in der Bordkarte (heute bzw. nächster Hafen) und im Kalenderexport
@@ -98,11 +108,19 @@ aisstream.io erlaubt keine Verbindungen direkt aus dem Browser. Deshalb holt ein
 Repository die Position serverseitig und die Seite liest nur noch das Ergebnis:
 
 1. **AIS-Abgleich über GitHub Action** (`.github/workflows/position.yml`, Skript
-   `scripts/fetch-position.mjs`): läuft alle 10 Minuten, lauscht bis 4 Minuten auf eine
+   `scripts/fetch-position.mjs`): fragt alle 5 Minuten ab, lauscht je bis 4 Minuten auf eine
    Positionsmeldung der MMSI 247282900 und schreibt `position.json` und `status.json` auf den
    Branch `position-data`. Die Seite liest beide von `raw.githubusercontent.com`.
    Voraussetzung: das Repository-Secret **`AISSTREAM_KEY`** (Settings → Secrets and variables →
-   Actions). Der Job lässt sich unter „Actions“ auch von Hand starten.
+   Actions).
+   **Dauerlauf statt Zeitplan:** GitHub startet Zeitplan-Jobs nur nach Möglichkeit. Gemessen bis 28. Nov. 2026
+   waren es 3 bis 5 Starts am Tag statt der eingestellten 144 (mittlerer Abstand 4,5 Stunden, alle Läufe
+   fehlerfrei) – das Schiff wurde also meist gar nicht abgefragt. Deshalb bleibt ein Lauf jetzt gut fünf Stunden
+   aktiv und startet am Ende selbst den nächsten; der stündliche Zeitplan ist nur noch die Rückversicherung,
+   falls die Kette reißt. Nach dem Übernehmen nach `main` einmal unter „Actions“ von Hand starten.
+   Veröffentlicht wird nur bei wesentlicher Änderung (neue Position, Empfang ja/nein, gemeldete Wegmarke) und
+   sonst alle 30 Minuten, damit der Branch klein bleibt. Neben der normalen Positionsmeldung nimmt das Skript
+   auch die AIS-Langstreckenmeldung (Typ 27) an.
    Meldungen älter als 18 Stunden gelten nicht mehr als aktuelle Position; die Seite zeigt sie
    aber weiterhin als „Letzte AIS-Meldung vor …“ (vor der Reise als Schiffsposition, unterwegs als
    Marke „zuletzt gesehen“). `status.json` zeigt, wann zuletzt geprüft wurde und ob das Schiff in
@@ -117,6 +135,58 @@ Repository die Position serverseitig und die Seite liest nur noch das Ergebnis:
 Terrestrisches AIS erreicht das Schiff in Häfen und bis etwa 40 sm vor der Küste. Auf hoher See
 bleibt es bei der Schätzung; dafür bräuchte es ein bezahltes Satelliten-AIS-Abo, das der Job
 ebenso einlesen könnte.
+
+## Benachrichtigungen zu Wegmarken
+
+Die Wegmarken stehen in `data/unterwegs.json`, je Etappe in Fahrtrichtung geordnet. Die Rechenlogik liegt in
+`unterwegs.js` und wird von der Seite und vom Push-Job gleichermaßen benutzt:
+
+- **Weg je Etappe:** Abfahrtshafen → Wegmarken → Zielhafen. Daraus ergibt sich die geplante Uhrzeit jeder
+  Passage, und die Fahrplan-Schätzung der Schiffsposition folgt diesem Weg (etwa durch die Straße von Gibraltar)
+  statt dem Großkreis über Land.
+- **Mit AIS-Position** (höchstens 45 Minuten alt): „nähert sich“ ab dem Umkreis `r` der Wegmarke, mindestens
+  aber eine halbe Stunde Fahrt vorher; „querab“, sobald sie 75° oder mehr seitlich liegt. Die Seite
+  (Backbord/Steuerbord) kommt dann aus dem echten Kurs.
+- **Ohne AIS** (hohe See) gilt die geplante Uhrzeit; die Nachricht sagt dann „laut Fahrplan“.
+- Wegmarken mit `live: true` liegen an einer Route, die nicht feststeht (z. B. Seto-Inlandsee oder außen um
+  Shikoku). Für sie kommt ein Hinweis nur, wenn die AIS-Position das Schiff wirklich in der Nähe zeigt.
+
+**Push bei geschlossener App.** Der Positions-Job ruft alle 5 Minuten `scripts/notify-highlights.mjs` auf. Das
+Skript verschickt die Nachrichten per Web Push an alle Geräte, die in der App „Benachrichtigungen einschalten“
+gewählt haben, und merkt sich in `unterwegs-state.json` (Branch `position-data`), was schon gemeldet wurde.
+Je Gerät einstellbar: alle Wegmarken oder nur die großen (★), Nachtruhe von 22 bis 7 Uhr Gerätezeit.
+
+Einmalig einrichten:
+
+1. **Repository-Secret `VAPID_PRIVATE_KEY`** anlegen (Settings → Secrets and variables → Actions). Der dazu
+   passende öffentliche Schlüssel steht als `vapidKey` in `data/sync.json`. Neues Paar bei Bedarf:
+   `npx web-push generate-vapid-keys`. Wird das Paar getauscht, müssen alle Geräte die Benachrichtigungen neu einschalten.
+2. **Firebase → Realtime Database → Regeln:** Inhalt von `database.rules.json` neu einspielen. Neu ist der
+   Bereich `push` mit den Anmeldungen der Geräte (Adresse beim Push-Dienst, Schlüssel, Zeitzone, Einstellungen).
+3. Änderungen nach `main` übernehmen – der Zeitplan des Jobs läuft nur dort.
+
+Ohne Schritt 1 und 2 rechnet der Job nur und sendet nichts; die App zeigt die Wegmarken trotzdem und meldet sie bei
+geöffneter Seite. Am iPhone gibt es Push nur für die App am Home-Bildschirm (Teilen → „Zum Home-Bildschirm“, ab iOS 16.4).
+Der Job fragt alle 5 Minuten ab: Eine Nachricht kann also einige Minuten nach dem eigentlichen Moment eintreffen.
+
+Prüfen ohne zu senden:
+
+```sh
+PLAN=1 node scripts/notify-highlights.mjs                                   # alle Wegmarken mit geplanter Uhrzeit (UTC)
+DRY_RUN=1 NOW=2026-11-28T19:15:00Z node scripts/notify-highlights.mjs       # was würde zu diesem Zeitpunkt gemeldet?
+```
+
+Eine Wegmarke in `data/unterwegs.json`:
+
+```json
+{"n": "Felsen von Gibraltar", "k": "meerenge", "lat": 36.125, "lon": -5.343, "s": "stb", "r": 25, "top": true,
+ "t": "Kurztext …", "w": "Felsen von Gibraltar"}
+```
+
+`s` ist die Seite (`bb`, `stb`, `beide`), `r` der Umkreis in Seemeilen, `ab: true` nimmt einen abseits liegenden
+Punkt aus dem Weg heraus, `f` ist der Anteil der Kanaldurchfahrt, `achse`/`wert` beschreiben eine Linie wie den Äquator.
+Koordinaten, Reihenfolge und Seiten sind aus Seekarten-Wissen zusammengestellt und an der ersten AIS-Meldung geprüft
+(Cabo de Palos: geplant 04:21 UTC, tatsächlich 04:18 UTC); die tatsächliche Route legt die Schiffsführung fest.
 
 ## Reisetagebuch (FindPenguins)
 
@@ -159,7 +229,7 @@ Schreiben eines Probeeintrags gelingen. Sie schlägt fehl, solange die Datenbank
 
 Die Website meldet sich bei Firebase anonym an (ohne Konto, ohne Eingabe) und schickt das
 Anmelde-Token bei jedem Zugriff mit. Die Regeln in `database.rules.json` lassen nur solche Aufrufe
-zu, nur auf die drei Bereiche `notes`, `excursions` und `visits`, und prüfen Form und Größe jedes
+zu, nur auf die Bereiche `notes`, `excursions`, `visits` und `push`, und prüfen Form und Größe jedes
 Eintrags. Hartes Löschen und das Überschreiben ganzer Listen sind gesperrt.
 
 Einmalig in dieser Reihenfolge einrichten:

@@ -45,6 +45,22 @@
           }
         }
       },
+      "push": {
+        ".read": "auth != null",
+        "$id": {
+          ".write": "auth != null && newData.exists()",
+          ".validate": "$id.matches(/^[A-Za-z0-9]{8,40}$/) && newData.hasChildren(['endpoint', 'p256dh', 'auth', 'at'])",
+          "endpoint": { ".validate": "newData.isString() && newData.val().length <= 1000 && newData.val().beginsWith('https://')" },
+          "p256dh": { ".validate": "newData.isString() && newData.val().length <= 200" },
+          "auth": { ".validate": "newData.isString() && newData.val().length <= 100" },
+          "tz": { ".validate": "newData.isString() && newData.val().length <= 64" },
+          "nur": { ".validate": "newData.isString() && newData.val().matches(/^(alle|top)$/)" },
+          "ruhe": { ".validate": "newData.isBoolean()" },
+          "off": { ".validate": "newData.isBoolean()" },
+          "at": { ".validate": "newData.isNumber()" },
+          "$other": { ".validate": false }
+        }
+      },
       "_probe": {
         ".read": "auth != null",
         ".write": "auth != null",
